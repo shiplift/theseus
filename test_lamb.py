@@ -22,4 +22,8 @@ class TestInteger(object):
     pass
 
 class TestContstructor(object):
-    pass
+
+    def test_empty_constructor(self):
+        w_res = W_Contstructor(symbol("zork"))
+        assert isinstance(w_res, W_Contstructor)
+        assert w_res.tag is symbol("zork")
