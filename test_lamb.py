@@ -19,11 +19,44 @@ class TestSymbol(object):
         assert w_res1 is not w_res2
 
 class TestInteger(object):
-    pass
+    
+    def test_futile(self):
+        w_int = integer(1)
+        assert isinstance(w_int, W_Integer)
 
 class TestContstructor(object):
 
     def test_empty_constructor(self):
-        w_res = W_Contstructor(symbol("zork"))
-        assert isinstance(w_res, W_Contstructor)
+        w_res = W_Constructor(symbol("zork"))
+        assert isinstance(w_res, W_Constructor)
         assert w_res.tag is symbol("zork")
+        assert len(w_res.children()) is 0
+
+    def test_simple_constructor(self):
+        w_res = W_Constructor(symbol("zork"), W_Integer(1))
+        assert isinstance(w_res, W_Constructor)
+        assert w_res.tag is symbol("zork")
+        assert len(w_res.children()) is 1
+
+    def test_still_simple_constructor(self):
+        w_res = W_Constructor(symbol("zork"), W_Integer(1), W_Integer(2))
+        assert isinstance(w_res, W_Constructor)
+        assert w_res.tag is symbol("zork")
+        assert len(w_res.children()) is 2
+
+    def test_simple_nested_constructor(self):
+        w_res = W_Constructor(symbol("zork"), W_Constructor(symbol("barf")))
+        assert isinstance(w_res, W_Constructor)
+        assert w_res.tag is symbol("zork")
+        assert len(w_res.children()) is 1
+
+        w_subcons = w_res.children()[0]
+        assert isinstance(w_subcons, W_Constructor)
+        assert w_subcons.tag is symbol("barf")
+        assert len(w_subcons.children()) is 0
+        
+        
+        
+        
+
+
