@@ -20,7 +20,7 @@ Components
 Behavior
 ========
 
-match(pattern, object) ≔ No | name_binding
+match(pattern, object, binding) ≔ { update binding | throw NoMatch }
 
 
 
