@@ -179,6 +179,42 @@ class TestPattern(object):
         binding = {}
         pat.match(w_obj, binding)
         assert binding[var] == w_int
+
+    def test_complex(self):
+
+        var1 = Variable("x")
+        var2 = Variable("y")
+        var3 = Variable("z")
+
+        w_int1 = integer(1)
+        w_int2 = integer(2)
+        w_int3 = integer(3)
+
+        w_cons1 = cons("zork")
+        w_cons2 = cons("barf", w_int1, w_int2)
+        w_cons3 = cons("moep", w_cons1)
+        w_cons4 = cons("universe", w_cons2, w_cons3)
+
+        pat1 = pattern(cons("universe", var1, var2))
+        pat2 = pattern(cons("moep", var3))
+        pat3 = pattern(cons("universe", cons("barf", var1, var2), var3))
+
+        binding = {}
+        pat1.match(w_cons4, binding)
+        assert binding[var1] == w_int1
+        assert binding[var2] == w_int2
+
+        binding = {}
+        pat2.match(w_cons3, binding)
+        assert binding[var3] == cons("zork")
+
+        binding = {}
+        pat3.match(w_cons4, binding)
+        assert binding[var1] == w_int1
+        assert binding[var2] == w_int2
+        assert binding[var3] == cons("moep", cons("zork"))
+
+        
         
 # note to self: resolve binding == copy exrp, replace var by binding
  
