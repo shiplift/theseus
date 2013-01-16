@@ -42,15 +42,59 @@ class W_Integer(W_Object):
 def integer(value):
     assert isinstance(value, int)
     return W_Integer(value)
+   
 
 class W_Constructor(W_Object):
 
-    def __init__(self, tag, *children):
+    def __init__(self, tag, children=None):
         assert isinstance(tag, W_Symbol)
-        self.tag = tag
+        self._tag = tag
         self._children = children or []
 
-    def children(self):
-        return self._children
+    def get_tag(self):
+        return self._tag
+        
+    def get_child(self, index):
+        return self._children[index]
 
-    
+    def get_number_of_children(self):
+        return len(self._children)
+
+
+class Variable(object):
+
+    def __init__(self, name):        
+        self.name = name
+
+
+class Pattern(object):
+    def match(self, an_obj, binding):
+        raise NotImplementedError("abstract method")
+        
+class VariablePattern(Pattern):
+
+    def __init__(self, variable):
+        self.variable = variable
+
+    def match(self, obj, binding):
+        assert self.variable not in binding
+        binding[self.variable] = obj
+
+class ConstructorPattern(object):
+
+    def __init__(self, tag, children=None):
+        self._tag = tag
+        self._children = children or []
+
+    def match(self, obj, binding):
+        if isinstance(obj, W_Constructor):
+            if (obj.get_tag() == self._tag):
+                if obj.get_number_of_children() == len(self._children):
+                    for i in range(len(self._children)):
+                        self._children[i].match(obj.get_child(i), binding)
+                    return
+        raise NoMatch()
+
+class NoMatch(Exception):
+    pass
+                    

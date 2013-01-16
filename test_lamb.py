@@ -1,5 +1,18 @@
 from lamb import *
 
+def pattern(obj):
+    if isinstance(obj, Variable):
+        return VariablePattern(obj)
+    else:
+        return pattern_from_constructor(obj)
+
+
+def pattern_from_constructor(constructor):
+    _tag = constructor.get_tag()
+    _children = [pattern(constructor.get_child(i)) for i in range(constructor.get_number_of_children())]
+    return ConstructorPattern(_tag, _children)
+
+
 
 class TestSymbol(object):
 
@@ -29,34 +42,60 @@ class TestContstructor(object):
     def test_empty_constructor(self):
         w_res = W_Constructor(symbol("zork"))
         assert isinstance(w_res, W_Constructor)
-        assert w_res.tag is symbol("zork")
-        assert len(w_res.children()) is 0
+        assert w_res.get_tag() is symbol("zork")
+        assert w_res.get_number_of_children() is 0
 
     def test_simple_constructor(self):
-        w_res = W_Constructor(symbol("zork"), W_Integer(1))
+        w_res = W_Constructor(symbol("zork"), [W_Integer(1)])
         assert isinstance(w_res, W_Constructor)
-        assert w_res.tag is symbol("zork")
-        assert len(w_res.children()) is 1
+        assert w_res.get_tag() is symbol("zork")
+        assert w_res.get_number_of_children() is 1
 
     def test_still_simple_constructor(self):
-        w_res = W_Constructor(symbol("zork"), W_Integer(1), W_Integer(2))
+        w_res = W_Constructor(symbol("zork"), [W_Integer(1), W_Integer(2)])
         assert isinstance(w_res, W_Constructor)
-        assert w_res.tag is symbol("zork")
-        assert len(w_res.children()) is 2
+        assert w_res.get_tag() is symbol("zork")
+        assert w_res.get_number_of_children() is 2
 
     def test_simple_nested_constructor(self):
-        w_res = W_Constructor(symbol("zork"), W_Constructor(symbol("barf")))
+        w_res = W_Constructor(symbol("zork"), [W_Constructor(symbol("barf"))])
         assert isinstance(w_res, W_Constructor)
-        assert w_res.tag is symbol("zork")
-        assert len(w_res.children()) is 1
+        assert w_res.get_tag() is symbol("zork")
+        assert w_res.get_number_of_children() is 1
 
-        w_subcons = w_res.children()[0]
+        w_subcons = w_res.get_child(0)
         assert isinstance(w_subcons, W_Constructor)
-        assert w_subcons.tag is symbol("barf")
-        assert len(w_subcons.children()) is 0
-        
-        
-        
-        
+        assert w_subcons.get_tag() is symbol("barf")
+        assert w_subcons.get_number_of_children() is 0
 
+class TestVariable(object):
 
+    def test_variable(self):
+        res = Variable("x")
+        assert isinstance(res, Variable)
+
+        res2 = Variable("y")
+        assert res2 is not res
+
+        res3 = Variable("x")
+        assert res3 is not res
+
+class TestPattern(object):
+
+    def test_catch_all(self):
+        var = Variable("x")
+        pat = pattern(var)
+        w_obj = W_Constructor(symbol("barf"))
+        binding = {}
+        pat.match(w_obj, binding)
+        assert binding[var] == w_obj
+        
+    def test_simple_constructor(self):
+        w_cons = W_Constructor(symbol("barf"))
+        pat = pattern_from_constructor(w_cons)
+        w_obj = W_Constructor(symbol("barf"))
+
+        binding = {}
+        pat.match(w_obj, binding)
+        assert binding == {}
+        
