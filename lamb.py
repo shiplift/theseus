@@ -32,17 +32,12 @@ def symbol(name):
 class W_Integer(W_Object):
 
     def __init__(self, value):
-        self.value = value
+        self._value = value
 
     def to_repr(self):
-        return str(self.value)
+        return str(self._value)
 
     to_str = to_repr
-
-def integer(value):
-    assert isinstance(value, int)
-    return W_Integer(value)
-   
 
 class W_Constructor(W_Object):
 
@@ -70,6 +65,17 @@ class Variable(object):
 class Pattern(object):
     def match(self, an_obj, binding):
         raise NotImplementedError("abstract method")
+
+class IntegerPattern(Pattern):
+
+    def __init__(self, value):
+        self.value = value
+
+    def match(self, obj, binding):
+        if isinstance(obj, W_Integer):
+            if obj._value == self.value:
+                return
+        raise NoMatch()
         
 class VariablePattern(Pattern):
 
