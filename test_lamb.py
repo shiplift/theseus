@@ -200,7 +200,7 @@ class TestPattern(object):
         pat3 = pattern(cons("universe", cons("barf", var1, var2), var3))
 
         binding = {}
-        pat1.match(w_cons4, binding)
+        pat1.match(w_cons2, binding)
         assert binding[var1] == w_int1
         assert binding[var2] == w_int2
 
