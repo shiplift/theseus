@@ -86,7 +86,7 @@ class VariablePattern(Pattern):
         assert self.variable not in binding
         binding[self.variable] = obj
 
-class ConstructorPattern(object):
+class ConstructorPattern(Pattern):
 
     def __init__(self, tag, children=None):
         self._tag = tag
@@ -107,7 +107,7 @@ class NoMatch(Exception):
 
 class Expression(object):
 
-    def resolve(self, binding):
+    def evaluate(self, binding):
         raise NotImplementedError("abstract method")
 
 class IntegerExpression(Expression):
@@ -115,7 +115,7 @@ class IntegerExpression(Expression):
     def __init__(self, value):
         self.value = value
 
-    def resolve(self, binding):
+    def evaluate(self, binding):
         return self.value
 
 
@@ -124,23 +124,34 @@ class VariableExpression(Expression):
     def __init__(self, variable):
         self.variable = variable
 
-    def resolve(self, binding):
+    def evaluate(self, binding):
         w_result = binding.get(self.variable, None)
         if w_result is None:
             raise VariableUnbound()
         else:            
             return w_result
 
-class ConstructorExpression(object):
+class ConstructorExpression(Expression):
 
     def __init__(self, tag, children=None):
         self._tag = tag
         self._children = children or []
 
-    def resolve(self, binding):
-        resolvents = [child.resolve(binding) for child in self._children]
-        return W_Constructor(self._tag, resolvents)
+    def evaluate(self, binding):
+        children = [child.evaluate(binding) for child in self._children]
+        return W_Constructor(self._tag, children)
+
+class CallExpression(Expression):
+
+    def __init__(self, callee, arguments=None):
+        self.callee = callee
+        self.arguments = arguments or []
+
+    def evaluate(self, binding):
+        function = self.callee.evaluate(binding)
+        args = [arg.evaluate(binding) for arg in self.arguments]
         
+    
 
 class VariableUnbound(Exception):
     pass

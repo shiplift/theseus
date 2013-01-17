@@ -236,7 +236,7 @@ class TestExpression(object):
         expr = expression(w_int)
 
         binding = {}
-        w_res = expr.resolve(binding)
+        w_res = expr.evaluate(binding)
         assert w_res is w_int
 
     def test_variable_expression(self):
@@ -246,7 +246,7 @@ class TestExpression(object):
         expr = expression(var)
 
         binding = { var : w_int }
-        w_res = expr.resolve(binding)
+        w_res = expr.evaluate(binding)
         assert w_res is w_int
         
     def test_simple_constructor_expression(self):
@@ -254,7 +254,7 @@ class TestExpression(object):
         expr = ConstructorExpression(symbol("barf"), [])
 
         binding = {}
-        w_res = expr.resolve(binding)
+        w_res = expr.evaluate(binding)
         assert w_res.get_tag() is symbol("barf")
         assert w_res.get_number_of_children() is 0
 
@@ -264,7 +264,7 @@ class TestExpression(object):
         expr = expression(w_cons)
 
         binding = {}
-        w_res = expr.resolve(binding)
+        w_res = expr.evaluate(binding)
         assert w_res.get_tag() == w_cons.get_tag()
         assert w_res.get_number_of_children() == w_cons.get_number_of_children()
         assert w_res.get_child(0) == w_int
@@ -277,7 +277,7 @@ class TestExpression(object):
         expr = expression(w_cons)
 
         binding = { var : w_int }
-        w_res = expr.resolve(binding)
+        w_res = expr.evaluate(binding)
         assert w_res.get_child(0) == w_int
 
     def test_complex(self):
@@ -300,7 +300,7 @@ class TestExpression(object):
 
         binding = { var1: w_cons2, var2: w_cons3, var3: w_cons1 }
 
-        w_res = expr1.resolve(binding)
+        w_res = expr1.evaluate(binding)
         assert w_res.get_tag() is symbol("universe")
         w_child0 = w_res.get_child(0)
         assert w_child0.get_tag() is symbol("barf")
@@ -310,12 +310,12 @@ class TestExpression(object):
         assert w_child1.get_tag() is symbol("moep")
         assert w_child1.get_child(0).get_tag() is symbol("zork")
 
-        w_res = expr2.resolve(binding)
+        w_res = expr2.evaluate(binding)
         assert w_res.get_tag() is symbol("moep")
         w_child0 = w_res.get_child(0)
         assert w_child0.get_tag() is symbol("zork")
 
-        w_res = expr3.resolve(binding)
+        w_res = expr3.evaluate(binding)
         assert w_res.get_tag() is symbol("universe")
         w_child0 = w_res.get_child(0)
         assert w_child0.get_tag() is symbol("barf")
@@ -331,7 +331,3 @@ class TestExpression(object):
 
         
         
-        
-        
-# note to self: resolve binding == copy exrp, replace var by binding
- 
