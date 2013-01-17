@@ -1,16 +1,12 @@
-from contextlib import contextmanager
 
 import py
 
-class BaseTest(object):
-    @contextmanager
-    def raises(self, space, exc_name, msg=None):
-        if msg is not None:
-            assert exc.value.w_value.msg == msg
-
-
 from lamb import *
 
+
+#
+# Construction Helper
+#
 def pattern(obj):
     if isinstance(obj, Variable):
         return VariablePattern(obj)
@@ -34,8 +30,26 @@ def cons(tag, *children):
 def integer(value):
     assert isinstance(value, int)
     return W_Integer(value)
+
+def expression(obj):
+    if isinstance(obj, Variable):
+        return VariableExpression(obj)
+    elif isinstance(obj, W_Integer):
+        return IntegerExpression(obj)
+    else:
+        return expression_from_constructor(obj)
+
+def expression_from_constructor(w_constructor):
+    _tag = w_constructor.get_tag()
+    _children = [expression(w_constructor.get_child(i)) for i in range(w_constructor.get_number_of_children())]
+    return ConstructorExpression(_tag, _children)
+
     
 
+
+#
+# Tests
+#
 
 class TestSymbol(object):
 
@@ -214,6 +228,109 @@ class TestPattern(object):
         assert binding[var2] == w_int2
         assert binding[var3] == w_cons3
 
+
+class TestExpression(object):
+
+    def test_simple_expression(self):
+        w_int = integer(1)
+        expr = expression(w_int)
+
+        binding = {}
+        w_res = expr.resolve(binding)
+        assert w_res is w_int
+
+    def test_variable_expression(self):
+
+        w_int = integer(42)
+        var = Variable("x")
+        expr = expression(var)
+
+        binding = { var : w_int }
+        w_res = expr.resolve(binding)
+        assert w_res is w_int
+        
+    def test_simple_constructor_expression(self):
+
+        expr = ConstructorExpression(symbol("barf"), [])
+
+        binding = {}
+        w_res = expr.resolve(binding)
+        assert w_res.get_tag() is symbol("barf")
+        assert w_res.get_number_of_children() is 0
+
+    def test_constructor_with_int(self):
+        w_int = integer(1)
+        w_cons = cons("zork", w_int)
+        expr = expression(w_cons)
+
+        binding = {}
+        w_res = expr.resolve(binding)
+        assert w_res.get_tag() == w_cons.get_tag()
+        assert w_res.get_number_of_children() == w_cons.get_number_of_children()
+        assert w_res.get_child(0) == w_int
+        
+
+    def test_constructor_with_var(self):
+        var = Variable("x")
+        w_cons = cons("zork", var)
+        w_int = integer(1)
+        expr = expression(w_cons)
+
+        binding = { var : w_int }
+        w_res = expr.resolve(binding)
+        assert w_res.get_child(0) == w_int
+
+    def test_complex(self):
+
+        var1 = Variable("x")
+        var2 = Variable("y")
+        var3 = Variable("z")
+
+        w_int1 = integer(1)
+        w_int2 = integer(2)
+        w_int3 = integer(3)
+
+        w_cons1 = cons("zork")
+        w_cons2 = cons("barf", w_int1, w_int2)
+        w_cons3 = cons("moep", w_cons1)
+
+        expr1 = expression(cons("universe", var1, var2))
+        expr2 = expression(cons("moep", var3))
+        expr3 = expression(cons("universe", cons("barf", var1, var2), var3))
+
+        binding = { var1: w_cons2, var2: w_cons3, var3: w_cons1 }
+
+        w_res = expr1.resolve(binding)
+        assert w_res.get_tag() is symbol("universe")
+        w_child0 = w_res.get_child(0)
+        assert w_child0.get_tag() is symbol("barf")
+        assert w_child0.get_child(0) is w_int1
+        assert w_child0.get_child(1) is w_int2
+        w_child1 = w_res.get_child(1)
+        assert w_child1.get_tag() is symbol("moep")
+        assert w_child1.get_child(0).get_tag() is symbol("zork")
+
+        w_res = expr2.resolve(binding)
+        assert w_res.get_tag() is symbol("moep")
+        w_child0 = w_res.get_child(0)
+        assert w_child0.get_tag() is symbol("zork")
+
+        w_res = expr3.resolve(binding)
+        assert w_res.get_tag() is symbol("universe")
+        w_child0 = w_res.get_child(0)
+        assert w_child0.get_tag() is symbol("barf")
+        w_child00 = w_child0.get_child(0)
+        assert w_child00.get_tag() is symbol("barf")
+        assert w_child00.get_child(0) is w_int1
+        assert w_child00.get_child(1) is w_int2
+        w_child01 = w_child0.get_child(1)
+        assert w_child01.get_tag() is symbol("moep")
+        assert w_child01.get_child(0).get_tag() is symbol("zork")
+        w_child1 = w_res.get_child(1)
+        assert w_child1.get_tag() is symbol("zork")
+
+        
+        
         
         
 # note to self: resolve binding == copy exrp, replace var by binding
