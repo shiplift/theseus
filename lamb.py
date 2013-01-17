@@ -21,10 +21,15 @@ class W_Symbol(W_Object):
     def __init__(self, name):
         self.name = name
 
+
+    #
+    # Testing and Debug
+    #
     def to_repr(self):
-        return self.name
-    
-    to_string = to_repr
+        return self.name    
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
 
 
 def symbol(name):
@@ -104,6 +109,23 @@ class W_Lambda(W_Object):
 
         raise NoMatch()
 
+    def interpret(self, binding, stack, exp_stack):
+        w_arguments = []
+        for i in range(self.arity()):
+            w_arguments.append(stack.pop())
+        local_binding = {}
+        for rule in self._rules:
+            try:
+                expression = rule.match_all(w_arguments, local_binding)
+            except NoMatch:
+                local_binding = {}
+            else:
+                exp_stack.append(expression)
+                binding.update(local_binding)
+                return
+
+        raise NoMatch()
+        
     #
     # Testing and Debug
     #
@@ -201,6 +223,9 @@ class Expression(TestEqualityMixin):
     def evaluate(self, binding):
         raise NotImplementedError("abstract method")
 
+    def interpret(self, binding, stack, exp_stack):
+        raise NotImplementedError("abstract method")
+
 class ValueExpression(Expression):
 
     def __init__(self, value):
@@ -209,6 +234,20 @@ class ValueExpression(Expression):
     def evaluate(self, binding):
         return self.value
 
+    def interpret(self, binding, stack, exp_stack):
+        if isinstance(self.value, W_Lambda):
+            exp_stack.append(self.value)
+        else:
+            stack.append(self.value)
+
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "?(" + repr(self.value) + ")"
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
 
 class VariableExpression(Expression):
 
@@ -222,6 +261,18 @@ class VariableExpression(Expression):
         else:            
             return w_result
 
+    def interpret(self, binding, stack, exp_stack):
+        # ok here.
+        stack.append(self.evaluate(binding))
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "!" + repr(self.variable)
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
+
 class ConstructorExpression(Expression):
 
     def __init__(self, tag, children=None):
@@ -231,6 +282,32 @@ class ConstructorExpression(Expression):
     def evaluate(self, binding):
         children = [child.evaluate(binding) for child in self._children]
         return W_Constructor(self._tag, children)
+
+    def interpret(self, binding, stack, exp_stack):
+        exp_stack.append(ConstructorBuilder(self._tag, len(self._children)))
+        for child in self._children:
+            exp_stack.append(child)
+
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "$" + repr(self._tag) + "(" + repr(self._children) + ")"
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
+
+class ConstructorBuilder(object):
+    def __init__(self, tag, number_of_children):
+        self._tag = tag
+        self._number_of_children = number_of_children
+
+    def interpret(self, binding, stack, exp_stack):
+        children = []
+        for i in range(self._number_of_children):
+            children.append(stack.pop())
+        stack.append(W_Constructor(self._tag, children))
+
 
 class CallExpression(Expression):
 
@@ -243,9 +320,36 @@ class CallExpression(Expression):
         w_args = [arg.evaluate(binding) for arg in self.arguments]
         return w_function.call(w_args)
 
+    def interpret(self, binding, stack, exp_stack):
+        exp_stack.append(self.callee)
+        for arg in self.arguments:
+            exp_stack.append(arg)
+
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "!" + repr(self.callee) + "(" + repr(self.arguments) + ")"
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
+
+
 class VariableUnbound(Exception):
     pass
 
 class NoMatch(Exception):
     pass
+
+
+
+def interpret(expressions, arguments=None):
+
+    binding = {}
+    stack = arguments or []
+    while len(expressions) > 0:
+        expression = expressions.pop()
+        expression.interpret(binding, stack, expressions)
+    assert len(stack) > 0
+    return stack.pop()
 

@@ -466,3 +466,51 @@ class TestLambda(object):
         list2_w = [integer(4),integer(5),integer(6)]
         assert plist(l.call([conslist(list1_w), conslist(list2_w)])) == list1_w + list2_w
 
+class TestInterpret(object):
+
+    def test_simple_lambda(self):
+        w_int = integer(1)
+        l = lamb( ([], w_int) )
+        res = interpret([mu(l)])
+        assert res is w_int
+
+    def test_lambda_id(self):
+        x = Variable("x")
+        l = lamb( ([x], x) )
+        w_int = integer(1)
+        res = interpret([mu(l, w_int)])
+        assert res is w_int
+        
+    def test_lambda_not(self):
+
+        w_true = cons("true")
+        w_false = cons("false")
+
+        l = lamb(
+            ([w_true], w_false),
+            ([w_false], w_true))
+
+        res = interpret([mu(l, w_true)])        
+        assert res == w_false
+
+        res = interpret([mu(l, w_false)])
+        assert res == w_true
+
+
+    def test_append(self):
+        
+        x = Variable("x")
+        h = Variable("head")
+        t = Variable("tail")
+
+        l = lamb()
+        l._rules = ziprules(
+            ([w_nil, x], x),
+            ([cons("cons", h, t), x], cons("cons", h, mu(l, t, x))))
+
+       
+        list1_w = [integer(1),integer(2),integer(3)]
+        list2_w = [integer(4),integer(5),integer(6)]
+
+        res = interpret([mu(l, conslist(list1_w,), conslist(list2_w))])
+        assert plist(res) == list1_w + list2_w
