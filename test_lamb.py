@@ -512,5 +512,5 @@ class TestInterpret(object):
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
 
-        res = interpret([mu(l, conslist(list1_w,), conslist(list2_w))])
+        res = interpret([mu(l, conslist(list1_w), conslist(list2_w))])
         assert plist(res) == list1_w + list2_w

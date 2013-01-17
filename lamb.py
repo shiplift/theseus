@@ -3,6 +3,9 @@
 # Hi.
 #
 
+def who(object):
+    return hex(id(object) % 0xFFFF)[2:]
+
 class TestEqualityMixin(object):
     _mixin_ = True
     def __eq__(self, other):
@@ -76,7 +79,7 @@ class W_Constructor(W_Object):
     # Testing and Debug
     #
     def to_repr(self):
-        return "(" + repr(self._tag) + ", " + repr(self._children) + ")"
+        return "#(" + repr(self._tag) + ", " + repr(self._children) + ")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -130,9 +133,8 @@ class W_Lambda(W_Object):
     # Testing and Debug
     #
     def to_repr(self):
-        return "lambda (" + repr(self._rules) + ")"
-    def to_str(self):
-        return "λ(" + repr(self._rules)
+        return "λ_" + who(self) + "(" + "; ".join(map(repr, self._rules)) + ")"
+    to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
 
@@ -156,7 +158,7 @@ class Rule(TestEqualityMixin):
     # Testing and Debug
     #
     def to_repr(self):
-        return "[" + repr(self._patterns) + " -> " + repr(self._expression) + "]"
+        return "{" + ", ".join(map(repr, self._patterns)) + " -> " + repr(self._expression) + "}"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -171,7 +173,7 @@ class Variable(TestEqualityMixin):
     # Testing and Debug
     #
     def to_repr(self):
-        return "v_" + str(id(self)) + "_" + self.name
+        return "v_" + who(self) + "_" + self.name
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -191,6 +193,15 @@ class IntegerPattern(Pattern):
             if obj._value == self.value:
                 return
         raise NoMatch()
+
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "&" + repr(self.value)
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
     
 class VariablePattern(Pattern):
 
@@ -200,6 +211,16 @@ class VariablePattern(Pattern):
     def match(self, obj, binding):
         assert self.variable not in binding
         binding[self.variable] = obj
+
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "&" + repr(self.variable)
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
+
 
 class ConstructorPattern(Pattern):
 
@@ -215,6 +236,16 @@ class ConstructorPattern(Pattern):
                         self._children[i].match(obj.get_child(i), binding)
                     return
         raise NoMatch()
+
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "&" + repr(self._tag) + "(" + ", ".join(map(repr, self._children)) + ")"
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
+
 
 
 
@@ -244,7 +275,7 @@ class ValueExpression(Expression):
     # Testing and Debug
     #
     def to_repr(self):
-        return "?(" + repr(self.value) + ")"
+        return "!(" + repr(self.value) + ")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -292,7 +323,7 @@ class ConstructorExpression(Expression):
     # Testing and Debug
     #
     def to_repr(self):
-        return "$" + repr(self._tag) + "(" + repr(self._children) + ")"
+        return "$" + repr(self._tag) + "(" + repr(self._children)[1:][:-1] + ")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -306,7 +337,17 @@ class ConstructorBuilder(object):
         children = []
         for i in range(self._number_of_children):
             children.append(stack.pop())
+        children.reverse()
         stack.append(W_Constructor(self._tag, children))
+
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "%" + repr(self._tag) + "(" + repr(self._number_of_children) + ")"
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
 
 
 class CallExpression(Expression):
@@ -329,7 +370,7 @@ class CallExpression(Expression):
     # Testing and Debug
     #
     def to_repr(self):
-        return "!" + repr(self.callee) + "(" + repr(self.arguments) + ")"
+        return "μ" + repr(self.callee) + "(" + repr(self.arguments) + ")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -347,9 +388,11 @@ def interpret(expressions, arguments=None):
 
     binding = {}
     stack = arguments or []
+    # print "==\nstack:\t\t%r\nexpressions\t%r\n" % (stack, expressions)
     while len(expressions) > 0:
         expression = expressions.pop()
         expression.interpret(binding, stack, expressions)
+        # print "stack:\t\t%r\nexpressions\t%r\nbinding:\t%r\n" % (stack, expressions, binding)
     assert len(stack) > 0
     return stack.pop()
 
