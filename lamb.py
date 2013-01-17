@@ -2,20 +2,28 @@
 #
 # Hi.
 #
+
+class TestEqualityMixin(object):
+    _mixin_ = True
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not self == other
     
-class W_Object(object):
+    
+class W_Object(TestEqualityMixin):
     pass
 
 class W_Symbol(W_Object):
     symbols = {}
     
-
     def __init__(self, name):
         self.name = name
 
     def to_repr(self):
         return self.name
-
+    
     to_string = to_repr
 
 
@@ -25,7 +33,7 @@ def symbol(name):
     if w_symbol is None:
         w_symbol = W_Symbol(name)
         W_Symbol.symbols[name] = w_symbol
-
+    
     assert isinstance(w_symbol, W_Symbol)
     return w_symbol
 
@@ -34,10 +42,14 @@ class W_Integer(W_Object):
     def __init__(self, value):
         self._value = value
 
+    #
+    # Testing and Debug
+    #
     def to_repr(self):
-        return str(self._value)
-
+        return "#" + str(self._value)
     to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
 
 class W_Constructor(W_Object):
 
@@ -55,14 +67,95 @@ class W_Constructor(W_Object):
     def get_number_of_children(self):
         return len(self._children)
 
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "(" + repr(self._tag) + ", " + repr(self._children) + ")"
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
 
-class Variable(object):
+
+class W_Lambda(W_Object):
+    """
+    λ arity is the number of patterns in the first rule, or zero
+    """
+    
+    def __init__(self, rules):
+        self._rules = rules
+
+    def arity(self):
+        if len(self._rules) > 0:
+            return self._rules[0].arity()
+        else:
+            return 0
+
+    def call(self, w_arguments):
+        assert len(w_arguments) == self.arity()
+        binding = {}
+        for rule in self._rules:
+            try:
+                expression = rule.match_all(w_arguments, binding)
+            except NoMatch:
+                binding = {}
+            else:
+                return expression.evaluate(binding)  
+
+        raise NoMatch()
+
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "lambda (" + repr(self._rules) + ")"
+    def to_str(self):
+        return "λ(" + repr(self._rules)
+    __repr__ = to_repr
+    __str__ = to_str
+
+
+class Rule(TestEqualityMixin):
+
+    def __init__(self, patterns, expression):
+        self._patterns = patterns
+        self._expression = expression
+
+    def arity(self):
+        return len(self._patterns)
+
+    def match_all(self, w_arguments, binding):
+        if self.arity() != 0:
+            for i in range(self.arity()):
+                self._patterns[i].match(w_arguments[i], binding)
+        return self._expression            
+
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "[" + repr(self._patterns) + " -> " + repr(self._expression) + "]"
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
+
+
+class Variable(TestEqualityMixin):
 
     def __init__(self, name):        
         self.name = name
 
+    #
+    # Testing and Debug
+    #
+    def to_repr(self):
+        return "v_" + str(id(self)) + "_" + self.name
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
 
-class Pattern(object):
+
+class Pattern(TestEqualityMixin):
     def match(self, an_obj, binding):
         raise NotImplementedError("abstract method")
 
@@ -76,7 +169,7 @@ class IntegerPattern(Pattern):
             if obj._value == self.value:
                 return
         raise NoMatch()
-        
+    
 class VariablePattern(Pattern):
 
     def __init__(self, variable):
@@ -101,16 +194,14 @@ class ConstructorPattern(Pattern):
                     return
         raise NoMatch()
 
-class NoMatch(Exception):
-    pass
 
 
-class Expression(object):
+class Expression(TestEqualityMixin):
 
     def evaluate(self, binding):
         raise NotImplementedError("abstract method")
 
-class IntegerExpression(Expression):
+class ValueExpression(Expression):
 
     def __init__(self, value):
         self.value = value
@@ -148,11 +239,13 @@ class CallExpression(Expression):
         self.arguments = arguments or []
 
     def evaluate(self, binding):
-        function = self.callee.evaluate(binding)
-        args = [arg.evaluate(binding) for arg in self.arguments]
-        
-    
+        w_function = self.callee.evaluate(binding)
+        w_args = [arg.evaluate(binding) for arg in self.arguments]
+        return w_function.call(w_args)
 
 class VariableUnbound(Exception):
+    pass
+
+class NoMatch(Exception):
     pass
 
