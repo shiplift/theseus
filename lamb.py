@@ -1,20 +1,11 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Hi.
 #
 
-def who(object):
-    return hex(id(object) % 0xFFFF)[2:]
+from util import *
 
-class TestEqualityMixin(object):
-    _mixin_ = True
-    def __eq__(self, other):
-        return self.__class__ == other.__class__ and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not self == other
-    
-    
 class W_Object(TestEqualityMixin):
     pass
 
@@ -28,8 +19,9 @@ class W_Symbol(W_Object):
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return self.name    
+        return self.name
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -53,8 +45,9 @@ class W_Integer(W_Object):
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "#" + str(self._value)
+        return u"#" + unicode(self._value)
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -78,8 +71,9 @@ class W_Constructor(W_Object):
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "#(" + repr(self._tag) + ", " + repr(self._children) + ")"
+        return u"#(" + urepr(self._tag) + u", " + urepr(self._children) + u")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -94,37 +88,34 @@ class W_Lambda(W_Object):
         self._rules = rules
 
     def arity(self):
-        if len(self._rules) > 0:
-            return self._rules[0].arity()
-        else:
-            return 0
+        assert len(self._rules) > 0
+        return self._rules[0].arity()
 
     def call(self, w_arguments):
-        assert len(w_arguments) == self.arity()
-        binding = {}
+        assert len(w_arguments) == self.arity()        
         for rule in self._rules:
             try:
+                binding = [None] * rule.maximal_number_of_variables
                 expression = rule.match_all(w_arguments, binding)
             except NoMatch:
-                binding = {}
+                pass
             else:
-                return expression.evaluate(binding)  
+                return expression.copy(binding).evaluate()
 
         raise NoMatch()
 
-    def interpret(self, binding, stack, exp_stack):
+    def interpret_lamdba(self, stack, exp_stack):
         w_arguments = []
         for i in range(self.arity()):
             w_arguments.append(stack.pop())
-        local_binding = {}
         for rule in self._rules:
             try:
-                expression = rule.match_all(w_arguments, local_binding)
+                binding = [None] * rule.maximal_number_of_variables
+                expression = rule.match_all(w_arguments, binding)
             except NoMatch:
-                local_binding = {}
+                pass
             else:
-                exp_stack.append(expression)
-                binding.update(local_binding)
+                exp_stack.append(expression.copy(binding))
                 return
 
         raise NoMatch()
@@ -132,8 +123,9 @@ class W_Lambda(W_Object):
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "λ_" + who(self) + "(" + "; ".join(map(repr, self._rules)) + ")"
+        return u"λ_" + who(self) + u"(" + u"; ".join(map(urepr, self._rules)) + u")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -144,6 +136,9 @@ class Rule(TestEqualityMixin):
     def __init__(self, patterns, expression):
         self._patterns = patterns
         self._expression = expression
+        self.maximal_number_of_variables = 0
+        for pattern in self._patterns:
+            pattern.update_number_of_variables(self)
 
     def arity(self):
         return len(self._patterns)
@@ -157,8 +152,10 @@ class Rule(TestEqualityMixin):
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "{" + ", ".join(map(repr, self._patterns)) + " -> " + repr(self._expression) + "}"
+        return u"{" + u", ".join(map(urepr, self._patterns)) + u" ↦ " + urepr(self._expression) + u"}"
+        return ""
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -168,20 +165,26 @@ class Variable(TestEqualityMixin):
 
     def __init__(self, name):        
         self.name = name
+        self.binding_index = -1
 
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "v_" + who(self) + "_" + self.name
+        return u"v_" + who(self) + u"_" + self.name + ("@%s" % self.binding_index if self.binding_index != -1 else "")
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
 
 
 class Pattern(TestEqualityMixin):
+
     def match(self, an_obj, binding):
         raise NotImplementedError("abstract method")
+
+    def update_number_of_variables(self, rule):
+        pass
 
 class IntegerPattern(Pattern):
 
@@ -189,7 +192,7 @@ class IntegerPattern(Pattern):
         self.value = value
 
     def match(self, obj, binding):
-        if isinstance(obj, W_Integer):
+        if isinstance(obj, W_Integer): # pragma: no branch
             if obj._value == self.value:
                 return
         raise NoMatch()
@@ -197,8 +200,9 @@ class IntegerPattern(Pattern):
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "&" + repr(self.value)
+        return u"&" + unicode(repr(self.value))
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -209,14 +213,21 @@ class VariablePattern(Pattern):
         self.variable = variable
 
     def match(self, obj, binding):
-        assert self.variable not in binding
-        binding[self.variable] = obj
+        assert self.variable.binding_index != -1 # bound
+        assert binding[self.variable.binding_index] is None
+        binding[self.variable.binding_index] = obj
 
+    def update_number_of_variables(self, rule):
+        assert self.variable.binding_index == -1 # unbound        
+        self.variable.binding_index = rule.maximal_number_of_variables
+        rule.maximal_number_of_variables += 1
+    
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "&" + repr(self.variable)
+        return u"&" + urepr(self.variable)
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -229,19 +240,23 @@ class ConstructorPattern(Pattern):
         self._children = children or []
 
     def match(self, obj, binding):
-        if isinstance(obj, W_Constructor):
-            if (obj.get_tag() == self._tag):
-                if obj.get_number_of_children() == len(self._children):
-                    for i in range(len(self._children)):
-                        self._children[i].match(obj.get_child(i), binding)
-                    return
+        if isinstance(obj, W_Constructor): # pragma: no branch
+            if (obj.get_tag() == self._tag) and (obj.get_number_of_children() == len(self._children)):
+                for i in range(len(self._children)):
+                    self._children[i].match(obj.get_child(i), binding)
+                return
         raise NoMatch()
+
+    def update_number_of_variables(self, rule):
+        for child in self._children:
+            child.update_number_of_variables(rule)
 
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "&" + repr(self._tag) + "(" + ", ".join(map(repr, self._children)) + ")"
+        return u"&" + urepr(self._tag) + u"(" + u", ".join(map(urepr, self._children)) + u")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -251,31 +266,39 @@ class ConstructorPattern(Pattern):
 
 class Expression(TestEqualityMixin):
 
-    def evaluate(self, binding):
+    def evaluate_with_binding(self, binding):
+        return self.copy(binding).evaluate()
+
+    def evaluate(self):
         raise NotImplementedError("abstract method")
 
     def interpret(self, binding, stack, exp_stack):
         raise NotImplementedError("abstract method")
 
+    def copy(self, binding):
+        return self
+
+        
 class ValueExpression(Expression):
 
     def __init__(self, value):
         self.value = value
 
-    def evaluate(self, binding):
+    def evaluate(self):
         return self.value
 
     def interpret(self, binding, stack, exp_stack):
-        if isinstance(self.value, W_Lambda):
-            exp_stack.append(self.value)
-        else:
-            stack.append(self.value)
+        #if isinstance(self.value, W_Lambda):
+        #    exp_stack.append(self.value)
+        #else:
+        stack.append(self.value)
 
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "!(" + repr(self.value) + ")"
+        return u"!(" + urepr(self.value) + u")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -285,21 +308,41 @@ class VariableExpression(Expression):
     def __init__(self, variable):
         self.variable = variable
 
-    def evaluate(self, binding):
-        w_result = binding.get(self.variable, None)
+    def resolve(self, binding):
+        try:
+            w_result = binding[self.variable.binding_index]
+        except KeyError: # pragma: no cover
+            # should not happen
+            raise VariableUnbound()
+        
         if w_result is None:
             raise VariableUnbound()
         else:            
             return w_result
+        
 
-    def interpret(self, binding, stack, exp_stack):
-        # ok here.
-        stack.append(self.evaluate(binding))
+    def evaluate(self): # pragma: no cover
+        # should not happen
+        raise VariableUnbound()
+
+    # for tests only
+    def evaluate_with_binding(self, binding):
+        return self.resolve(binding)
+    
+    def interpret(self, binding, stack, exp_stack): # pragma: no cover
+        # should not happen
+        raise VariableUnbound()
+
+    def copy(self, binding):
+        return ValueExpression(self.resolve(binding))
+
+    
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "!" + repr(self.variable)
+        return u"!" + urepr(self.variable)
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -310,25 +353,61 @@ class ConstructorExpression(Expression):
         self._tag = tag
         self._children = children or []
 
-    def evaluate(self, binding):
-        children = [child.evaluate(binding) for child in self._children]
-        return W_Constructor(self._tag, children)
+    def evaluate(self):
+        return W_Constructor(self._tag, [child.evaluate() for child in self._children])
 
     def interpret(self, binding, stack, exp_stack):
-        exp_stack.append(ConstructorBuilder(self._tag, len(self._children)))
-        for child in self._children:
+        exp_stack.append(ConstructorCursor(self._tag, len(self._children)))
+        for child in reversed(self._children):
             exp_stack.append(child)
+
+    def copy(self, binding):
+        return ConstructorExpression(self._tag, [child.copy(binding) for child in self._children])
 
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "$" + repr(self._tag) + "(" + repr(self._children)[1:][:-1] + ")"
+        return u"$" + urepr(self._tag) + u"(" + urepr(self._children)[1:][:-1] + u")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
 
-class ConstructorBuilder(object):
+class CallExpression(Expression):
+
+    def __init__(self, callee, arguments=None):
+        self.callee = callee
+        self.arguments = arguments or []
+
+    def evaluate(self):
+        return self.callee.evaluate().call([arg.evaluate() for arg in self.arguments])
+
+    def interpret(self, binding, stack, exp_stack):
+        exp_stack.append(self.callee)
+        for arg in self.arguments:
+            exp_stack.append(arg)
+
+    def copy(self, binding):
+        return CallExpression(self.callee.copy(binding), [arg.copy(binding) for arg in self.arguments])
+
+    #
+    # Testing and Debug
+    #
+    @uni
+    def to_repr(self):
+        return u"μ" + urepr(self.callee) + u"(" + urepr(self.arguments) + u")"
+    to_str = to_repr
+    __repr__ = to_repr
+    __str__ = to_str
+
+class Cursor(Expression):
+    """
+    Cursors are no actual expressions but act as such on the expression stack.
+    """
+    pass
+
+class ConstructorCursor(Cursor):
     def __init__(self, tag, number_of_children):
         self._tag = tag
         self._number_of_children = number_of_children
@@ -343,34 +422,31 @@ class ConstructorBuilder(object):
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "%" + repr(self._tag) + "(" + repr(self._number_of_children) + ")"
+        return u"%" + urepr(self._tag) + u"(" + urepr(self._number_of_children) + u")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
 
+class LambdaCursor(Cursor):
+    def __init__(self, lamb):
+        self._lamb = lamb
 
-class CallExpression(Expression):
+    def evaluate(self):
+        return self._lamb
 
-    def __init__(self, callee, arguments=None):
-        self.callee = callee
-        self.arguments = arguments or []
 
-    def evaluate(self, binding):
-        w_function = self.callee.evaluate(binding)
-        w_args = [arg.evaluate(binding) for arg in self.arguments]
-        return w_function.call(w_args)
 
     def interpret(self, binding, stack, exp_stack):
-        exp_stack.append(self.callee)
-        for arg in self.arguments:
-            exp_stack.append(arg)
+        self._lamb.interpret_lamdba(stack, exp_stack)
 
     #
     # Testing and Debug
     #
+    @uni
     def to_repr(self):
-        return "μ" + repr(self.callee) + "(" + repr(self.arguments) + ")"
+        return u"%" + urepr(self._lamb)
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -382,17 +458,15 @@ class VariableUnbound(Exception):
 class NoMatch(Exception):
     pass
 
+def interpret(expressions, arguments=None, debug=False):
 
-
-def interpret(expressions, arguments=None):
-
-    binding = {}
     stack = arguments or []
-    # print "==\nstack:\t\t%r\nexpressions\t%r\n" % (stack, expressions)
+    if debug: debug_stack({'expressions': expressions, 'stack': stack})
     while len(expressions) > 0:
         expression = expressions.pop()
-        expression.interpret(binding, stack, expressions)
-        # print "stack:\t\t%r\nexpressions\t%r\nbinding:\t%r\n" % (stack, expressions, binding)
+        expression.interpret(None, stack, expressions)
+        if debug: debug_stack({'expressions': expressions, 'stack': stack})
     assert len(stack) > 0
     return stack.pop()
+
 

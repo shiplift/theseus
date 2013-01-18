@@ -37,3 +37,24 @@ Architecture
     call          |     integer
     cond/case     |     constructor
                   |     λ
+
+Some functions
+==============
+
+    nil    ≔ (nil)
+    append ≔ λ x, y:
+	         1. nil              , X ↦ X
+			 2. (cons Head, Tail), X ↦ (cons Head, μ(append, Tail, X))
+
+
+
+    a ≔ (cons 1, (cons 2, (cons 3, nil)))
+    b ≔ (cons 4, (cons 5, (cons 6, nil)))
+	
+	μ(append, a, b)
+	↳ μ(append, (cons 1, (cons 2, (cons 3, nil))), (cons 4, (cons 5, (cons 6, nil))))
+	↳ (cons 1, μ(append, (cons 2, (cons 3, nil)), (cons 4, (cons 5, (cons 6, nil)))))
+	↳ (cons 1, (cons 2, μ(append, (cons 3, nil), (cons 4, (cons 5, (cons 6, nil))))))
+	↳ (cons 1, (cons 2, (cons 3, μ(append, nil, (cons 4, (cons 5, (cons 6, nil)))))))
+	↳ (cons 1, (cons 2, (cons 3, (cons 4, (cons 5, (cons 6, nil))))))
+	

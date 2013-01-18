@@ -20,8 +20,7 @@ def pattern(obj):
     elif isinstance(obj, W_Constructor):
         return pattern_from_constructor(obj)
     else:
-        # should be already pattern
-        return obj
+        raise NotImplementedError("what pattern?")
 
 
 def pattern_from_constructor(w_constructor):
@@ -42,13 +41,16 @@ def integer(value):
 def expression(obj):
     if isinstance(obj, Variable):
         return VariableExpression(obj)
-    elif isinstance(obj, W_Integer) or isinstance(obj, W_Lambda):
+    elif isinstance(obj, W_Integer):
         return ValueExpression(obj)
     elif isinstance(obj, W_Constructor):
         return expression_from_constructor(obj)
-    else:
-        # should be already expression
+    elif isinstance(obj, W_Lambda):
+        return LambdaCursor(obj)
+    elif isinstance(obj, Expression):
         return obj
+    else:
+        raise NotImplementedError("what expression?")
 
 def expression_from_constructor(w_constructor):
     _tag = w_constructor.get_tag()
@@ -81,11 +83,12 @@ def plist(c_list):
         conses = conses.get_child(1)
     return result
 
-class ForwardReference(object):
-
-    def become(self, x):
-        self.__class__ = x.__class__
-        self.__dict__.update(x.__dict__)
+# Not used yet
+#class ForwardReference(object):
+#
+#    def become(self, x):
+#        self.__class__ = x.__class__
+#        self.__dict__.update(x.__dict__)
 
 
 
@@ -167,7 +170,7 @@ class TestPattern(object):
         pat = pattern(w_int)
         w_obj = integer(1)
         
-        binding = {}
+        binding = []
         pat.match(w_obj, binding)
         assert True # should not raise.
 
@@ -181,9 +184,10 @@ class TestPattern(object):
         var = Variable("x")
         pat = pattern(var)
         w_obj = cons("barf")
-        binding = {}
+        binding = [None]
+        var.binding_index = 0
         pat.match(w_obj, binding)
-        assert binding[var] == w_obj
+        assert binding[var.binding_index] == w_obj
         
         
     def test_simple_constructor(self):
@@ -191,9 +195,9 @@ class TestPattern(object):
         pat = pattern(w_cons)
         w_obj = cons("barf")
 
-        binding = {}
+        binding = []
         pat.match(w_obj, binding)
-        assert binding == {}
+        assert binding == []
 
         w_obj = cons("zork")
         with py.test.raises(NoMatch) as e:
@@ -205,9 +209,9 @@ class TestPattern(object):
         pat = pattern(w_cons)
         w_obj = cons("zork", integer(1))
 
-        binding = {}
+        binding = []
         pat.match(w_obj, binding)
-        assert binding == {}
+        assert binding == []
 
         w_obj = cons("zork", integer(2))
         with py.test.raises(NoMatch) as e:
@@ -218,9 +222,9 @@ class TestPattern(object):
         pat = pattern(cons("barf", cons("zork")))
         w_obj = cons("barf", cons("zork"))
         
-        binding = {}
+        binding = []
         pat.match(w_obj, binding)
-        assert binding == {}
+        assert binding == []
 
         w_obj = cons("barf", cons("moep"))
         with py.test.raises(NoMatch) as e:
@@ -233,15 +237,25 @@ class TestPattern(object):
         w_int = integer(1)
         w_obj = cons("zork", w_int)
 
-        binding = {}
+        binding = [None]
+        var.binding_index = 0
         pat.match(w_obj, binding)
-        assert binding[var] == w_int
+        assert binding[var.binding_index] == w_int
 
     def test_complex(self):
 
         var1 = Variable("x")
+        var1.binding_index = 0
         var2 = Variable("y")
+        var2.binding_index = 1
         var3 = Variable("z")
+        var3.binding_index = 2
+        var4 = Variable("a")
+        var4.binding_index = 3
+        var5 = Variable("b")
+        var5.binding_index = 4
+        var6 = Variable("c")
+        var6.binding_index = 5
 
         w_int1 = integer(1)
         w_int2 = integer(2)
@@ -254,22 +268,22 @@ class TestPattern(object):
 
         pat1 = pattern(cons("universe", var1, var2))
         pat2 = pattern(cons("moep", var3))
-        pat3 = pattern(cons("universe", cons("barf", var1, var2), var3))
+        pat3 = pattern(cons("universe", cons("barf", var4, var5), var6))
 
-        binding = {}
+        binding = [None] * 6
         pat1.match(w_cons4, binding)
-        assert binding[var1] == w_cons2
-        assert binding[var2] == w_cons3
+        assert binding[var1.binding_index] == w_cons2
+        assert binding[var2.binding_index] == w_cons3
 
-        binding = {}
+        binding = [None] * 6
         pat2.match(w_cons3, binding)
-        assert binding[var3] == w_cons1
+        assert binding[var3.binding_index] == w_cons1
 
-        binding = {}
+        binding = [None] * 6
         pat3.match(w_cons4, binding)
-        assert binding[var1] == w_int1
-        assert binding[var2] == w_int2
-        assert binding[var3] == w_cons3
+        assert binding[var4.binding_index] == w_int1
+        assert binding[var5.binding_index] == w_int2
+        assert binding[var6.binding_index] == w_cons3
 
 
 class TestExpression(object):
@@ -278,29 +292,30 @@ class TestExpression(object):
         w_int = integer(1)
         expr = expression(w_int)
 
-        binding = {}
-        w_res = expr.evaluate(binding)
+        binding = []
+        w_res = expr.evaluate_with_binding(binding)
         assert w_res is w_int
 
     def test_variable_expression(self):
 
         w_int = integer(42)
         var = Variable("x")
+        var.binding_index = 0
         expr = expression(var)
 
-        binding = { var : w_int }
-        w_res = expr.evaluate(binding)
+        binding = [w_int]
+        w_res = expr.evaluate_with_binding(binding)
         assert w_res is w_int
 
         with py.test.raises(VariableUnbound) as e:
-            expr.evaluate({})
+            expr.evaluate_with_binding([None])
         
     def test_simple_constructor_expression(self):
 
         expr = ConstructorExpression(symbol("barf"), [])
 
-        binding = {}
-        w_res = expr.evaluate(binding)
+        binding = []
+        w_res = expr.evaluate_with_binding(binding)
         assert w_res.get_tag() is symbol("barf")
         assert w_res.get_number_of_children() is 0
 
@@ -309,8 +324,8 @@ class TestExpression(object):
         w_cons = cons("zork", w_int)
         expr = expression(w_cons)
 
-        binding = {}
-        w_res = expr.evaluate(binding)
+        binding = []
+        w_res = expr.evaluate_with_binding(binding)
         assert w_res.get_tag() == w_cons.get_tag()
         assert w_res.get_number_of_children() == w_cons.get_number_of_children()
         assert w_res.get_child(0) == w_int
@@ -318,19 +333,29 @@ class TestExpression(object):
 
     def test_constructor_with_var(self):
         var = Variable("x")
+        var.binding_index = 0
         w_cons = cons("zork", var)
         w_int = integer(1)
         expr = expression(w_cons)
 
-        binding = { var : w_int }
-        w_res = expr.evaluate(binding)
+        binding = [w_int]
+        w_res = expr.evaluate_with_binding(binding)
         assert w_res.get_child(0) == w_int
 
     def test_complex(self):
 
         var1 = Variable("x")
+        var1.binding_index = 0
         var2 = Variable("y")
+        var2.binding_index = 1
         var3 = Variable("z")
+        var3.binding_index = 2
+        var4 = Variable("a")
+        var4.binding_index = 3
+        var5 = Variable("b")
+        var5.binding_index = 4
+        var6 = Variable("c")
+        var6.binding_index = 5
 
         w_int1 = integer(1)
         w_int2 = integer(2)
@@ -342,11 +367,11 @@ class TestExpression(object):
 
         expr1 = expression(cons("universe", var1, var2))
         expr2 = expression(cons("moep", var3))
-        expr3 = expression(cons("universe", cons("barf", var1, var2), var3))
+        expr3 = expression(cons("universe", cons("barf", var4, var5), var6))
 
-        binding = { var1: w_cons2, var2: w_cons3, var3: w_cons1 }
+        binding = [w_cons2, w_cons3, w_cons1, w_cons2, w_cons3, w_cons1]
 
-        w_res = expr1.evaluate(binding)
+        w_res = expr1.evaluate_with_binding(binding)
         assert w_res.get_tag() is symbol("universe")
         w_child0 = w_res.get_child(0)
         assert w_child0.get_tag() is symbol("barf")
@@ -356,12 +381,12 @@ class TestExpression(object):
         assert w_child1.get_tag() is symbol("moep")
         assert w_child1.get_child(0).get_tag() is symbol("zork")
 
-        w_res = expr2.evaluate(binding)
+        w_res = expr2.evaluate_with_binding(binding)
         assert w_res.get_tag() is symbol("moep")
         w_child0 = w_res.get_child(0)
         assert w_child0.get_tag() is symbol("zork")
 
-        w_res = expr3.evaluate(binding)
+        w_res = expr3.evaluate_with_binding(binding)
         assert w_res.get_tag() is symbol("universe")
         w_child0 = w_res.get_child(0)
         assert w_child0.get_tag() is symbol("barf")
@@ -385,8 +410,8 @@ class TestRule(object):
         rule = Rule([], expression(w_int))
         assert rule.arity() == 0
 
-        expr = rule.match_all([integer(2)], {})
-        assert expr.evaluate({}) is w_int
+        expr = rule.match_all([integer(2)], [])
+        assert expr.evaluate_with_binding([]) is w_int
 
     def test_simple_rule(self):
         w_int = integer(1)
@@ -394,11 +419,11 @@ class TestRule(object):
         rule = Rule([pattern(w_int)], expr)
         assert rule.arity() == 1
 
-        res = rule.match_all([w_int], {})
-        assert res.evaluate({}) is w_int
+        res = rule.match_all([w_int], [])
+        assert res.evaluate_with_binding([]) is w_int
 
         with py.test.raises(NoMatch) as e:
-            rule.match_all([integer(2)], {})
+            rule.match_all([integer(2)], [])
 
     def test_multi_rule(self):
         w_int0 = integer(0)
@@ -409,11 +434,11 @@ class TestRule(object):
         rule = Rule([pattern(w_int1), pattern(w_int2)], expr)
         assert rule.arity() == 2
 
-        res = rule.match_all([w_int1, w_int2], {})
-        assert res.evaluate({}) is w_int0
+        res = rule.match_all([w_int1, w_int2], [])
+        assert res.evaluate_with_binding([]) is w_int0
 
         with py.test.raises(NoMatch) as e:
-            rule.match_all([w_int2, w_int1], {})
+            rule.match_all([w_int2, w_int1], [])
        
     def test_var_rule(self):
         w_int = integer(1)
@@ -421,10 +446,9 @@ class TestRule(object):
         expr = expression(var)
 
         rule = Rule([pattern(var)], expr)
-        binding = {}
+        binding = [None] * rule.maximal_number_of_variables
         res = rule.match_all([w_int], binding)
-        result = res.evaluate(binding)
-
+        result = res.evaluate_with_binding(binding)
         assert result is w_int        
         
 class TestLambda(object):
@@ -433,6 +457,14 @@ class TestLambda(object):
         w_int = integer(1)
         l = lamb( ([], w_int) )
         assert l.call([]) is w_int
+
+    def test_fail_lambda(self):
+        w_int1 = integer(1)
+        w_int2 = integer(2)
+        l = lamb( ([w_int1], w_int2) )
+
+        with py.test.raises(NoMatch) as e:
+            l.call([w_int2])
 
     def test_lambda_id(self):
         x = Variable("x")
@@ -453,14 +485,15 @@ class TestLambda(object):
 
     def test_append(self):
         
-        x = Variable("x")
+        x1 = Variable("x")
+        x2 = Variable("x")
         h = Variable("head")
         t = Variable("tail")
 
         l = lamb()
         l._rules = ziprules(
-            ([w_nil, x], x),
-            ([cons("cons", h, t), x], cons("cons", h, mu(l, t, x))))
+            ([w_nil, x1], x1),
+            ([cons("cons", h, t), x2], cons("cons", h, mu(l, t, x2))))
 
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
@@ -473,6 +506,14 @@ class TestInterpret(object):
         l = lamb( ([], w_int) )
         res = interpret([mu(l)])
         assert res is w_int
+
+    def test_fail_lambda(self):
+        w_int1 = integer(1)
+        w_int2 = integer(2)
+        l = lamb( ([w_int1], w_int2) )
+
+        with py.test.raises(NoMatch) as e:
+            res = interpret([mu(l, w_int2)])
 
     def test_lambda_id(self):
         x = Variable("x")
@@ -499,18 +540,20 @@ class TestInterpret(object):
 
     def test_append(self):
         
-        x = Variable("x")
+        x1 = Variable("x")
+        x2 = Variable("x")
         h = Variable("head")
         t = Variable("tail")
 
         l = lamb()
         l._rules = ziprules(
-            ([w_nil, x], x),
-            ([cons("cons", h, t), x], cons("cons", h, mu(l, t, x))))
+            ([w_nil, x1], x1),
+            ([cons("cons", h, t), x2], cons("cons", h, mu(l, t, x2))))
 
        
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
-
-        res = interpret([mu(l, conslist(list1_w), conslist(list2_w))])
+        
+        expr = mu(l, conslist(list1_w), conslist(list2_w))
+        res = interpret([expr])
         assert plist(res) == list1_w + list2_w
