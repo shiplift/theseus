@@ -83,6 +83,21 @@ def plist(c_list):
         conses = conses.get_child(1)
     return result
 
+
+def peano_num(pynum):
+    res = w_nil
+    for i in range(pynum):
+        res = cons("p", res)
+    return res
+        
+def python_num(peano):
+    p = peano
+    res = 0
+    while p != nil:
+        res += 1
+        p = p.get_child(0)
+    return res
+
 # Not used yet
 #class ForwardReference(object):
 #
@@ -557,3 +572,41 @@ class TestInterpret(object):
         expr = mu(l, conslist(list1_w), conslist(list2_w))
         res = interpret([expr])
         assert plist(res) == list1_w + list2_w
+
+    def test_map(self):
+        """
+        in scheme
+        (define (map proc lis)
+   (cond ((null? lis)
+          '())
+         ((pair? lis)
+          (cons (proc (car lis))
+                (map proc (cdr lis))))))
+
+        nil    ≔ (nil)
+        map ≔ λ:
+            F, (cons X, Y) ↦ (cons μ(F, X), μ(map, F, Y))
+            _, nil         ↦ nil
+        """
+
+        f = Variable("F")
+        x = Variable("X")
+        y = Variable("Y")
+        _ = Variable("_")
+        _2 = Variable("_")
+
+        map = lamb()
+        map._rules = ziprules(
+            ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(map, f, y))),
+            ([_, w_nil], w_nil))
+
+        x1 = Variable("x")
+        
+        list_w = [peano_num(1),peano_num(2),peano_num(3)]
+        
+        succ = lamb( ([x1], cons("p", x1)) )
+
+        expr = mu(map, succ, conslist(list_w))
+        res = interpret([expr], debug=True)
+        assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
+        

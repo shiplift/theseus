@@ -4,7 +4,7 @@
 # Hi.
 #
 
-from util import *
+from util import TestEqualityMixin, uni, who, urepr, debug_stack
 
 class W_Object(TestEqualityMixin):
     pass
@@ -288,9 +288,6 @@ class ValueExpression(Expression):
         return self.value
 
     def interpret(self, binding, stack, exp_stack):
-        #if isinstance(self.value, W_Lambda):
-        #    exp_stack.append(self.value)
-        #else:
         stack.append(self.value)
 
     #
@@ -325,10 +322,6 @@ class VariableExpression(Expression):
         # should not happen
         raise VariableUnbound()
 
-    # for tests only
-    def evaluate_with_binding(self, binding):
-        return self.resolve(binding)
-    
     def interpret(self, binding, stack, exp_stack): # pragma: no cover
         # should not happen
         raise VariableUnbound()
@@ -358,7 +351,7 @@ class ConstructorExpression(Expression):
 
     def interpret(self, binding, stack, exp_stack):
         exp_stack.append(ConstructorCursor(self._tag, len(self._children)))
-        for child in reversed(self._children):
+        for child in self._children:
             exp_stack.append(child)
 
     def copy(self, binding):
@@ -416,7 +409,6 @@ class ConstructorCursor(Cursor):
         children = []
         for i in range(self._number_of_children):
             children.append(stack.pop())
-        children.reverse()
         stack.append(W_Constructor(self._tag, children))
 
     #
@@ -468,5 +460,4 @@ def interpret(expressions, arguments=None, debug=False):
         if debug: debug_stack({'expressions': expressions, 'stack': stack})
     assert len(stack) > 0
     return stack.pop()
-
 
