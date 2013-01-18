@@ -93,7 +93,7 @@ def peano_num(pynum):
 def python_num(peano):
     p = peano
     res = 0
-    while p != nil:
+    while p != w_nil:
         res += 1
         p = p.get_child(0)
     return res
@@ -576,14 +576,14 @@ class TestInterpret(object):
     def test_map(self):
         """
         in scheme
-        (define (map proc lis)
-   (cond ((null? lis)
-          '())
-         ((pair? lis)
-          (cons (proc (car lis))
-                (map proc (cdr lis))))))
-
-        nil    ≔ (nil)
+	 (define (map proc lis)
+	   (cond ((null? lis)
+		  '())
+		 ((pair? lis)
+		  (cons (proc (car lis))
+			(map proc (cdr lis))))))
+	 
+        nil ≔ (nil)
         map ≔ λ:
             F, (cons X, Y) ↦ (cons μ(F, X), μ(map, F, Y))
             _, nil         ↦ nil
@@ -602,11 +602,16 @@ class TestInterpret(object):
 
         x1 = Variable("x")
         
-        list_w = [peano_num(1),peano_num(2),peano_num(3)]
+        #list_w = [peano_num(1),peano_num(2),peano_num(3)]
+        list_w = [peano_num(1)]
         
         succ = lamb( ([x1], cons("p", x1)) )
 
+        res = interpret([mu(succ, peano_num(12))])
+        assert python_num(res) == 13
+
         expr = mu(map, succ, conslist(list_w))
         res = interpret([expr], debug=True)
-        assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
+        #assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
+        assert plist(res) == [peano_num(2)]
         

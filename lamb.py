@@ -5,6 +5,8 @@
 #
 
 from util import TestEqualityMixin, uni, who, urepr, debug_stack
+from util import _dot, view
+
 
 class W_Object(TestEqualityMixin):
     pass
@@ -73,7 +75,7 @@ class W_Constructor(W_Object):
     #
     @uni
     def to_repr(self):
-        return u"#(" + urepr(self._tag) + u", " + urepr(self._children) + u")"
+        return u"#" + urepr(self._tag) + ( ("(" + urepr(self._children)[1:][:-1] + u")") if len(self._children) > 0 else "") 
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -125,7 +127,7 @@ class W_Lambda(W_Object):
     #
     @uni
     def to_repr(self):
-        return u"λ_" + who(self) + u"(" + u"; ".join(map(urepr, self._rules)) + u")"
+        return u"λ" + who(self) + u"(" + u"; ".join(map(urepr, self._rules)) + u")"
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -155,7 +157,6 @@ class Rule(TestEqualityMixin):
     @uni
     def to_repr(self):
         return u"{" + u", ".join(map(urepr, self._patterns)) + u" ↦ " + urepr(self._expression) + u"}"
-        return ""
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -172,7 +173,7 @@ class Variable(TestEqualityMixin):
     #
     @uni
     def to_repr(self):
-        return u"v_" + who(self) + u"_" + self.name + ("@%s" % self.binding_index if self.binding_index != -1 else "")
+        return self.name + u"_" + who(self)  + ("@%s" % self.binding_index if self.binding_index != -1 else "")
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str
@@ -362,7 +363,7 @@ class ConstructorExpression(Expression):
     #
     @uni
     def to_repr(self):
-        return u"$" + urepr(self._tag) + u"(" + urepr(self._children)[1:][:-1] + u")"
+        return u"!" + urepr(self._tag) + ( (u"(" + urepr(self._children)[1:][:-1] + u")") if len(self._children) > 0 else "" )
     to_str = to_repr
     __repr__ = to_repr
     __str__ = to_str

@@ -19,6 +19,7 @@ def debug_stack(d):
     print dictionary of stacks.
     """
     print
+    print "%: Cursor, !: Expression, μ: Call, #: Value, λ: Lambda, &: Pattern, {}: Rule, _ Variable"
     from itertools import izip_longest 
     def i_(o):
         try: [ e for e in o ]
@@ -28,8 +29,8 @@ def debug_stack(d):
         length = 52; return o[:length] if len(o) > length else o
     
     k = d.keys()
-    v = map(list, map(reversed, map(list, map(i_, d.values()))))
-    stacks = map(lambda x: map(lambda y: u"[%-52s]" % y, map(t_, map(lambda y: urepr(y) if y else u"", x))), map(list, zip(*list(izip_longest(*v, fillvalue="")))))
+    v = map(list, map(list, map(i_, d.values())))
+    stacks = map(lambda x: map(lambda y: u"[%-52s]" % y, map(t_, map(lambda y: urepr(y) if y else u"", x))), map(list, map(reversed, zip(*list(izip_longest(*v, fillvalue=""))))))
     tops = map(lambda x: [u"%-55s" % x], k)
     stat = map(lambda x: x[0] + x[1], list(zip(tops,stacks)))
     lines = map(lambda x: u" ".join(x), map(list, zip(*stat)))
