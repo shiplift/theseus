@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Test.
@@ -41,12 +42,10 @@ def integer(value):
 def expression(obj):
     if isinstance(obj, Variable):
         return VariableExpression(obj)
-    elif isinstance(obj, W_Integer):
+    elif isinstance(obj, W_Integer) or isinstance(obj, W_Lambda):
         return ValueExpression(obj)
     elif isinstance(obj, W_Constructor):
         return expression_from_constructor(obj)
-    elif isinstance(obj, W_Lambda):
-        return LambdaCursor(obj)
     elif isinstance(obj, Expression):
         return obj
     else:
@@ -514,6 +513,43 @@ class TestLambda(object):
         list2_w = [integer(4),integer(5),integer(6)]
         assert plist(l.call([conslist(list1_w), conslist(list2_w)])) == list1_w + list2_w
 
+    def test_map(self):
+        """
+        in scheme
+         (define (map proc lis)
+           (cond ((null? lis)
+                  '())
+                 ((pair? lis)
+                  (cons (proc (car lis))
+                        (map proc (cdr lis))))))
+         
+        nil ≔ (nil)
+        map ≔ λ:
+            F, (cons X, Y) ↦ (cons μ(F, X), μ(map, F, Y))
+            _, nil         ↦ nil
+        """
+
+        f = Variable("F")
+        x = Variable("X")
+        y = Variable("Y")
+        _ = Variable("_")
+        _2 = Variable("_")
+
+        map = lamb()
+        map._rules = ziprules(
+            ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(map, f, y))),
+            ([_, w_nil], w_nil))
+
+        x1 = Variable("x")
+        
+        list_w = [peano_num(1),peano_num(2),peano_num(3)]
+        
+        succ = lamb( ([x1], cons("p", x1)) )
+
+        res = map.call([succ, conslist(list_w)])
+        assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
+
+
 class TestInterpret(object):
 
     def test_simple_lambda(self):
@@ -576,13 +612,13 @@ class TestInterpret(object):
     def test_map(self):
         """
         in scheme
-	 (define (map proc lis)
-	   (cond ((null? lis)
-		  '())
-		 ((pair? lis)
-		  (cons (proc (car lis))
-			(map proc (cdr lis))))))
-	 
+         (define (map proc lis)
+           (cond ((null? lis)
+                  '())
+                 ((pair? lis)
+                  (cons (proc (car lis))
+                        (map proc (cdr lis))))))
+         
         nil ≔ (nil)
         map ≔ λ:
             F, (cons X, Y) ↦ (cons μ(F, X), μ(map, F, Y))
@@ -602,16 +638,16 @@ class TestInterpret(object):
 
         x1 = Variable("x")
         
-        #list_w = [peano_num(1),peano_num(2),peano_num(3)]
-        list_w = [peano_num(1)]
+        list_w = [peano_num(1),peano_num(2),peano_num(3)]
+        # list_w = [peano_num(1)]
         
         succ = lamb( ([x1], cons("p", x1)) )
 
         res = interpret([mu(succ, peano_num(12))])
         assert python_num(res) == 13
 
-        expr = mu(map, succ, conslist(list_w))
-        res = interpret([expr], debug=True)
-        #assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
-        assert plist(res) == [peano_num(2)]
+        expr = mu(map, ValueExpression(succ), conslist(list_w))
+        res = interpret([expr])
+        assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
+        # assert plist(res) == [peano_num(2)]
         

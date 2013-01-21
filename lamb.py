@@ -1,14 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Hi.
 #
 
-from util import TestEqualityMixin, uni, who, urepr, debug_stack
-from util import _dot, view
+from util import HelperMixin, uni, who, urepr, debug_stack
 
-
-class W_Object(TestEqualityMixin):
+class W_Object(HelperMixin):
     pass
 
 class W_Symbol(W_Object):
@@ -133,7 +131,7 @@ class W_Lambda(W_Object):
     __str__ = to_str
 
 
-class Rule(TestEqualityMixin):
+class Rule(HelperMixin):
 
     def __init__(self, patterns, expression):
         self._patterns = patterns
@@ -162,7 +160,7 @@ class Rule(TestEqualityMixin):
     __str__ = to_str
 
 
-class Variable(TestEqualityMixin):
+class Variable(HelperMixin):
 
     def __init__(self, name):        
         self.name = name
@@ -179,7 +177,7 @@ class Variable(TestEqualityMixin):
     __str__ = to_str
 
 
-class Pattern(TestEqualityMixin):
+class Pattern(HelperMixin):
 
     def match(self, an_obj, binding):
         raise NotImplementedError("abstract method")
@@ -265,7 +263,7 @@ class ConstructorPattern(Pattern):
 
 
 
-class Expression(TestEqualityMixin):
+class Expression(HelperMixin):
 
     def evaluate_with_binding(self, binding):
         return self.copy(binding).evaluate()
@@ -378,7 +376,9 @@ class CallExpression(Expression):
         return self.callee.evaluate().call([arg.evaluate() for arg in self.arguments])
 
     def interpret(self, binding, stack, exp_stack):
-        exp_stack.append(self.callee)
+        assert isinstance(self.callee, ValueExpression)
+        # always in interpreter call.
+        exp_stack.append(LambdaCursor(self.callee.value))
         for arg in self.arguments:
             exp_stack.append(arg)
 
@@ -399,7 +399,8 @@ class Cursor(Expression):
     """
     Cursors are no actual expressions but act as such on the expression stack.
     """
-    pass
+    def evaluate(self):
+        raise NotImplementedError("only meaningfull in non-recursive implementation")
 
 class ConstructorCursor(Cursor):
     def __init__(self, tag, number_of_children):
@@ -426,11 +427,6 @@ class LambdaCursor(Cursor):
     def __init__(self, lamb):
         self._lamb = lamb
 
-    def evaluate(self):
-        return self._lamb
-
-
-
     def interpret(self, binding, stack, exp_stack):
         self._lamb.interpret_lamdba(stack, exp_stack)
 
@@ -454,11 +450,13 @@ class NoMatch(Exception):
 def interpret(expressions, arguments=None, debug=False):
 
     stack = arguments or []
-    if debug: debug_stack({'expressions': expressions, 'stack': stack})
+    if debug:
+        debug_stack({'expressions': expressions, 'stack': stack})
     while len(expressions) > 0:
         expression = expressions.pop()
         expression.interpret(None, stack, expressions)
-        if debug: debug_stack({'expressions': expressions, 'stack': stack})
+        if debug:
+            debug_stack({'expressions': expressions, 'stack': stack})
     assert len(stack) > 0
     return stack.pop()
 

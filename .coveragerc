@@ -1,8 +1,10 @@
+# -*- mode: conf -*-
 # .coveragerc to control coverage.py
 [run]
 branch = True
 omit =
      util.py
+     util_view.py
 
 [report]
 # Regexes for lines to exclude from consideration
