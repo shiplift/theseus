@@ -5,7 +5,7 @@
 #
 import py
 
-from lamb import *
+from lamb.execution import *
 
 
 #
