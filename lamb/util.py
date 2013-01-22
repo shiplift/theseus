@@ -4,25 +4,12 @@
 import py
 
 from util_view import _dot, view, DebugVizualizationMixin
-
-#
-# Debug helper
-#
-def who(object):
-    """ concise id """
-    return unicode(hex(id(object) % 0xFFFF)[2:])
-def urepr(object):
-    """ support for unicode repr. see uni() """
-    return repr(object).decode("utf-8")
-def uni(fun):
-    """ support decorator for unicode repr. see urepr() """
-    def fun2(*args): return fun(*args).encode("utf-8")
-    return fun2
+from util_repr import urepr, who, uni
 
 _iteration = 0
 _stacks = {}
 
-def debug_stack(d):
+def debug_stack(w_stack, e_stack, **rest):
     """
     print dictionary of stacks.
     """
@@ -30,6 +17,8 @@ def debug_stack(d):
     print "%: Cursor, !: Expression, μ: Call, #: Value, λ: Lambda, &: Pattern, {}: Rule, _ Variable"
 
     length = 60
+
+    d = {'w_stack':w_stack,'e_stack':e_stack}
     
     def i_(o):
         if hasattr(o, 'linearize'):
@@ -84,3 +73,8 @@ class HelperMixin(DebugVizualizationMixin):
 
     def __ne__(self, other):
         return not self == other
+
+    def __repr__(self):
+        r = self.to_repr(set())
+        return r if isinstance(r, str) else r.encode("utf-8")
+        

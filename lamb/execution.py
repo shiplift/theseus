@@ -4,7 +4,8 @@
 # Hi.
 #
 
-from util import HelperMixin, uni, who, urepr, debug_stack
+from util_repr import uni, who, urepr
+from util import HelperMixin, debug_stack
 from stack import ExecutionStackElement, OperandStackElement
 
 class W_Object(HelperMixin):
@@ -21,12 +22,8 @@ class W_Symbol(W_Object):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
+    def to_repr(self, seen):
         return self.name
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
-
 
 def symbol(name):
     assert isinstance(name, str)
@@ -47,11 +44,8 @@ class W_Integer(W_Object):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"#" + unicode(self._value)
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
+    def to_repr(self, seen):
+        return u"#%d" % self._value
 
 class W_Constructor(W_Object):
 
@@ -73,12 +67,8 @@ class W_Constructor(W_Object):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"#" + urepr(self._tag) + ( ("(" + urepr(self._children)[1:][:-1] + u")") if len(self._children) > 0 else "") 
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
-
+    def to_repr(self, seen):
+        return u"#" + urepr(self._tag, seen) + ( ("(" + urepr(self._children, seen)[1:][:-1] + u")") if len(self._children) > 0 else "")
 
 class W_Lambda(W_Object):
     """
@@ -128,12 +118,8 @@ class W_Lambda(W_Object):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"λ" + who(self) + u"(" + u"; ".join(map(urepr, self._rules)) + u")"
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
-
+    def to_repr(self, seen):
+        return u"λ" + who(self) + u"(" + u"; ".join(map(lambda x: urepr(x, seen), self._rules)) + u")"
 
 class Rule(HelperMixin):
 
@@ -157,11 +143,8 @@ class Rule(HelperMixin):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"{" + u", ".join(map(urepr, self._patterns)) + u" ↦ " + urepr(self._expression) + u"}"
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
+    def to_repr(self, seen):
+        return u"{" + u", ".join(map(lambda x: urepr(x, seen), self._patterns)) + u" ↦ " + urepr(self._expression, seen) + u"}"
 
 
 class Variable(HelperMixin):
@@ -174,11 +157,8 @@ class Variable(HelperMixin):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
+    def to_repr(self, seen):
         return self.name + u"_" + who(self)  + ("@%s" % self.binding_index if self.binding_index != -1 else "")
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
 
 
 class Pattern(HelperMixin):
@@ -204,11 +184,8 @@ class IntegerPattern(Pattern):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
+    def to_repr(self, seen):
         return u"&" + unicode(repr(self.value))
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
     
 class VariablePattern(Pattern):
 
@@ -229,11 +206,8 @@ class VariablePattern(Pattern):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"&" + urepr(self.variable)
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
+    def to_repr(self, seen):
+        return u"&" + urepr(self.variable, seen)
 
 
 class ConstructorPattern(Pattern):
@@ -258,14 +232,8 @@ class ConstructorPattern(Pattern):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"&" + urepr(self._tag) + u"(" + u", ".join(map(urepr, self._children)) + u")"
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
-
-
-
+    def to_repr(self, seen):
+        return u"&" + urepr(self._tag, seen) + u"(" + u", ".join(map(lambda x: urepr(x, seen), self._children)) + u")"
 
 class Expression(ExecutionStackElement):
 
@@ -297,11 +265,8 @@ class ValueExpression(Expression):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"!(" + urepr(self.value) + u")"
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
+    def to_repr(self, seen):
+        return u"!(" + urepr(self.value, seen) + u")"
 
 class VariableExpression(Expression):
 
@@ -337,11 +302,8 @@ class VariableExpression(Expression):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"!" + urepr(self.variable)
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
+    def to_repr(self, seen):
+        return u"!" + urepr(self.variable, seen)
 
 class ConstructorExpression(Expression):
 
@@ -368,11 +330,8 @@ class ConstructorExpression(Expression):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"!" + urepr(self._tag) + ( (u"(" + urepr(self._children)[1:][:-1] + u")") if len(self._children) > 0 else "" )
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
+    def to_repr(self, seen):
+        return u"!" + urepr(self._tag,seen) + ( (u"(" + urepr(self._children, seen)[1:][:-1] + u")") if len(self._children) > 0 else "" )
 
 class CallExpression(Expression):
 
@@ -401,11 +360,8 @@ class CallExpression(Expression):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"μ" + urepr(self.callee) + u"(" + urepr(self.arguments) + u")"
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
+    def to_repr(self, seen):
+        return u"μ" + urepr(self.callee, seen) + u"(" + urepr(self.arguments, seen) + u")"
 
 class Cursor(Expression):
     """
@@ -431,11 +387,8 @@ class ConstructorCursor(Cursor):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"%" + urepr(self._tag) + u"(" + urepr(self._number_of_children) + u")"
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
+    def to_repr(self, seen):
+        return u"%" + urepr(self._tag, seen) + u"(" + urepr(self._number_of_children, seen) + u")"
 
 class LambdaCursor(Cursor):
     def __init__(self, lamb):
@@ -448,12 +401,8 @@ class LambdaCursor(Cursor):
     # Testing and Debug
     #
     @uni
-    def to_repr(self):
-        return u"%" + urepr(self._lamb)
-    to_str = to_repr
-    __repr__ = to_repr
-    __str__ = to_str
-
+    def to_repr(self, seen):
+        return u"%" + urepr(self._lamb, seen)
 
 class VariableUnbound(Exception):
     pass
@@ -461,19 +410,19 @@ class VariableUnbound(Exception):
 class NoMatch(Exception):
     pass
 
-def interpret(expression, arguments=None, debug=False):
+def interpret(expression, arguments=None, debug=False, debug_callback=None):
 
-    w_stack = arguments or OperandStackElement()
-    expression._next = ExecutionStackElement()
+    w_stack = arguments
     e_stack = expression
 
-    while not e_stack.is_bottom():
-        if debug: debug_stack({'e_stack': e_stack, 'w_stack': w_stack})
-        expr = e_stack
-        e_stack = e_stack._next
-        (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
-        assert isinstance(e_stack, ExecutionStackElement)
+    if debug_callback is None: debug_callback = debug_stack
 
-    if debug: debug_stack({'e_stack': e_stack, 'w_stack': w_stack})
+    while not e_stack is None:
+        if debug: debug_callback(**locals())
+        expr = e_stack
+        e_stack = e_stack._next if hasattr(e_stack, '_next') else None
+        (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
+
+    if debug: debug_callback(**locals())
     return w_stack._data
 

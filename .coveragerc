@@ -6,6 +6,7 @@ omit =
      lamb/autopath1.py
      lamb/util.py
      lamb/util_view.py
+     lamb/util_repr.py
 
 [report]
 # Regexes for lines to exclude from consideration

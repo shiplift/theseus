@@ -650,4 +650,59 @@ class TestInterpret(object):
         res = interpret(expr)
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
         # assert plist(res) == [peano_num(2)]
-        
+
+    def test_reverse(self):
+
+        a1 = Variable("accumulator")
+        a2 = Variable("accumulator")
+        h = Variable("head")
+        t = Variable("tail")
+        reverse_acc = lamb()
+        reverse_acc._rules = ziprules(
+            ([w_nil,              a1], a1),
+            ([cons("cons", h, t), a2], mu(reverse_acc, t, cons("cons", h, a2))))
+
+        l = Variable("list")
+        reverse = lamb(([l], mu(reverse_acc, l, w_nil)))
+
+
+        global w_stack_max
+        global e_stack_max
+
+        w_stack_max = 0
+        e_stack_max = 0
+
+        def maxdepth(w_stack, e_stack, **rest):
+            global w_stack_max
+            global e_stack_max
+            w_stack_list = w_stack.linearize() if w_stack is not None else []
+            e_stack_list = e_stack.linearize() if e_stack is not None else []
+            
+            w_stack_max = max(w_stack_max, len(w_stack_list))
+            e_stack_max = max(e_stack_max, len(e_stack_list))
+
+        nums = 5
+        list1_w = [integer(x) for x in range(nums)]
+        interpret(LambdaCursor(reverse), arguments=OperandStackElement(conslist(list1_w)), debug=True, debug_callback=maxdepth)
+
+        e_stack_max1 = e_stack_max
+
+        w_stack_max = 0
+        e_stack_max = 0
+
+        nums = 100
+        list1_w = [integer(x) for x in range(nums)]
+        interpret(LambdaCursor(reverse), arguments=OperandStackElement(conslist(list1_w)), debug=True, debug_callback=maxdepth)
+        e_stack_max2 = e_stack_max
+
+        assert e_stack_max2  == e_stack_max1
+
+        w_stack_max = 0
+        e_stack_max = 0
+
+        nums = 1000
+        list1_w = [integer(x) for x in range(nums)]
+        interpret(LambdaCursor(reverse), arguments=OperandStackElement(conslist(list1_w)), debug=True, debug_callback=maxdepth)
+        e_stack_max3 = e_stack_max
+
+        assert e_stack_max3 == e_stack_max2

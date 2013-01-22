@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-
+from util_repr import urepr
+import py
 #
 # Graphviz
 #
@@ -53,7 +54,7 @@ def view(*objects, **names):
             for subkey, subobj in obj.items():
                 content.append(u"%s -> %s [label=%s]" % (key, id(subobj)), subkey)
         else:
-            content.append(u"%s -> %s" % (key, id(value)))
+            content.append(u"%s -> %s" % (key, id(obj)))
     content.append(u"}")
     p = py.test.ensuretemp("lamb").join("temp.dot")
     p.write(u"\n".join(content).encode('utf-8'), 'wb')
