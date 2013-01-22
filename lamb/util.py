@@ -31,19 +31,21 @@ def debug_stack(d):
 
     length = 60
     
-    from itertools import izip_longest 
     def i_(o):
+        if hasattr(o, 'linearize'):
+            return o.linearize()
         try: [ e for e in o ]
         except TypeError: return [o]
         else: return o
     def t_(o):
         return o[:length] if len(o) > length else o
     
+    from itertools import izip_longest 
     k = d.keys()
     v = map(list, map(list, map(i_, d.values())))
 
     update_stack_mappings(d)
-        
+    
     stacks = map(lambda x: map(lambda y: (u"[%%-%ds]" % length) % y, map(t_, map(lambda y: urepr(y) if y else u"", x))), map(list, map(reversed, zip(*list(izip_longest(*v, fillvalue=""))))))
     tops = map(lambda x: [(u"%%-%ds" % (length + 3)) % x], k)
     stat = map(lambda x: x[0] + x[1], list(zip(tops,stacks)))

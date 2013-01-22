@@ -5,6 +5,7 @@
 #
 
 from util import HelperMixin, uni, who, urepr, debug_stack
+from stack import ExecutionStackElement, OperandStackElement
 
 class W_Object(HelperMixin):
     pass
@@ -107,7 +108,8 @@ class W_Lambda(W_Object):
     def interpret_lamdba(self, stack, exp_stack):
         w_arguments = []
         for i in range(self.arity()):
-            w_arguments.append(stack.pop())
+            w_arguments.append(stack._data)
+            stack = stack._next
         for rule in self._rules:
             try:
                 binding = [None] * rule.maximal_number_of_variables
@@ -115,8 +117,10 @@ class W_Lambda(W_Object):
             except NoMatch:
                 pass
             else:
-                exp_stack.append(expression.copy(binding))
-                return
+                new_exp = expression.copy(binding)
+                new_exp._next = exp_stack
+                exp_stack = new_exp
+                return (stack, exp_stack)
 
         raise NoMatch()
         
@@ -263,7 +267,7 @@ class ConstructorPattern(Pattern):
 
 
 
-class Expression(HelperMixin):
+class Expression(ExecutionStackElement):
 
     def evaluate_with_binding(self, binding):
         return self.copy(binding).evaluate()
@@ -287,7 +291,7 @@ class ValueExpression(Expression):
         return self.value
 
     def interpret(self, binding, stack, exp_stack):
-        stack.append(self.value)
+        return (OperandStackElement(self.value, stack), exp_stack)
 
     #
     # Testing and Debug
@@ -349,9 +353,13 @@ class ConstructorExpression(Expression):
         return W_Constructor(self._tag, [child.evaluate() for child in self._children])
 
     def interpret(self, binding, stack, exp_stack):
-        exp_stack.append(ConstructorCursor(self._tag, len(self._children)))
+        new_exp_stack = ConstructorCursor(self._tag, len(self._children))
+        new_exp_stack._next = exp_stack
+        exp_stack = new_exp_stack
         for child in self._children:
-            exp_stack.append(child)
+            child._next = exp_stack
+            exp_stack = child
+        return (stack, exp_stack)
 
     def copy(self, binding):
         return ConstructorExpression(self._tag, [child.copy(binding) for child in self._children])
@@ -378,9 +386,13 @@ class CallExpression(Expression):
     def interpret(self, binding, stack, exp_stack):
         assert isinstance(self.callee, ValueExpression)
         # always in interpreter call.
-        exp_stack.append(LambdaCursor(self.callee.value))
+        new_exp_stack = LambdaCursor(self.callee.value)
+        new_exp_stack._next = exp_stack
+        exp_stack = new_exp_stack
         for arg in self.arguments:
-            exp_stack.append(arg)
+            arg._next = exp_stack
+            exp_stack = arg
+        return (stack, exp_stack)
 
     def copy(self, binding):
         return CallExpression(self.callee.copy(binding), [arg.copy(binding) for arg in self.arguments])
@@ -410,8 +422,10 @@ class ConstructorCursor(Cursor):
     def interpret(self, binding, stack, exp_stack):
         children = []
         for i in range(self._number_of_children):
-            children.append(stack.pop())
-        stack.append(W_Constructor(self._tag, children))
+            children.append(stack._data)
+            stack = stack._next
+        stack = OperandStackElement(W_Constructor(self._tag, children), stack)
+        return (stack, exp_stack)
 
     #
     # Testing and Debug
@@ -428,7 +442,7 @@ class LambdaCursor(Cursor):
         self._lamb = lamb
 
     def interpret(self, binding, stack, exp_stack):
-        self._lamb.interpret_lamdba(stack, exp_stack)
+        return self._lamb.interpret_lamdba(stack, exp_stack)
 
     #
     # Testing and Debug
@@ -447,16 +461,19 @@ class VariableUnbound(Exception):
 class NoMatch(Exception):
     pass
 
-def interpret(expressions, arguments=None, debug=False):
+def interpret(expression, arguments=None, debug=False):
 
-    stack = arguments or []
-    if debug:
-        debug_stack({'expressions': expressions, 'stack': stack})
-    while len(expressions) > 0:
-        expression = expressions.pop()
-        expression.interpret(None, stack, expressions)
-        if debug:
-            debug_stack({'expressions': expressions, 'stack': stack})
-    assert len(stack) > 0
-    return stack.pop()
+    w_stack = arguments or OperandStackElement()
+    expression._next = ExecutionStackElement()
+    e_stack = expression
+
+    while not e_stack.is_bottom():
+        if debug: debug_stack({'e_stack': e_stack, 'w_stack': w_stack})
+        expr = e_stack
+        e_stack = e_stack._next
+        (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
+        assert isinstance(e_stack, ExecutionStackElement)
+
+    if debug: debug_stack({'e_stack': e_stack, 'w_stack': w_stack})
+    return w_stack._data
 

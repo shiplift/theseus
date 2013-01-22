@@ -555,7 +555,7 @@ class TestInterpret(object):
     def test_simple_lambda(self):
         w_int = integer(1)
         l = lamb( ([], w_int) )
-        res = interpret([mu(l)])
+        res = interpret(mu(l))
         assert res is w_int
 
     def test_fail_lambda(self):
@@ -564,13 +564,13 @@ class TestInterpret(object):
         l = lamb( ([w_int1], w_int2) )
 
         with py.test.raises(NoMatch) as e:
-            res = interpret([mu(l, w_int2)])
+            res = interpret(mu(l, w_int2))
 
     def test_lambda_id(self):
         x = Variable("x")
         l = lamb( ([x], x) )
         w_int = integer(1)
-        res = interpret([mu(l, w_int)])
+        res = interpret(mu(l, w_int))
         assert res is w_int
         
     def test_lambda_not(self):
@@ -582,10 +582,10 @@ class TestInterpret(object):
             ([w_true], w_false),
             ([w_false], w_true))
 
-        res = interpret([mu(l, w_true)])        
+        res = interpret(mu(l, w_true))
         assert res == w_false
 
-        res = interpret([mu(l, w_false)])
+        res = interpret(mu(l, w_false))
         assert res == w_true
 
 
@@ -606,7 +606,7 @@ class TestInterpret(object):
         list2_w = [integer(4),integer(5),integer(6)]
         
         expr = mu(l, conslist(list1_w), conslist(list2_w))
-        res = interpret([expr])
+        res = interpret(expr)
         assert plist(res) == list1_w + list2_w
 
     def test_map(self):
@@ -643,11 +643,11 @@ class TestInterpret(object):
         
         succ = lamb( ([x1], cons("p", x1)) )
 
-        res = interpret([mu(succ, peano_num(12))])
+        res = interpret(mu(succ, peano_num(12)))
         assert python_num(res) == 13
 
         expr = mu(map, ValueExpression(succ), conslist(list_w))
-        res = interpret([expr])
+        res = interpret(expr)
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
         # assert plist(res) == [peano_num(2)]
         
