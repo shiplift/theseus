@@ -3,6 +3,7 @@
 #
 # Hi.
 #
+from pypy.rlib import jit
 
 from lamb.util.repr import uni, who, urepr
 from lamb.util.debug import debug_stack
@@ -425,5 +426,30 @@ def interpret(expression, arguments=None, debug=False, debug_callback=None):
         (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
 
     if debug: debug_callback(**locals())
+    return w_stack._data
+
+jitdriver = jit.JitDriver(
+    greens=["w_stack"],
+    reds=["e_stack", "expr"]
+    #,
+    #    get_printable_location=get_printable_location,
+)
+
+
+def l_interpret(expression, arguments):
+
+    w_stack = arguments
+    e_stack = expression
+    e_stack._next = None
+    expr = None
+    
+    while not e_stack is None:
+        jitdriver.jit_merge_point(
+            expr=expr, w_stack=w_stack, e_stack=e_stack
+        )
+
+        expr = e_stack
+        e_stack = e_stack._next if e_stack is not None else None
+        (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
     return w_stack._data
 
