@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from util_repr import urepr
+from lamb.util.repr import urepr
 import py
 #
 # Graphviz

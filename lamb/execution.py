@@ -4,9 +4,10 @@
 # Hi.
 #
 
-from util_repr import uni, who, urepr
-from util import HelperMixin, debug_stack
-from stack import ExecutionStackElement, OperandStackElement
+from lamb.util.repr import uni, who, urepr
+from lamb.util.debug import debug_stack
+from lamb.util.testing import HelperMixin
+from lamb.stack import ExecutionStackElement, OperandStackElement
 
 class W_Object(HelperMixin):
     pass
