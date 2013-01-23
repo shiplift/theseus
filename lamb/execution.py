@@ -3,7 +3,7 @@
 #
 # Hi.
 #
-from pypy.rlib import jit
+from rpython.rlib import jit
 
 from lamb.util.repr import uni, who, urepr
 from lamb.util.debug import debug_stack
@@ -412,14 +412,27 @@ class VariableUnbound(Exception):
 class NoMatch(Exception):
     pass
 
+jitdriver = jit.JitDriver(
+    greens=["w_stack"],
+    reds=["e_stack", "expr"]
+    #,
+    #    get_printable_location=get_printable_location,
+)
+
 def interpret(expression, arguments=None, debug=False, debug_callback=None):
 
     w_stack = arguments
     e_stack = expression
-
+    e_stack._next = None
+    expr = None
+    
     if debug_callback is None: debug_callback = debug_stack
 
     while not e_stack is None:
+        jitdriver.jit_merge_point(
+            expr=expr, w_stack=w_stack, e_stack=e_stack
+        )
+
         if debug: debug_callback(**locals())
         expr = e_stack
         e_stack = e_stack._next if hasattr(e_stack, '_next') else None
@@ -428,12 +441,6 @@ def interpret(expression, arguments=None, debug=False, debug_callback=None):
     if debug: debug_callback(**locals())
     return w_stack._data
 
-jitdriver = jit.JitDriver(
-    greens=["w_stack"],
-    reds=["e_stack", "expr"]
-    #,
-    #    get_printable_location=get_printable_location,
-)
 
 
 def l_interpret(expression, arguments):
