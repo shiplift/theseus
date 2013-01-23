@@ -77,11 +77,12 @@ class W_Lambda(W_Object):
     λ arity is the number of patterns in the first rule, or zero
     """
 
-    _immutable_fields_ = ['_rules[*]']
+    _immutable_fields_ = ['_rules[*]', '_cursor']
     
     def __init__(self, rules):
         self._rules = rules
-
+        self._cursor = LambdaCursor(self)
+        
     def arity(self):
         assert len(self._rules) > 0
         return self._rules[0].arity()
@@ -359,22 +360,22 @@ class ConstructorExpression(Expression):
 
 class CallExpression(Expression):
 
-    _immutable_fields_ = ['callee', 'arguments[*]', '_cursor']
+    _immutable_fields_ = ['callee', 'arguments[*]']
 
     def __init__(self, callee, arguments=None):
         self.callee = callee
         self.arguments = arguments or []
-        if isinstance(callee, ValueExpression):
-            self._cursor = LambdaCursor(callee.value)
-        else: # for the evaluate-path
-            self._cursor = None 
 
     def evaluate(self):
         return self.callee.evaluate().call([arg.evaluate() for arg in self.arguments])
 
     @jit.unroll_safe
     def interpret(self, binding, stack, exp_stack):
-        exp_stack = ExecutionStackElement(self._cursor, exp_stack)
+        callee = self.callee
+        assert isinstance(callee, ValueExpression)
+        lamb = callee.value
+        assert isinstance(lamb, W_Lambda)
+        exp_stack = ExecutionStackElement(lamb._cursor, exp_stack)
         for arg in self.arguments:
             exp_stack = ExecutionStackElement(arg, exp_stack)
         return (stack, exp_stack)
@@ -423,6 +424,9 @@ class ConstructorCursor(Cursor):
         return u"%" + urepr(self._tag, seen) + u"(" + urepr(self._number_of_children, seen) + u")"
 
 class LambdaCursor(Cursor):
+
+    _immutable_fields_ = ['_lamb']
+    
     def __init__(self, lamb):
         self._lamb = lamb
 
@@ -435,6 +439,12 @@ class LambdaCursor(Cursor):
     @uni
     def to_repr(self, seen):
         return u"%" + urepr(self._lamb, seen)
+
+    #
+    # to avoid recursion in _lamb._cursor
+    #
+    def __eq__(self, other):
+        return self._lamb is other._lamb
 
 class VariableUnbound(Exception):
     pass
@@ -458,9 +468,9 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
     if debug_callback is None: debug_callback = debug_stack
 
     while True:
-        expr = e_stack._data if e_stack is not None else None
-        if isinstance(expr, LambdaCursor):
-            current_lambda = expr._lamb
+        n = e_stack._data if e_stack is not None else None
+        if isinstance(n, LambdaCursor):
+            current_lambda = n._lamb
             jitdriver.can_enter_jit(
                 expr=expr, w_stack=w_stack, e_stack=e_stack,
                 current_lambda=current_lambda,
@@ -474,6 +484,7 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
 
 
         if debug: debug_callback(**locals())
+        expr = e_stack._data
         e_stack = e_stack._next
         (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
 
@@ -490,9 +501,9 @@ def l_interpret(expression_stack, arguments_stack):
     expr = None
     
     while True:
-        expr = e_stack._data if e_stack is not None else None
-        if isinstance(expr, LambdaCursor):
-            current_lambda = expr._lamb
+        n = e_stack._data if e_stack is not None else None
+        if isinstance(n, LambdaCursor):
+            current_lambda = n._lamb
             jitdriver.can_enter_jit(
                 expr=expr, w_stack=w_stack, e_stack=e_stack,
                 current_lambda=current_lambda,
