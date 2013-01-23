@@ -76,6 +76,8 @@ class W_Lambda(W_Object):
     """
     λ arity is the number of patterns in the first rule, or zero
     """
+
+    _immutable_fields_ = ['_rules[*]']
     
     def __init__(self, rules):
         self._rules = rules
@@ -97,7 +99,9 @@ class W_Lambda(W_Object):
 
         raise NoMatch()
 
+    @jit.unroll_safe
     def interpret_lamdba(self, stack, exp_stack):
+        jit.promote(self)
         w_arguments = []
         for i in range(self.arity()):
             w_arguments.append(stack._data)
@@ -125,6 +129,8 @@ class W_Lambda(W_Object):
 
 class Rule(HelperMixin):
 
+    _immutable_fields_ = ['_patterns[*]', '_expression', 'maximal_number_of_variables']
+
     def __init__(self, patterns, expression):
         self._patterns = patterns
         self._expression = expression
@@ -135,6 +141,7 @@ class Rule(HelperMixin):
     def arity(self):
         return len(self._patterns)
 
+    @jit.unroll_safe
     def match_all(self, w_arguments, binding):
         if self.arity() != 0:
             for i in range(self.arity()):
@@ -150,6 +157,8 @@ class Rule(HelperMixin):
 
 
 class Variable(HelperMixin):
+
+    _immutable_fields_ = ['name', 'binding_index']
 
     def __init__(self, name):        
         self.name = name
@@ -191,6 +200,8 @@ class IntegerPattern(Pattern):
     
 class VariablePattern(Pattern):
 
+    _immutable_fields_ = ['variable']
+
     def __init__(self, variable):
         self.variable = variable
 
@@ -214,13 +225,17 @@ class VariablePattern(Pattern):
 
 class ConstructorPattern(Pattern):
 
+    _immutable_fields_ = ['_tag', '_children[*]']
+
     def __init__(self, tag, children=None):
         self._tag = tag
         self._children = children or []
 
+    @jit.unroll_safe
     def match(self, obj, binding):
         if isinstance(obj, W_Constructor): # pragma: no branch
-            if (obj.get_tag() == self._tag) and (obj.get_number_of_children() == len(self._children)):
+            tag = jit.promote(obj.get_tag())
+            if (tag == self._tag) and (obj.get_number_of_children() == len(self._children)):
                 for i in range(len(self._children)):
                     self._children[i].match(obj.get_child(i), binding)
                 return
@@ -239,6 +254,9 @@ class ConstructorPattern(Pattern):
 
 class Expression(ExecutionStackElement):
 
+
+    _attrs_ = []
+
     def evaluate_with_binding(self, binding):
         return self.copy(binding).evaluate()
 
@@ -253,6 +271,8 @@ class Expression(ExecutionStackElement):
 
         
 class ValueExpression(Expression):
+
+    _immutable_fields_ = ['value']
 
     def __init__(self, value):
         self.value = value
@@ -272,6 +292,8 @@ class ValueExpression(Expression):
 
 class VariableExpression(Expression):
 
+    _immutable_fields_ = ['variable']
+    
     def __init__(self, variable):
         self.variable = variable
 
@@ -309,6 +331,8 @@ class VariableExpression(Expression):
 
 class ConstructorExpression(Expression):
 
+    _immutable_fields_ = ['_tag', '_children[*]']
+
     def __init__(self, tag, children=None):
         self._tag = tag
         self._children = children or []
@@ -316,6 +340,7 @@ class ConstructorExpression(Expression):
     def evaluate(self):
         return W_Constructor(self._tag, [child.evaluate() for child in self._children])
 
+    @jit.unroll_safe
     def interpret(self, binding, stack, exp_stack):
         new_exp_stack = ConstructorCursor(self._tag, len(self._children))
         new_exp_stack._next = exp_stack
@@ -325,6 +350,7 @@ class ConstructorExpression(Expression):
             exp_stack = child
         return (stack, exp_stack)
 
+    @jit.unroll_safe
     def copy(self, binding):
         return ConstructorExpression(self._tag, [child.copy(binding) for child in self._children])
 
@@ -337,6 +363,8 @@ class ConstructorExpression(Expression):
 
 class CallExpression(Expression):
 
+    _immutable_fields_ = ['callee', 'arguments[*]']
+
     def __init__(self, callee, arguments=None):
         self.callee = callee
         self.arguments = arguments or []
@@ -344,10 +372,12 @@ class CallExpression(Expression):
     def evaluate(self):
         return self.callee.evaluate().call([arg.evaluate() for arg in self.arguments])
 
+    @jit.unroll_safe
     def interpret(self, binding, stack, exp_stack):
-        assert isinstance(self.callee, ValueExpression)
+        callee = self.callee
+        assert isinstance(callee, ValueExpression)
         # always in interpreter call.
-        new_exp_stack = LambdaCursor(self.callee.value)
+        new_exp_stack = LambdaCursor(callee.value)
         new_exp_stack._next = exp_stack
         exp_stack = new_exp_stack
         for arg in self.arguments:
@@ -355,6 +385,7 @@ class CallExpression(Expression):
             exp_stack = arg
         return (stack, exp_stack)
 
+    @jit.unroll_safe
     def copy(self, binding):
         return CallExpression(self.callee.copy(binding), [arg.copy(binding) for arg in self.arguments])
 
@@ -377,6 +408,7 @@ class ConstructorCursor(Cursor):
         self._tag = tag
         self._number_of_children = number_of_children
 
+    @jit.unroll_safe
     def interpret(self, binding, stack, exp_stack):
         children = []
         for i in range(self._number_of_children):
@@ -413,9 +445,8 @@ class NoMatch(Exception):
     pass
 
 jitdriver = jit.JitDriver(
-    greens=["w_stack"],
-    reds=["e_stack", "expr"]
-    #,
+    greens=["current_lambda"],
+    reds=["w_stack", "e_stack", "expr"],
     #    get_printable_location=get_printable_location,
 )
 
@@ -448,12 +479,23 @@ def l_interpret(expression, arguments):
     w_stack = arguments
     e_stack = expression
     e_stack._next = None
+    current_lambda = None
     expr = None
     
-    while not e_stack is None:
+    while True:
+        if isinstance(e_stack, LambdaCursor):
+            current_lambda = e_stack._lamb
+            jitdriver.can_enter_jit(
+                expr=expr, w_stack=w_stack, e_stack=e_stack,
+                current_lambda=current_lambda,
+            )
         jitdriver.jit_merge_point(
-            expr=expr, w_stack=w_stack, e_stack=e_stack
+            expr=expr, w_stack=w_stack, e_stack=e_stack,
+            current_lambda=current_lambda,
         )
+        if e_stack is None:
+            break
+
 
         expr = e_stack
         e_stack = e_stack._next if e_stack is not None else None

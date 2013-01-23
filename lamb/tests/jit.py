@@ -8,7 +8,7 @@ import sys
 from rpython import conftest
 class o:
     view = False
-    viewloops = False
+    viewloops = True
 conftest.option = o
 from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 

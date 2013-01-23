@@ -36,7 +36,8 @@ class StackElement(HelperMixin):
             return u"<%s[%h]>" % (self.__class__, id(self))
 
 class ExecutionStackElement(StackElement):
-    pass
+
+    _attrs_ = ['_next']
 
 class OperandStackElement(HelperMixin):
 
