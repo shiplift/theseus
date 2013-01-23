@@ -9,7 +9,8 @@ from lamb.execution import *
 from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            ziprules, lamb, mu,
                                            w_nil,
-                                           conslist, plist, peano_num, python_num)
+                                           conslist, plist, peano_num, python_num,
+                                           execution_stack, operand_stack)
 
 #
 # Tests
@@ -459,7 +460,7 @@ class TestInterpret(object):
     def test_simple_lambda(self):
         w_int = integer(1)
         l = lamb( ([], w_int) )
-        res = interpret(mu(l))
+        res = interpret(execution_stack(mu(l)))
         assert res is w_int
 
     def test_fail_lambda(self):
@@ -468,13 +469,13 @@ class TestInterpret(object):
         l = lamb( ([w_int1], w_int2) )
 
         with py.test.raises(NoMatch) as e:
-            res = interpret(mu(l, w_int2))
+            res = interpret(execution_stack(mu(l, w_int2)))
 
     def test_lambda_id(self):
         x = Variable("x")
         l = lamb( ([x], x) )
         w_int = integer(1)
-        res = interpret(mu(l, w_int))
+        res = interpret(execution_stack(mu(l, w_int)))
         assert res is w_int
         
     def test_lambda_not(self):
@@ -486,10 +487,10 @@ class TestInterpret(object):
             ([w_true], w_false),
             ([w_false], w_true))
 
-        res = interpret(mu(l, w_true))
+        res = interpret(execution_stack(mu(l, w_true)))
         assert res == w_false
 
-        res = interpret(mu(l, w_false))
+        res = interpret(execution_stack(mu(l, w_false)))
         assert res == w_true
 
 
@@ -510,7 +511,7 @@ class TestInterpret(object):
         list2_w = [integer(4),integer(5),integer(6)]
         
         expr = mu(l, conslist(list1_w), conslist(list2_w))
-        res = interpret(expr)
+        res = interpret(execution_stack(expr))
         assert plist(res) == list1_w + list2_w
 
     def test_map(self):
@@ -547,11 +548,11 @@ class TestInterpret(object):
         
         succ = lamb( ([x1], cons("p", x1)) )
 
-        res = interpret(mu(succ, peano_num(12)))
+        res = interpret(execution_stack(mu(succ, peano_num(12))))
         assert python_num(res) == 13
 
         expr = mu(map, ValueExpression(succ), conslist(list_w))
-        res = interpret(expr)
+        res = interpret(execution_stack(expr))
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
         # assert plist(res) == [peano_num(2)]
 
@@ -587,7 +588,7 @@ class TestInterpret(object):
 
         nums = 5
         list1_w = [integer(x) for x in range(nums)]
-        res = interpret(LambdaCursor(reverse), arguments=OperandStackElement(conslist(list1_w)), debug=True, debug_callback=maxdepth)
+        res = interpret(operand_stack(LambdaCursor(reverse)), operand_stack(conslist(list1_w)), True, maxdepth)
         list1_w.reverse()
         assert plist(res) == list1_w
 
@@ -598,7 +599,7 @@ class TestInterpret(object):
 
         nums = 100
         list1_w = [integer(x) for x in range(nums)]
-        interpret(LambdaCursor(reverse), arguments=OperandStackElement(conslist(list1_w)), debug=True, debug_callback=maxdepth)
+        interpret(execution_stack(LambdaCursor(reverse)), operand_stack(conslist(list1_w)), True, maxdepth)
         e_stack_max2 = e_stack_max
 
         assert e_stack_max2  == e_stack_max1
@@ -608,7 +609,7 @@ class TestInterpret(object):
 
         nums = 1000
         list1_w = [integer(x) for x in range(nums)]
-        interpret(LambdaCursor(reverse), arguments=OperandStackElement(conslist(list1_w)), debug=True, debug_callback=maxdepth)
+        interpret(execution_stack(LambdaCursor(reverse)), operand_stack(conslist(list1_w)), True, maxdepth)
         e_stack_max3 = e_stack_max
 
         assert e_stack_max3 == e_stack_max2

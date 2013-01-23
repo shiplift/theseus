@@ -113,9 +113,7 @@ class W_Lambda(W_Object):
             except NoMatch:
                 pass
             else:
-                new_exp = expression.copy(binding)
-                new_exp._next = exp_stack
-                exp_stack = new_exp
+                exp_stack = ExecutionStackElement(expression.copy(binding), exp_stack)
                 return (stack, exp_stack)
 
         raise NoMatch()
@@ -252,7 +250,7 @@ class ConstructorPattern(Pattern):
     def to_repr(self, seen):
         return u"&" + urepr(self._tag, seen) + u"(" + u", ".join(map(lambda x: urepr(x, seen), self._children)) + u")"
 
-class Expression(ExecutionStackElement):
+class Expression(HelperMixin):
 
 
     _attrs_ = []
@@ -331,28 +329,26 @@ class VariableExpression(Expression):
 
 class ConstructorExpression(Expression):
 
-    _immutable_fields_ = ['_tag', '_children[*]']
+    _immutable_fields_ = ['_tag', '_children[*]', '_cursor']
 
-    def __init__(self, tag, children=None):
+    def __init__(self, tag, children=None, cursor=None):
         self._tag = tag
         self._children = children or []
-
+        self._cursor = cursor or ConstructorCursor(self._tag, len(self._children))
+        
     def evaluate(self):
         return W_Constructor(self._tag, [child.evaluate() for child in self._children])
 
     @jit.unroll_safe
     def interpret(self, binding, stack, exp_stack):
-        new_exp_stack = ConstructorCursor(self._tag, len(self._children))
-        new_exp_stack._next = exp_stack
-        exp_stack = new_exp_stack
+        exp_stack = ExecutionStackElement(self._cursor, exp_stack)
         for child in self._children:
-            child._next = exp_stack
-            exp_stack = child
+            exp_stack = ExecutionStackElement(child, exp_stack)
         return (stack, exp_stack)
 
     @jit.unroll_safe
     def copy(self, binding):
-        return ConstructorExpression(self._tag, [child.copy(binding) for child in self._children])
+        return ConstructorExpression(self._tag, [child.copy(binding) for child in self._children], self._cursor)
 
     #
     # Testing and Debug
@@ -363,26 +359,24 @@ class ConstructorExpression(Expression):
 
 class CallExpression(Expression):
 
-    _immutable_fields_ = ['callee', 'arguments[*]']
+    _immutable_fields_ = ['callee', 'arguments[*]', '_cursor']
 
     def __init__(self, callee, arguments=None):
         self.callee = callee
         self.arguments = arguments or []
+        if isinstance(callee, ValueExpression):
+            self._cursor = LambdaCursor(callee.value)
+        else: # for the evaluate-path
+            self._cursor = None 
 
     def evaluate(self):
         return self.callee.evaluate().call([arg.evaluate() for arg in self.arguments])
 
     @jit.unroll_safe
     def interpret(self, binding, stack, exp_stack):
-        callee = self.callee
-        assert isinstance(callee, ValueExpression)
-        # always in interpreter call.
-        new_exp_stack = LambdaCursor(callee.value)
-        new_exp_stack._next = exp_stack
-        exp_stack = new_exp_stack
+        exp_stack = ExecutionStackElement(self._cursor, exp_stack)
         for arg in self.arguments:
-            arg._next = exp_stack
-            exp_stack = arg
+            exp_stack = ExecutionStackElement(arg, exp_stack)
         return (stack, exp_stack)
 
     @jit.unroll_safe
@@ -404,12 +398,16 @@ class Cursor(Expression):
         raise NotImplementedError("only meaningfull in non-recursive implementation")
 
 class ConstructorCursor(Cursor):
+
+    _immutable_fields_ = ['_tag', '_number_of_children']
+    
     def __init__(self, tag, number_of_children):
         self._tag = tag
         self._number_of_children = number_of_children
 
     @jit.unroll_safe
     def interpret(self, binding, stack, exp_stack):
+        jit.promote(self)
         children = []
         for i in range(self._number_of_children):
             children.append(stack._data)
@@ -450,41 +448,19 @@ jitdriver = jit.JitDriver(
     #    get_printable_location=get_printable_location,
 )
 
-def interpret(expression, arguments=None, debug=False, debug_callback=None):
+def interpret(expression_stack, arguments_stack=None, debug=False, debug_callback=None):
 
-    w_stack = arguments
-    e_stack = expression
-    e_stack._next = None
+    w_stack = arguments_stack
+    e_stack = expression_stack
+    current_lambda = None
     expr = None
     
     if debug_callback is None: debug_callback = debug_stack
 
-    while not e_stack is None:
-        jitdriver.jit_merge_point(
-            expr=expr, w_stack=w_stack, e_stack=e_stack
-        )
-
-        if debug: debug_callback(**locals())
-        expr = e_stack
-        e_stack = e_stack._next if hasattr(e_stack, '_next') else None
-        (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
-
-    if debug: debug_callback(**locals())
-    return w_stack._data
-
-
-
-def l_interpret(expression, arguments):
-
-    w_stack = arguments
-    e_stack = expression
-    e_stack._next = None
-    current_lambda = None
-    expr = None
-    
     while True:
-        if isinstance(e_stack, LambdaCursor):
-            current_lambda = e_stack._lamb
+        expr = e_stack._data if e_stack is not None else None
+        if isinstance(expr, LambdaCursor):
+            current_lambda = expr._lamb
             jitdriver.can_enter_jit(
                 expr=expr, w_stack=w_stack, e_stack=e_stack,
                 current_lambda=current_lambda,
@@ -497,8 +473,39 @@ def l_interpret(expression, arguments):
             break
 
 
-        expr = e_stack
-        e_stack = e_stack._next if e_stack is not None else None
+        if debug: debug_callback(**locals())
+        e_stack = e_stack._next
+        (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
+
+    if debug: debug_callback(**locals())
+    return w_stack._data
+
+
+
+def l_interpret(expression_stack, arguments_stack):
+
+    w_stack = arguments_stack
+    e_stack = expression_stack
+    current_lambda = None
+    expr = None
+    
+    while True:
+        expr = e_stack._data if e_stack is not None else None
+        if isinstance(expr, LambdaCursor):
+            current_lambda = expr._lamb
+            jitdriver.can_enter_jit(
+                expr=expr, w_stack=w_stack, e_stack=e_stack,
+                current_lambda=current_lambda,
+            )
+        jitdriver.jit_merge_point(
+            expr=expr, w_stack=w_stack, e_stack=e_stack,
+            current_lambda=current_lambda,
+        )
+        if e_stack is None:
+            break
+
+        expr = e_stack._data
+        e_stack = e_stack._next
         (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
     return w_stack._data
 

@@ -98,3 +98,16 @@ def python_num(peano):
 #    def become(self, x):
 #        self.__class__ = x.__class__
 #        self.__dict__.update(x.__dict__)
+
+
+def operand_stack(*elems):
+    stack = None
+    for elem in reversed(elems):
+        stack = OperandStackElement(elem, stack)
+    return stack
+    
+def execution_stack(*elems):
+    stack = None
+    for elem in reversed(elems):
+        stack = ExecutionStackElement(elem, stack)
+    return stack

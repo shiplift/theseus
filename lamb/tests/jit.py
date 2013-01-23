@@ -14,9 +14,11 @@ from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 
 
 from lamb.execution import (l_interpret,
+                            ValueExpression,
                             Variable, LambdaCursor, OperandStackElement)
 from lamb.util.construction_helper import (lamb, ziprules, mu, cons, w_nil,
-                                           conslist, integer)
+                                           conslist, integer, operand_stack,
+                                           peano_num, execution_stack)
 
 
 
@@ -44,8 +46,34 @@ class TestLLtype(LLJitMixin):
 
         nums = 5
         list1_w = [integer(x) for x in range(nums)]
-        clist1_w = conslist(list1_w)
+        stack_w = operand_stack(conslist(list1_w))
+        stack_e = execution_stack(LambdaCursor(reverse))
         def interp_w():
-            return l_interpret(LambdaCursor(reverse), OperandStackElement(clist1_w))
+            return l_interpret(stack_e, stack_w)
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
+    def test_map(self):
+        f = Variable("F")
+        x = Variable("X")
+        y = Variable("Y")
+        _ = Variable("_")
+        _2 = Variable("_")
+
+        map = lamb()
+        map._rules = ziprules(
+            ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(map, f, y))),
+            ([_, w_nil], w_nil))
+
+        x1 = Variable("x")
+        
+        list_w = [peano_num(x) for x in range(30)]
+        clist_w = conslist(list_w)
+
+        succ = lamb( ([x1], cons("p", x1)) )
+        stack_e = execution_stack(LambdaCursor(map))
+        stack_w = operand_stack(succ, clist_w)
+        def interp_w():
+            return l_interpret(stack_e, stack_w)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
