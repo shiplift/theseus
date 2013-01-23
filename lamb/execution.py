@@ -483,40 +483,10 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
             break
 
 
-        if debug: debug_callback(**locals())
+        if debug: debug_callback({'e_stack':e_stack, 'w_stack':w_stack})
         expr = e_stack._data
         e_stack = e_stack._next
         (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
 
-    if debug: debug_callback(**locals())
+    if debug: debug_callback({'e_stack':e_stack, 'w_stack':w_stack})
     return w_stack._data
-
-
-
-def l_interpret(expression_stack, arguments_stack):
-
-    w_stack = arguments_stack
-    e_stack = expression_stack
-    current_lambda = None
-    expr = None
-    
-    while True:
-        n = e_stack._data if e_stack is not None else None
-        if isinstance(n, LambdaCursor):
-            current_lambda = n._lamb
-            jitdriver.can_enter_jit(
-                expr=expr, w_stack=w_stack, e_stack=e_stack,
-                current_lambda=current_lambda,
-            )
-        jitdriver.jit_merge_point(
-            expr=expr, w_stack=w_stack, e_stack=e_stack,
-            current_lambda=current_lambda,
-        )
-        if e_stack is None:
-            break
-
-        expr = e_stack._data
-        e_stack = e_stack._next
-        (w_stack, e_stack) = expr.interpret(None, w_stack, e_stack)
-    return w_stack._data
-

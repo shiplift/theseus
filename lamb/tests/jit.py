@@ -13,8 +13,7 @@ conftest.option = o
 from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 
 
-from lamb.execution import (l_interpret,
-                            ValueExpression,
+from lamb.execution import (interpret, ValueExpression,
                             Variable, LambdaCursor, OperandStackElement)
 from lamb.util.construction_helper import (lamb, ziprules, mu, cons, w_nil,
                                            conslist, integer, operand_stack,
@@ -49,7 +48,7 @@ class TestLLtype(LLJitMixin):
         stack_w = operand_stack(conslist(list1_w))
         stack_e = execution_stack(LambdaCursor(reverse))
         def interp_w():
-            return l_interpret(stack_e, stack_w)
+            return interpret(stack_e, stack_w)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
@@ -74,6 +73,6 @@ class TestLLtype(LLJitMixin):
         stack_e = execution_stack(LambdaCursor(map))
         stack_w = operand_stack(succ, clist_w)
         def interp_w():
-            return l_interpret(stack_e, stack_w)
+            return interpret(stack_e, stack_w)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
