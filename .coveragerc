@@ -3,10 +3,8 @@
 [run]
 branch = True
 omit =
-     lamb/autopath1.py
-     lamb/util.py
-     lamb/util_view.py
-     lamb/util_repr.py
+     lamb/util/*
+     lamb/tests/jit.py
 
 [report]
 # Regexes for lines to exclude from consideration

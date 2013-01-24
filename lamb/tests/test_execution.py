@@ -577,7 +577,10 @@ class TestInterpret(object):
         w_stack_max = 0
         e_stack_max = 0
 
-        def maxdepth(w_stack, e_stack, **rest):
+        def maxdepth(d):
+            w_stack = d['w_stack']
+            e_stack = d['e_stack']
+            
             global w_stack_max
             global e_stack_max
             w_stack_list = w_stack.linearize() if w_stack is not None else []

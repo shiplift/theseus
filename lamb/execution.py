@@ -442,8 +442,9 @@ class LambdaCursor(Cursor):
 
     #
     # to avoid recursion in _lamb._cursor
+    # only ever used by the type annotator
     #
-    def __eq__(self, other):
+    def __eq__(self, other): #pragma: no cover
         return self._lamb is other._lamb
 
 class VariableUnbound(Exception):

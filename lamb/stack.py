@@ -16,7 +16,7 @@ class StackElement(HelperMixin):
     #
     # useful when inspecing the stack
     #
-    def linearize(self):
+    def linearize(self): # pragma: no cover
         element = self
         ret = []
         while element is not None:
