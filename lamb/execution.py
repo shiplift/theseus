@@ -79,8 +79,9 @@ class W_Lambda(W_Object):
 
     _immutable_fields_ = ['_rules[*]', '_cursor']
     
-    def __init__(self, rules):
+    def __init__(self, rules, name=""):
         self._rules = rules
+        self._name = name
         self._cursor = LambdaCursor(self)
         
     def arity(self):
@@ -453,11 +454,20 @@ class VariableUnbound(Exception):
 class NoMatch(Exception):
     pass
 
+def get_printable_location(current_lambda):
+    if current_lambda is None:
+        return "<None>"
+    else:
+        return current_lambda._name
+
 jitdriver = jit.JitDriver(
     greens=["current_lambda"],
     reds=["w_stack", "e_stack", "expr"],
-    #    get_printable_location=get_printable_location,
+    get_printable_location=get_printable_location,
 )
+
+
+    
 
 def interpret(expression_stack, arguments_stack=None, debug=False, debug_callback=None):
 
