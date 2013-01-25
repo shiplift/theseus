@@ -9,7 +9,7 @@ from lamb.util.repr import urepr, who, uni
 _iteration = 0
 _stacks = {}
 
-def debug_stack(w_stack, e_stack, **rest):
+def debug_stack(d):
     """
     print dictionary of stacks.
     """
@@ -17,8 +17,6 @@ def debug_stack(w_stack, e_stack, **rest):
     print "%: Cursor, !: Expression, μ: Call, #: Value, λ: Lambda, &: Pattern, {}: Rule, _ Variable"
 
     length = 60
-
-    d = {'w_stack':w_stack,'e_stack':e_stack}
     
     def i_(o):
         if hasattr(o, 'linearize'):

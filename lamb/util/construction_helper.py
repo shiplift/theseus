@@ -36,20 +36,11 @@ def integer(value):
 
 def expression(obj):
     if isinstance(obj, Variable):
-        return VariableExpression(obj)
-    elif isinstance(obj, W_Integer) or isinstance(obj, W_Lambda):
-        return ValueExpression(obj)
-    elif isinstance(obj, W_Constructor):
-        return expression_from_constructor(obj)
-    elif isinstance(obj, Expression):
-        return obj
+        return W_VariableExpression(obj)
+    if isinstance(obj, W_Constructor):
+        return W_Constructor(obj._tag, [expression(x) for x in obj._children])
     else:
-        raise NotImplementedError("what expression?")
-
-def expression_from_constructor(w_constructor):
-    _tag = w_constructor.get_tag()
-    _children = [expression(w_constructor.get_child(i)) for i in range(w_constructor.get_number_of_children())]
-    return ConstructorExpression(_tag, _children)
+        return obj
 
 def ziprules(*tuples):
     return [Rule([pattern(p) for p in item[0]], expression(item[1])) for item in tuples]
@@ -59,7 +50,7 @@ def lamb(*tuples):
     return W_Lambda(ziprules(*tuples))
 
 def mu(l, *args):
-    return CallExpression(expression(l), [expression(i) for i in args])
+    return W_Call(expression(l), [expression(i) for i in args])
 
 w_nil = cons("nil")
 
