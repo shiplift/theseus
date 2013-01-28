@@ -163,7 +163,7 @@ def generate_constructor_class(n_children):
     children_iter = unrolling_iterable(range(n_children))
 
     class constructor_class(W_Constructor):
-        _immutable_ = True
+        _immutable_fields_ = [(CHILD_ATTR_TEMPLATE % x) for x in children_iter]
 
         def _init_children(self, children):
             for x in children_iter:
@@ -453,7 +453,8 @@ def generate_call_class(n_arguments):
     arguments_iter = unrolling_iterable(range(n_arguments))
 
     class call_class(W_Call):
-        _immutable_ = True
+        _immutable_fields_ = [(ARG_ATTR_TEMPLATE % x) for x in arguments_iter]
+
 
         def _init_arguments(self, arguments):
             for x in arguments_iter:
