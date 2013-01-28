@@ -16,21 +16,26 @@ from lamb.util.construction_helper import (pattern, cons, integer, expression,
 # Tests
 #
 
-class TestSymbol(object):
+class TestTag(object):
 
-    def test_newsymbol(self):
-        w_res = W_Symbol("name")
-        assert isinstance(w_res, W_Symbol)
+    def test_newtag(self):
+        w_res = W_Tag("name", 0)
+        assert isinstance(w_res, W_Tag)
         assert w_res.name == "name"
+        assert w_res.arity == 0
 
     def test_interning(self):
-        w_res1 = symbol("name")
-        w_res2 = symbol("name")
+        w_res1 = tag("name", 0)
+        w_res2 = tag("name", 0)
         assert w_res1 is w_res2
 
+        w_res1 = tag("name", 0)
+        w_res2 = tag("name", 1)
+        assert w_res1 is not w_res2
+
     def test_non_interning(self):
-        w_res1 = W_Symbol("name")
-        w_res2 = W_Symbol("name")
+        w_res1 = W_Tag("name", 0)
+        w_res2 = W_Tag("name", 0)
         assert w_res1 is not w_res2
 
 class TestInteger(object):
@@ -44,31 +49,46 @@ class TestContstructor(object):
     def test_empty_constructor(self):
         w_res = cons("zork")
         assert isinstance(w_res, W_Constructor)
-        assert w_res.get_tag() is symbol("zork")
+        assert w_res.get_tag() is tag("zork", 0)
         assert w_res.get_number_of_children() is 0
 
     def test_simple_constructor(self):
         w_res = cons("zork", integer(1))
         assert isinstance(w_res, W_Constructor)
-        assert w_res.get_tag() is symbol("zork")
+        assert w_res.get_tag() is tag("zork", 1)
         assert w_res.get_number_of_children() is 1
 
     def test_still_simple_constructor(self):
         w_res = cons("zork", integer(1), integer(2))
         assert isinstance(w_res, W_Constructor)
-        assert w_res.get_tag() is symbol("zork")
+        assert w_res.get_tag() is tag("zork", 2)
         assert w_res.get_number_of_children() is 2
 
     def test_simple_nested_constructor(self):
         w_res = cons("zork", cons("barf"))
         assert isinstance(w_res, W_Constructor)
-        assert w_res.get_tag() is symbol("zork")
+        assert w_res.get_tag() is tag("zork", 1)
         assert w_res.get_number_of_children() is 1
 
         w_subcons = w_res.get_child(0)
         assert isinstance(w_subcons, W_Constructor)
-        assert w_subcons.get_tag() is symbol("barf")
+        assert w_subcons.get_tag() is tag("barf", 0)
         assert w_subcons.get_number_of_children() is 0
+
+    def test_nary_constructors(self):
+        for i in range(12):
+            w_children = [integer(n) for n in range(i)]
+            w_res = cons("zork", *w_children)
+
+            assert isinstance(w_res, W_Constructor)
+            assert w_res.get_tag() is tag("zork", len(w_children))
+            assert w_res.get_number_of_children() is i
+            if i > 0:
+                assert w_res.get_child(i - 1) == integer(i - 1)
+
+            with py.test.raises(IndexError) as e:
+                w_res.get_child(i)
+
 
 class TestVariable(object):
 
@@ -231,24 +251,24 @@ class TestExpression(object):
         
     def test_simple_constructor_expression(self):
 
-        expr = W_Constructor(symbol("barf"), [])
+        expr = w_constructor(tag("barf", 0), [])
 
         binding = []
         w_res = expr.evaluate_with_binding(binding)
-        assert w_res.get_tag() is symbol("barf")
+        assert w_res.get_tag() is tag("barf", 0)
         assert w_res.get_number_of_children() is 0
 
     def test_constructor_with_int(self):
-        w_int = integer(1)
-        w_cons = cons("zork", w_int)
-        expr = expression(w_cons)
+        for num in range(0, 12):        
+            w_int = integer(1)
+            w_children = [w_int] * num
+            w_cons = cons("zork", *w_children)
+            expr = expression(w_cons)
 
-        binding = []
-        w_res = expr.evaluate_with_binding(binding)
-        assert w_res.get_tag() == w_cons.get_tag()
-        assert w_res.get_number_of_children() == w_cons.get_number_of_children()
-        assert w_res.get_child(0) == w_int
-        
+            binding = []
+            w_res = expr.evaluate_with_binding(binding)
+            assert w_res == w_cons
+
 
     def test_constructor_with_var(self):
         var = Variable("x")
@@ -291,33 +311,33 @@ class TestExpression(object):
         binding = [w_cons2, w_cons3, w_cons1, w_cons2, w_cons3, w_cons1]
 
         w_res = expr1.evaluate_with_binding(binding)
-        assert w_res.get_tag() is symbol("universe")
+        assert w_res.get_tag() is tag("universe", 2)
         w_child0 = w_res.get_child(0)
-        assert w_child0.get_tag() is symbol("barf")
+        assert w_child0.get_tag() is tag("barf", 2)
         assert w_child0.get_child(0) is w_int1
         assert w_child0.get_child(1) is w_int2
         w_child1 = w_res.get_child(1)
-        assert w_child1.get_tag() is symbol("moep")
-        assert w_child1.get_child(0).get_tag() is symbol("zork")
+        assert w_child1.get_tag() is tag("moep", 1)
+        assert w_child1.get_child(0).get_tag() is tag("zork", 0)
 
         w_res = expr2.evaluate_with_binding(binding)
-        assert w_res.get_tag() is symbol("moep")
+        assert w_res.get_tag() is tag("moep", 1)
         w_child0 = w_res.get_child(0)
-        assert w_child0.get_tag() is symbol("zork")
+        assert w_child0.get_tag() is tag("zork", 0)
 
         w_res = expr3.evaluate_with_binding(binding)
-        assert w_res.get_tag() is symbol("universe")
+        assert w_res.get_tag() is tag("universe", 2)
         w_child0 = w_res.get_child(0)
-        assert w_child0.get_tag() is symbol("barf")
+        assert w_child0.get_tag() is tag("barf", 2)
         w_child00 = w_child0.get_child(0)
-        assert w_child00.get_tag() is symbol("barf")
+        assert w_child00.get_tag() is tag("barf", 2)
         assert w_child00.get_child(0) is w_int1
         assert w_child00.get_child(1) is w_int2
         w_child01 = w_child0.get_child(1)
-        assert w_child01.get_tag() is symbol("moep")
-        assert w_child01.get_child(0).get_tag() is symbol("zork")
+        assert w_child01.get_tag() is tag("moep", 1)
+        assert w_child01.get_child(0).get_tag() is tag("zork", 0)
         w_child1 = w_res.get_child(1)
-        assert w_child1.get_tag() is symbol("zork")
+        assert w_child1.get_tag() is tag("zork", 0)
 
         
         
@@ -417,6 +437,20 @@ class TestLambda(object):
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
         assert plist(l.call([conslist(list1_w), conslist(list2_w)])) == list1_w + list2_w
+
+    def test_shuffle(self):
+        
+        for i in range(20):
+            vars = [Variable("x%s" % n) for n in range(i)]
+
+            l = lamb(([cons("cons", *vars)], cons("cons", *(vars[1:] + vars[:1]))))
+            l._name = "shuffle%s" % i
+
+            list1 = [integer(n) for n in range(i)]
+            w_cons1 = cons("cons", *list1)
+            res = l.call([w_cons1])
+            assert res == cons("cons", *(list1[1:] + list1[:1]))
+
 
     def test_map(self):
         """
@@ -554,6 +588,21 @@ class TestInterpret(object):
         res = interpret(execution_stack(W_LambdaCursor(map)), operand_stack(succ, conslist(list_w)))
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
         # assert plist(res) == [peano_num(2)]
+
+    def test_shuffle(self):
+        
+        for i in range(20):
+            vars = [Variable("x%s" % n) for n in range(i)]
+
+            l = lamb(([cons("cons", *vars)], cons("cons", *(vars[1:] + vars[:1]))))
+            l._name = "shuffle%s" % i
+
+            list1 = [integer(n) for n in range(i)]
+            w_cons1 = cons("cons", *list1)
+            res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(w_cons1))
+            assert res == cons("cons", *(list1[1:] + list1[:1]))
+
+
 
     def test_reverse(self):
 

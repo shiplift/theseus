@@ -4,6 +4,7 @@
 # Hi.
 #
 from rpython.rlib import jit
+from rpython.rlib.unroll import unrolling_iterable
 
 from lamb.util.repr import uni, who, urepr
 from lamb.util.debug import debug_stack
@@ -28,29 +29,40 @@ class W_Object(HelperMixin):
         return self
 
 
-class W_Symbol(W_Object):
-    symbols = {}
-    
-    def __init__(self, name):
-        self.name = name
+class W_Tag(W_Object):
+    tags = {}
 
+    _immutable_fields_ = ['name', 'arity', '_cursor']
+    
+    def __init__(self, name, arity):
+        self.name = name
+        self.arity = arity
+        self._cursor = W_ConstructorCursor(self, self.arity)
 
     #
     # Testing and Debug
     #
     @uni
     def to_repr(self, seen):
-        return self.name
+        return u"%s/%d" % (self.name, self.arity)
 
-def symbol(name):
+    #
+    # Tags compare by identity
+    #
+    def __eq__(self, other): #pragma: no cover
+        return self is other
+
+
+def tag(name, arity):
     assert isinstance(name, str)
-    w_symbol = W_Symbol.symbols.get(name, None)
-    if w_symbol is None:
-        w_symbol = W_Symbol(name)
-        W_Symbol.symbols[name] = w_symbol
+    assert isinstance(arity, int)
+    w_tag = W_Tag.tags.get( (name, arity) , None)
+    if w_tag is None:
+        w_tag = W_Tag(name, arity)
+        W_Tag.tags[ (name, arity) ] = w_tag
     
-    assert isinstance(w_symbol, W_Symbol)
-    return w_symbol
+    assert isinstance(w_tag, W_Tag)
+    return w_tag
 
 class W_Integer(W_Object):
 
@@ -66,40 +78,148 @@ class W_Integer(W_Object):
 
 class W_Constructor(W_Object):
 
-    _immutable_fields_ = ['_tag', '_children[*]', '_cursor']
+    _immutable_fields_ = ['_tag']
 
-    def __init__(self, tag, children=None):
-        assert isinstance(tag, W_Symbol)
+    def __init__(self, tag):
+        assert isinstance(tag, W_Tag)
         self._tag = tag
-        self._children = children or []
 
+    def _init_children(self, children):
+        pass
 
     def get_tag(self):
         return self._tag
-        
+
+    def get_children(self):
+        return []  
+    
     def get_child(self, index):
-        return self._children[index]
+        raise IndexError()
 
     def get_number_of_children(self):
-        return len(self._children)
-
+        return 0
 
     #
     # Expression behavior
     #
-    def evaluate(self):
-        return W_Constructor(self._tag, [child.evaluate() for child in self._children])
-
     @jit.unroll_safe
     def copy(self, binding):
-        return W_ConstructorEvaluator(self._tag, [child.copy(binding) for child in self._children])
+        children = [self.get_child(index).copy(binding) for index in range(self.get_number_of_children())]
+        return W_ConstructorEvaluator(self._tag, children)
 
     #
     # Testing and Debug
     #
     @uni
     def to_repr(self, seen):
-        return u"#" + urepr(self._tag, seen) + ( ("(" + urepr(self._children, seen)[1:][:-1] + u")") if len(self._children) > 0 else "")
+        return u"#" + urepr(self._tag, seen) + self.children_to_repr(seen)
+
+    def children_to_repr(self, seen):
+        return u""
+
+
+class W_NAryConstructor(W_Constructor):
+
+    _immutable_fields_ = ['_children[*]']
+
+    def _init_children(self, children):
+        self._children = children or []
+
+    def get_children(self):
+        return self._children
+
+    def get_child(self, index):
+        try:
+            return self._children[index]
+        except IndexError as e:
+            raise e
+
+    def get_number_of_children(self):
+        return len(self._children)
+
+    #
+    # Expression behavior
+    #
+    def evaluate(self):
+        return type(self)(self._tag, [child.evaluate() for child in self._children])
+
+    #
+    # Testing and Debug
+    #
+    def children_to_repr(self, seen):
+        if len(self._children) > 0:
+            return u"(" + urepr(self._children, seen)[1:][:-1] + u")"
+        else:
+            return u""
+
+CHILD_ATTR_TEMPLATE = "child_%d"
+
+def constructor_class_name(n_children):
+    return 'W_Constructor' + str(n_children)
+
+
+def generate_constructor_class(n_children):
+
+    children_iter = unrolling_iterable(range(n_children))
+
+    class constructor_class(W_Constructor):
+        _immutable_ = True
+
+        def _init_children(self, children):
+            for x in children_iter:
+                setattr(self, CHILD_ATTR_TEMPLATE % x, children[x])
+
+        def get_children(self):
+            result = [None] * n_children
+            for x in children_iter:
+                result[x] = getattr(self, CHILD_ATTR_TEMPLATE % x)
+            return result
+        
+        def get_child(self, index):
+            for x in children_iter:
+                if x == index:
+                    return getattr(self, CHILD_ATTR_TEMPLATE % x)
+            raise IndexError
+        
+        def get_number_of_children(self):
+            return n_children
+        
+        #
+        # Expression behavior
+        #
+        def evaluate(self):
+            return w_constructor(self._tag, [child.evaluate() for child in self.get_children()])
+        
+        #
+        # Testing and Debug
+        #
+        @uni
+        def children_to_repr(self, seen):
+            result = u""
+            for x in arg_iter:
+                result += urepr(getattr(self, CHILD_ATTR_TEMPLATE % x), seen)
+            return result
+
+    constructor_class.__name__ = constructor_class_name(n_children)
+    return constructor_class
+
+constructor_classes = [W_Constructor]
+for n_children in range(1, 10):
+    constructor_classes.append(generate_constructor_class(n_children))
+
+class_iter = unrolling_iterable(enumerate(constructor_classes))
+
+def w_constructor(tag, children):
+    length = len(children)
+    for i, cls in class_iter:
+        if i == length:
+            constr = cls(tag)
+            constr._init_children(children)
+            return constr
+    # otherwise:
+    constr = W_NAryConstructor(tag)
+    constr._init_children(children)
+    return constr
 
 class W_Lambda(W_Object):
     """
@@ -164,21 +284,21 @@ class W_PureExpression(W_Object):
 
 class W_ConstructorEvaluator(W_PureExpression):
 
-    def __init__(self, tag, children=None, cursor=None):
-        assert isinstance(tag, W_Symbol)
+    def __init__(self, tag, children=None):
+        assert isinstance(tag, W_Tag)
         self._tag = tag
         self._children = children or []
-        self._cursor = cursor or W_ConstructorCursor(self._tag, len(self._children))
+
 
     #
     # Expression behavior
     #
     def evaluate(self):
-        return W_Constructor(self._tag, [child.evaluate() for child in self._children])
+        return w_constructor(self._tag, [child.evaluate() for child in self._children])
 
     @jit.unroll_safe
     def interpret(self, binding, stack, exp_stack):
-        exp_stack = ExecutionStackElement(self._cursor, exp_stack)
+        exp_stack = ExecutionStackElement(self._tag._cursor, exp_stack)
         for child in self._children:
             exp_stack = ExecutionStackElement(child, exp_stack)
         return (stack, exp_stack)
@@ -250,9 +370,11 @@ class W_Call(W_PureExpression):
     @jit.unroll_safe
     def interpret(self, binding, stack, exp_stack):
         lamb = self.callee
-        assert isinstance(lamb, W_Lambda)
+        jit.promote(lamb)
+        assert isinstance(lamb, W_Lambda)        
         exp_stack = ExecutionStackElement(lamb._cursor, exp_stack)
-        for arg in self.arguments:
+        for index in range(lamb.arity()):
+            arg = self.arguments[index]
             exp_stack = ExecutionStackElement(arg, exp_stack)
         return (stack, exp_stack)
 
@@ -290,7 +412,7 @@ class W_ConstructorCursor(W_Cursor):
         for i in range(self._number_of_children):
             children.append(stack._data)
             stack = stack._next
-        stack = OperandStackElement(W_Constructor(self._tag, children), stack)
+        stack = OperandStackElement(w_constructor(self._tag, children), stack)
         return (stack, exp_stack)
 
     #
@@ -308,6 +430,7 @@ class W_LambdaCursor(W_Cursor):
         self._lamb = lamb
 
     def interpret(self, binding, stack, exp_stack):
+        jit.promote(self)
         return self._lamb.interpret_lamdba(stack, exp_stack)
 
     #
@@ -433,12 +556,14 @@ class ConstructorPattern(Pattern):
     @jit.unroll_safe
     def match(self, obj, binding):
         if isinstance(obj, W_Constructor): # pragma: no branch
+            # be sure to use the W_Constructor api
             tag = jit.promote(obj.get_tag())
             if (tag == self._tag) and (obj.get_number_of_children() == len(self._children)):
                 for i in range(len(self._children)):
                     self._children[i].match(obj.get_child(i), binding)
                 return
         if isinstance(obj, W_ConstructorEvaluator): # pragma: no branch
+            # shortcut to the evaluator properties
             tag = jit.promote(obj._tag)
             if (tag == self._tag) and (len(obj._children) == len(self._children)):
                 for i in range(len(self._children)):
@@ -468,12 +593,11 @@ class VariableUnbound(Exception):
 class NoMatch(Exception):
     pass
 
-def get_printable_location(current_lambda):
+def get_printable_location(current_lambda): #pragma: no cover
     if current_lambda is None:
         return "<None>"
     else:
-        #return u"λ".encode("utf-8") + current_lambda._name
-        return u"Lambda " + current_lambda._name
+        return "Lamb " + current_lambda._name
 
 jitdriver = jit.JitDriver(
     greens=["current_lambda"],
