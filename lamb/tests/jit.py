@@ -13,8 +13,8 @@ conftest.option = o
 from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 
 
-from lamb.execution import (interpret, ValueExpression,
-                            Variable, LambdaCursor, OperandStackElement)
+from lamb.execution import (interpret,
+                            Variable, W_LambdaCursor, OperandStackElement)
 from lamb.util.construction_helper import (lamb, ziprules, mu, cons, w_nil,
                                            conslist, integer, operand_stack,
                                            peano_num, execution_stack)
@@ -26,8 +26,6 @@ from lamb.util.construction_helper import (lamb, ziprules, mu, cons, w_nil,
 #
 
 class TestLLtype(LLJitMixin):
-
-    
     
     def test_reverse(self):
         a1 = Variable("accumulator")
@@ -48,7 +46,7 @@ class TestLLtype(LLJitMixin):
         nums = 5
         list1_w = [integer(x) for x in range(nums)]
         stack_w = operand_stack(conslist(list1_w))
-        stack_e = execution_stack(LambdaCursor(reverse))
+        stack_e = execution_stack(W_LambdaCursor(reverse))
         def interp_w():
             return interpret(stack_e, stack_w)
 
@@ -74,7 +72,7 @@ class TestLLtype(LLJitMixin):
 
         succ = lamb( ([x1], cons("p", x1)) )
         succ._name = "succ"
-        stack_e = execution_stack(LambdaCursor(map))
+        stack_e = execution_stack(W_LambdaCursor(map))
         stack_w = operand_stack(succ, clist_w)
         def interp_w():
             return interpret(stack_e, stack_w)

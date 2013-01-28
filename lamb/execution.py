@@ -442,7 +442,7 @@ class ConstructorPattern(Pattern):
             tag = jit.promote(obj._tag)
             if (tag == self._tag) and (len(obj._children) == len(self._children)):
                 for i in range(len(self._children)):
-                    self._children[i].match(obj._children(i), binding)
+                    self._children[i].match(obj._children[i], binding)
                 return
         raise NoMatch()
 
@@ -472,7 +472,8 @@ def get_printable_location(current_lambda):
     if current_lambda is None:
         return "<None>"
     else:
-        return current_lambda._name
+        #return u"λ".encode("utf-8") + current_lambda._name
+        return u"Lambda " + current_lambda._name
 
 jitdriver = jit.JitDriver(
     greens=["current_lambda"],
