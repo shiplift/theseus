@@ -51,7 +51,7 @@ def lamb(*tuples):
     return W_Lambda(ziprules(*tuples))
 
 def mu(l, *args):
-    return W_Call(expression(l), [expression(i) for i in args])
+    return w_call(expression(l), [expression(i) for i in args])
 
 w_nil = cons("nil")
 

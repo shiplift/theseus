@@ -451,6 +451,27 @@ class TestLambda(object):
             res = l.call([w_cons1])
             assert res == cons("cons", *(list1[1:] + list1[:1]))
 
+    def test_muffle(self):
+        
+        for i in range(20):
+            vars = [Variable("x%s" % n) for n in range(i)]
+
+            vars2 = [Variable("x%s" % n) for n in range(i - 1)]
+
+            m = lamb( (vars2, cons("cons", *vars2)) )
+            m._name = "construct"
+
+            l = lamb()
+            l._name = "muffle%s" % i
+            l._rules = ziprules(
+                ([cons("cons", *vars)], mu(m, *vars[1:])))
+
+
+            list1 = [integer(n) for n in range(i)]
+            w_cons1 = cons("cons", *list1)
+            res = l.call([w_cons1])
+            assert res == cons("cons", *(list1[1:]))
+
 
     def test_map(self):
         """
@@ -602,6 +623,26 @@ class TestInterpret(object):
             res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(w_cons1))
             assert res == cons("cons", *(list1[1:] + list1[:1]))
 
+    def test_muffle(self):
+        
+        for i in range(20):
+            vars = [Variable("x%s" % n) for n in range(i)]
+
+            vars2 = [Variable("x%s" % n) for n in range(i - 1)]
+
+            m = lamb( (vars2, cons("cons", *vars2)) )
+            m._name = "construct"
+
+            l = lamb()
+            l._name = "muffle%s" % i
+            l._rules = ziprules(
+                ([cons("cons", *vars)], mu(m, *vars[1:])))
+
+
+            list1 = [integer(n) for n in range(i)]
+            w_cons1 = cons("cons", *list1)
+            res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(w_cons1))
+            assert res == cons("cons", *(list1[1:]))
 
 
     def test_reverse(self):

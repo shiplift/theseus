@@ -155,7 +155,7 @@ class W_NAryConstructor(W_Constructor):
 CHILD_ATTR_TEMPLATE = "child_%d"
 
 def constructor_class_name(n_children):
-    return 'W_Constructor' + str(n_children)
+    return 'W_Constructor%d' % n_children
 
 
 def generate_constructor_class(n_children):
@@ -196,8 +196,9 @@ def generate_constructor_class(n_children):
         @uni
         def children_to_repr(self, seen):
             result = u""
-            for x in arg_iter:
+            for x in children_iter:
                 result += urepr(getattr(self, CHILD_ATTR_TEMPLATE % x), seen)
+                result += u", "
             return result
 
     constructor_class.__name__ = constructor_class_name(n_children)
@@ -306,7 +307,7 @@ class W_ConstructorEvaluator(W_PureExpression):
 
     @jit.unroll_safe
     def copy(self, binding):
-        return W_ConstructorEvaluator(self._tag, [child.copy(binding) for child in self._children], self._cursor)
+        return W_ConstructorEvaluator(self._tag, [child.copy(binding) for child in self._children])
 
     #
     # Testing and Debug
@@ -355,17 +356,28 @@ class W_VariableExpression(W_PureExpression):
 
 class W_Call(W_PureExpression):
 
-    _immutable_fields_ = ['callee', 'arguments[*]']
+    _immutable_fields_ = ['callee']
 
-    def __init__(self, callee, arguments=None):
+    def __init__(self, callee):
         self.callee = callee
-        self.arguments = arguments or []
+
+    def _init_arguments(self, arguments):
+        pass
+
+    def get_arguments(self):
+        return []
+
+    def get_argument(self, index):
+        raise IndexError()
+
+    def get_number_of_arguments(self):
+        return 0
 
     #
     # Expression behavior
     #
     def evaluate(self):
-        return self.callee.evaluate().call([arg.evaluate() for arg in self.arguments])
+        return self.callee.evaluate().call([argument.evaluate() for argument in self.get_arguments()])
 
     @jit.unroll_safe
     def interpret(self, binding, stack, exp_stack):
@@ -373,22 +385,137 @@ class W_Call(W_PureExpression):
         jit.promote(lamb)
         assert isinstance(lamb, W_Lambda)        
         exp_stack = ExecutionStackElement(lamb._cursor, exp_stack)
-        for index in range(lamb.arity()):
-            arg = self.arguments[index]
-            exp_stack = ExecutionStackElement(arg, exp_stack)
         return (stack, exp_stack)
 
     @jit.unroll_safe
     def copy(self, binding):
-        return W_Call(self.callee.copy(binding), [arg.copy(binding) for arg in self.arguments])
+        return w_call(self.callee.copy(binding), [argument.copy(binding) for argument in self.get_arguments()])
 
     #
     # Testing and Debug
     #
     @uni
     def to_repr(self, seen):
-        return u"μ" + urepr(self.callee, seen) + u"(" + urepr(self.arguments, seen) + u")"
+        return u"μ" + urepr(self.callee, seen) + self.children_to_repr(seen)
 
+    def children_to_repr(self, seen):
+        return u""
+
+class W_NAryCall(W_Call):
+
+    _immutable_fields_ = ['arguments[*]']
+
+    def _init_arguments(self, arguments):
+        self.arguments = arguments
+
+    def get_arguments(self):
+        return self.arguments
+
+    def get_argument(self, index):
+        try:
+            return self.arguments[index]
+        except IndexError as e:
+            raise e
+
+    def get_number_of_arguments(self):
+        return len(self.arguments)
+
+    #
+    # Expression behavior
+    #
+    @jit.unroll_safe
+    def interpret(self, binding, stack, exp_stack):
+        # super
+        (stack, exp_stack) = W_Call.interpret(self, binding, stack, exp_stack)
+        for index in range(self.get_number_of_arguments()):
+            arg = self.get_argument(index)
+            exp_stack = ExecutionStackElement(arg, exp_stack)
+        return (stack, exp_stack)
+
+    #
+    # Testing and Debug
+    #
+    def children_to_repr(self, seen):
+        if len(self._children) > 0:
+            return u"(" + urepr(self._children, seen)[1:][:-1] + u")"
+        else:
+            return u""
+
+
+
+ARG_ATTR_TEMPLATE = "arg_%d"
+
+def call_class_name(n_arguments):
+    return 'W_Call%d' % n_arguments
+
+def generate_call_class(n_arguments):
+
+    arguments_iter = unrolling_iterable(range(n_arguments))
+
+    class call_class(W_Call):
+        _immutable_ = True
+
+        def _init_arguments(self, arguments):
+            for x in arguments_iter:
+                setattr(self, ARG_ATTR_TEMPLATE % x, arguments[x])
+
+        def get_arguments(self):
+            result = [None] * n_arguments
+            for x in arguments_iter:
+                result[x] = getattr(self, ARG_ATTR_TEMPLATE % x)
+            return result
+        
+        def get_argument(self, index):
+            for x in arguments_iter:
+                if x == index:
+                    return getattr(self, ARG_ATTR_TEMPLATE % x)
+            raise IndexError
+        
+        def get_number_of_arguments(self):
+            return n_arguments
+        
+        #
+        # Expression behavior
+        #
+        def interpret(self, binding, stack, exp_stack):
+            # super
+            (stack, exp_stack) = W_Call.interpret(self, binding, stack, exp_stack)
+            for x in arguments_iter:
+                argument = getattr(self, ARG_ATTR_TEMPLATE % x)
+                exp_stack = ExecutionStackElement(argument, exp_stack)
+            return (stack, exp_stack)
+
+        
+        #
+        # Testing and Debug
+        #
+        def children_to_repr(self, seen):
+            result = u""
+            for x in arg_iter:
+                result += urepr(getattr(self, ARG_ATTR_TEMPLATE % x), seen)
+                result += u", "
+            return result
+
+    call_class.__name__ = call_class_name(n_arguments)
+    return call_class
+
+call_classes = [W_Call]
+for n_arguments in range(1, 10):
+    call_classes.append(generate_call_class(n_arguments))
+
+call_class_iter = unrolling_iterable(enumerate(call_classes))
+
+def w_call(callee, arguments):
+    length = len(arguments)
+    for i, cls in call_class_iter:
+        if i == length:
+            constr = cls(callee)
+            constr._init_arguments(arguments)
+            return constr
+    # otherwise:
+    constr = W_NAryCall(callee)
+    constr._init_arguments(arguments)
+    return constr
 
 class W_Cursor(W_PureExpression):
     """
