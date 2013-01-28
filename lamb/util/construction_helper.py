@@ -28,7 +28,7 @@ def pattern_from_integer(w_integer):
     return IntegerPattern(w_integer._value)
 
 def cons(tag, *children):
-    return W_Constructor(symbol(tag), list(children))
+    return w_constructor(symbol(tag), list(children))
 
 def integer(value):
     assert isinstance(value, int)
@@ -38,7 +38,7 @@ def expression(obj):
     if isinstance(obj, Variable):
         return W_VariableExpression(obj)
     if isinstance(obj, W_Constructor):
-        return W_Constructor(obj._tag, [expression(x) for x in obj._children])
+        return w_constructor(obj._tag, [expression(x) for x in obj.get_children()])
     else:
         return obj
 

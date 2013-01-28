@@ -70,6 +70,21 @@ class TestContstructor(object):
         assert w_subcons.get_tag() is symbol("barf")
         assert w_subcons.get_number_of_children() is 0
 
+    def test_nary_constructors(self):
+        for i in range(12):
+            w_children = [integer(n) for n in range(i)]
+            w_res = cons("zork", *w_children)
+
+            assert isinstance(w_res, W_Constructor)
+            assert w_res.get_tag() is symbol("zork")
+            assert w_res.get_number_of_children() is i
+            if i > 0:
+                assert w_res.get_child(i - 1) == integer(i - 1)
+
+            with py.test.raises(IndexError) as e:
+                w_res.get_child(i)
+
+
 class TestVariable(object):
 
     def test_variable(self):
@@ -231,7 +246,7 @@ class TestExpression(object):
         
     def test_simple_constructor_expression(self):
 
-        expr = W_Constructor(symbol("barf"), [])
+        expr = w_constructor(symbol("barf"), [])
 
         binding = []
         w_res = expr.evaluate_with_binding(binding)
@@ -239,16 +254,16 @@ class TestExpression(object):
         assert w_res.get_number_of_children() is 0
 
     def test_constructor_with_int(self):
-        w_int = integer(1)
-        w_cons = cons("zork", w_int)
-        expr = expression(w_cons)
+        for num in range(0, 12):        
+            w_int = integer(1)
+            w_children = [w_int] * num
+            w_cons = cons("zork", *w_children)
+            expr = expression(w_cons)
 
-        binding = []
-        w_res = expr.evaluate_with_binding(binding)
-        assert w_res.get_tag() == w_cons.get_tag()
-        assert w_res.get_number_of_children() == w_cons.get_number_of_children()
-        assert w_res.get_child(0) == w_int
-        
+            binding = []
+            w_res = expr.evaluate_with_binding(binding)
+            assert w_res == w_cons
+
 
     def test_constructor_with_var(self):
         var = Variable("x")
@@ -418,6 +433,20 @@ class TestLambda(object):
         list2_w = [integer(4),integer(5),integer(6)]
         assert plist(l.call([conslist(list1_w), conslist(list2_w)])) == list1_w + list2_w
 
+    def test_shuffle(self):
+        
+        for i in range(20):
+            vars = [Variable("x%s" % n) for n in range(i)]
+
+            l = lamb(([cons("cons", *vars)], cons("cons", *(vars[1:] + vars[:1]))))
+            l._name = "shuffle%s" % i
+
+            list1 = [integer(n) for n in range(i)]
+            w_cons1 = cons("cons", *list1)
+            res = l.call([w_cons1])
+            assert res == cons("cons", *(list1[1:] + list1[:1]))
+
+
     def test_map(self):
         """
         in scheme
@@ -554,6 +583,21 @@ class TestInterpret(object):
         res = interpret(execution_stack(W_LambdaCursor(map)), operand_stack(succ, conslist(list_w)))
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
         # assert plist(res) == [peano_num(2)]
+
+    def test_shuffle(self):
+        
+        for i in range(20):
+            vars = [Variable("x%s" % n) for n in range(i)]
+
+            l = lamb(([cons("cons", *vars)], cons("cons", *(vars[1:] + vars[:1]))))
+            l._name = "shuffle%s" % i
+
+            list1 = [integer(n) for n in range(i)]
+            w_cons1 = cons("cons", *list1)
+            res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(w_cons1))
+            assert res == cons("cons", *(list1[1:] + list1[:1]))
+
+
 
     def test_reverse(self):
 
