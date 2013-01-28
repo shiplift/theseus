@@ -27,8 +27,9 @@ def pattern_from_constructor(w_constructor):
 def pattern_from_integer(w_integer):
     return IntegerPattern(w_integer._value)
 
-def cons(tag, *children):
-    return w_constructor(symbol(tag), list(children))
+def cons(t, *children):
+    ch = list(children)
+    return w_constructor(tag(t, len(ch)), ch)
 
 def integer(value):
     assert isinstance(value, int)
