@@ -590,9 +590,9 @@ class TestInterpret(object):
             w_stack_max = max(w_stack_max, len(w_stack_list))
             e_stack_max = max(e_stack_max, len(e_stack_list))
 
-        nums = 1
+        nums = 10
         list1_w = [integer(x) for x in range(nums)]
-        res = interpret(execution_stack(W_LambdaCursor(reverse)), operand_stack(conslist(list1_w)), True, None)
+        res = interpret(execution_stack(W_LambdaCursor(reverse)), operand_stack(conslist(list1_w)), True, maxdepth)
         list1_w.reverse()
         assert plist(res) == list1_w
 

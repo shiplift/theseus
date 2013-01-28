@@ -68,11 +68,10 @@ class W_Constructor(W_Object):
 
     _immutable_fields_ = ['_tag', '_children[*]', '_cursor']
 
-    def __init__(self, tag, children=None, cursor=None):
+    def __init__(self, tag, children=None):
         assert isinstance(tag, W_Symbol)
         self._tag = tag
         self._children = children or []
-        self._cursor = cursor or W_ConstructorCursor(self._tag, len(self._children))
 
 
     def get_tag(self):
@@ -89,18 +88,11 @@ class W_Constructor(W_Object):
     # Expression behavior
     #
     def evaluate(self):
-        return W_Constructor(self._tag, [child.evaluate() for child in self._children], self._cursor)
-
-    @jit.unroll_safe
-    def interpret(self, binding, stack, exp_stack):
-        exp_stack = ExecutionStackElement(self._cursor, exp_stack)
-        for child in self._children:
-            exp_stack = ExecutionStackElement(child, exp_stack)
-        return (stack, exp_stack)
+        return W_Constructor(self._tag, [child.evaluate() for child in self._children])
 
     @jit.unroll_safe
     def copy(self, binding):
-        return W_Constructor(self._tag, [child.copy(binding) for child in self._children], self._cursor)
+        return W_ConstructorEvaluator(self._tag, [child.copy(binding) for child in self._children])
 
     #
     # Testing and Debug
@@ -169,6 +161,40 @@ class W_PureExpression(W_Object):
     Objects that only ever live on the expresion stack
     """
     pass
+
+class W_ConstructorEvaluator(W_PureExpression):
+
+    def __init__(self, tag, children=None, cursor=None):
+        assert isinstance(tag, W_Symbol)
+        self._tag = tag
+        self._children = children or []
+        self._cursor = cursor or W_ConstructorCursor(self._tag, len(self._children))
+
+    #
+    # Expression behavior
+    #
+    def evaluate(self):
+        return W_Constructor(self._tag, [child.evaluate() for child in self._children])
+
+    @jit.unroll_safe
+    def interpret(self, binding, stack, exp_stack):
+        exp_stack = ExecutionStackElement(self._cursor, exp_stack)
+        for child in self._children:
+            exp_stack = ExecutionStackElement(child, exp_stack)
+        return (stack, exp_stack)
+
+
+    @jit.unroll_safe
+    def copy(self, binding):
+        return W_ConstructorEvaluator(self._tag, [child.copy(binding) for child in self._children], self._cursor)
+
+    #
+    # Testing and Debug
+    #
+    @uni
+    def to_repr(self, seen):
+        return u"^" + urepr(self._tag, seen) + ( ("(" + urepr(self._children, seen)[1:][:-1] + u")") if len(self._children) > 0 else "")
+
 
 class W_VariableExpression(W_PureExpression):
 
@@ -411,6 +437,12 @@ class ConstructorPattern(Pattern):
             if (tag == self._tag) and (obj.get_number_of_children() == len(self._children)):
                 for i in range(len(self._children)):
                     self._children[i].match(obj.get_child(i), binding)
+                return
+        if isinstance(obj, W_ConstructorEvaluator): # pragma: no branch
+            tag = jit.promote(obj._tag)
+            if (tag == self._tag) and (len(obj._children) == len(self._children)):
+                for i in range(len(self._children)):
+                    self._children[i].match(obj._children(i), binding)
                 return
         raise NoMatch()
 
