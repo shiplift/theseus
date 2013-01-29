@@ -103,3 +103,11 @@ def execution_stack(*elems):
     for elem in reversed(elems):
         stack = ExecutionStackElement(elem, stack)
     return stack
+
+def run(lamb, args):
+    ex = ExecutionStackElement(W_LambdaCursor(lamb))
+    op = None
+    l = len(args)
+    for i in range(l - 1, -1, -1):
+        op = OperandStackElement(args[i], op)
+    return interpret(ex, op)

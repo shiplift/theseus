@@ -492,7 +492,7 @@ def generate_call_class(n_arguments):
         #
         def children_to_repr(self, seen):
             result = u""
-            for x in arg_iter:
+            for x in arguments_iter:
                 result += urepr(getattr(self, ARG_ATTR_TEMPLATE % x), seen)
                 result += u", "
             return result
@@ -768,3 +768,5 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
 
     if debug: debug_callback({'e_stack':e_stack, 'w_stack':w_stack})
     return w_stack._data
+
+
