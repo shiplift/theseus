@@ -18,9 +18,6 @@ from lamb.execution import (interpret,
 from lamb.util.construction_helper import (lamb, ziprules, mu, cons, w_nil,
                                            conslist, integer, operand_stack,
                                            peano_num, execution_stack)
-
-
-
 #
 # Tests
 #
@@ -78,3 +75,15 @@ class TestLLtype(LLJitMixin):
             return interpret(stack_e, stack_w)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
+    def test_mult(self):
+        from mu.peano import mult
+        arg1 = peano_num(10)
+        arg2 = peano_num(10)
+        stack_e = execution_stack(W_LambdaCursor(mult))
+        stack_w = operand_stack(arg1, arg2)
+        def interp_w():
+            return interpret(stack_e, stack_w)
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+        

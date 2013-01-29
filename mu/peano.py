@@ -57,7 +57,7 @@ def make_mult():
     l._rules = ziprules(
         ([_1  , zero ], zero),
         ([zero, _2   ], zero),
-        ([x   , _p(y)], mu(plus, x, mu(l, x, y))))
+        ([x   , _p(y)], mu(plus, mu(l, x, y), x)))
     l._name = "mult"
     return l
 
