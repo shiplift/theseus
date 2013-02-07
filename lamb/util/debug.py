@@ -14,7 +14,7 @@ def debug_stack(d):
     print dictionary of stacks.
     """
     print
-    print "%: Cursor, !: Expression, μ: Call, #: Value, λ: Lambda, &: Pattern, {}: Rule, _ Variable"
+    #print "%: Cursor, !: Expression, μ: Call, #: Value, λ: Lambda, &: Pattern, {}: Rule, _ Variable"
 
     length = 60
     
@@ -32,8 +32,11 @@ def debug_stack(d):
     v = map(list, map(list, map(i_, d.values())))
 
     update_stack_mappings(d)
-    
-    stacks = map(lambda x: map(lambda y: (u"[%%-%ds]" % length) % y, map(t_, map(lambda y: urepr(y) if y else u"", x))), map(list, map(reversed, zip(*list(izip_longest(*v, fillvalue=""))))))
+
+    stacklists = map(list, map(reversed, zip(*list(izip_longest(*v, fillvalue=""))))) 
+    stackreprs = map(lambda x: map(lambda y: t_(urepr(y)) if y else u"", x), stacklists)
+    stacks = map(lambda x: map(lambda y: (u"[%%-%ds]" % length) % y, x), stackreprs)
+
     tops = map(lambda x: [(u"%%-%ds" % (length + 3)) % x], k)
     stat = map(lambda x: x[0] + x[1], list(zip(tops,stacks)))
     lines = map(lambda x: u" ".join(x), map(list, zip(*stat)))

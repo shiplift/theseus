@@ -78,8 +78,8 @@ class TestLLtype(LLJitMixin):
 
     def test_mult(self):
         from mu.peano import mult
-        arg1 = peano_num(10)
-        arg2 = peano_num(10)
+        arg1 = peano_num(100)
+        arg2 = peano_num(100)
         stack_e = execution_stack(W_LambdaCursor(mult))
         stack_w = operand_stack(arg1, arg2)
         def interp_w():

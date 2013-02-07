@@ -53,8 +53,6 @@ def lamb(*tuples):
 def mu(l, *args):
     return w_call(expression(l), [expression(i) for i in args])
 
-w_nil = cons("nil")
-
 def conslist(p_list):
     result = cons("nil")
     for element in reversed(p_list):
@@ -68,21 +66,6 @@ def plist(c_list):
         result.append(conses.get_child(0))
         conses = conses.get_child(1)
     return result
-
-
-def peano_num(pynum):
-    res = w_nil
-    for i in range(pynum):
-        res = cons("p", res)
-    return res
-        
-def python_num(peano):
-    p = peano
-    res = 0
-    while p != w_nil:
-        res += 1
-        p = p.get_child(0)
-    return res
 
 # Not used yet
 #class ForwardReference(object):
@@ -111,3 +94,5 @@ def run(lamb, args):
     for i in range(l - 1, -1, -1):
         op = OperandStackElement(args[i], op)
     return interpret(ex, op)
+
+w_nil = cons("nil")

@@ -9,9 +9,9 @@ from lamb.execution import *
 from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            ziprules, lamb, mu,
                                            w_nil,
-                                           conslist, plist, peano_num, python_num,
+                                           conslist, plist,
                                            execution_stack, operand_stack)
-
+from mu.peano import zero, succ, pred, plus, mult, peano_num, python_num
 #
 # Tests
 #
@@ -504,7 +504,7 @@ class TestLambda(object):
         
         list_w = [peano_num(1),peano_num(2),peano_num(3)]
         
-        succ = lamb( ([x1], cons("p", x1)) )
+        # succ = lamb( ([x1], cons("p", x1)) )
 
         res = map.call([succ, conslist(list_w)])
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
@@ -548,6 +548,11 @@ class TestInterpret(object):
         res = interpret(execution_stack(mu(l, w_false)))
         assert res == w_true
 
+        res = interpret(execution_stack(l), operand_stack(w_true), True)
+        assert res == w_false
+
+        res = interpret(execution_stack(l), operand_stack(w_false), True)
+        assert res == w_true
 
     def test_append(self):
         
@@ -557,6 +562,7 @@ class TestInterpret(object):
         t = Variable("tail")
 
         l = lamb()
+        l._name = "append"
         l._rules = ziprules(
             ([w_nil, x1], x1),
             ([cons("cons", h, t), x2], cons("cons", h, mu(l, t, x2))))
@@ -565,8 +571,7 @@ class TestInterpret(object):
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
         
-        expr = mu(l, conslist(list1_w), conslist(list2_w))
-        res = interpret(execution_stack(expr))
+        res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(conslist(list1_w), conslist(list2_w)), True)
         assert plist(res) == list1_w + list2_w
 
     def test_map(self):
@@ -592,23 +597,19 @@ class TestInterpret(object):
         _2 = Variable("_")
 
         map = lamb()
+        map._name = "map"
         map._rules = ziprules(
             ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(map, f, y))),
             ([_, w_nil], w_nil))
 
         x1 = Variable("x")
         
-        list_w = [peano_num(1),peano_num(2),peano_num(3)]
-        # list_w = [peano_num(1)]
-        
-        succ = lamb( ([x1], cons("p", x1)) )
-
-        res = interpret(execution_stack(mu(succ, peano_num(12))))
-        assert python_num(res) == 13
+        #list_w = [peano_num(1),peano_num(2),peano_num(3)]
+        list_w = [peano_num(1)]
 
         res = interpret(execution_stack(W_LambdaCursor(map)), operand_stack(succ, conslist(list_w)))
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
-        # assert plist(res) == [peano_num(2)]
+        assert plist(res) == [peano_num(2)]
 
     def test_shuffle(self):
         
@@ -647,8 +648,8 @@ class TestInterpret(object):
 
     def test_reverse(self):
 
-        a1 = Variable("accumulator")
-        a2 = Variable("accumulator")
+        a1 = Variable("acc")
+        a2 = Variable("acc")
         h = Variable("head")
         t = Variable("tail")
         reverse_acc = lamb()
@@ -707,3 +708,27 @@ class TestInterpret(object):
         e_stack_max3 = e_stack_max
 
         assert e_stack_max3 == e_stack_max2
+
+    def test_plus(self):
+
+        a_w = peano_num(4)
+        b_w = peano_num(5)
+
+        ex_stack = execution_stack(W_LambdaCursor(plus))
+        op_stack = operand_stack(a_w, b_w)
+
+        res = interpret(ex_stack, op_stack, True)
+        assert python_num(res) == 9
+
+    def test_mult(self):
+
+        a_w = peano_num(2)
+        b_w = peano_num(3)
+
+        ex_stack = execution_stack(W_LambdaCursor(mult))
+        op_stack = operand_stack(a_w, b_w)
+
+        res = interpret(ex_stack, op_stack, True)
+        assert python_num(res) == 6
+
+        

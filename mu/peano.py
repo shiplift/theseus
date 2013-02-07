@@ -3,9 +3,8 @@
 
 from lamb.execution import Variable
 from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
-                                           plist, conslist, peano_num, python_num,
+                                           plist, conslist,
                                            operand_stack, execution_stack, w_nil)
-
 
 def _p(x):
     return cons("p", x)
@@ -58,6 +57,7 @@ def make_mult():
         ([_1  , zero ], zero),
         ([zero, _2   ], zero),
         ([x   , _p(y)], mu(plus, mu(l, x, y), x)))
+        #([x   , _p(y)], mu(plus, x, mu(l, x, y))))
     l._name = "mult"
     return l
 
@@ -65,8 +65,26 @@ mult = make_mult()
 
 
 
+def peano_num(pynum):
+    res = w_nil
+    for i in range(pynum):
+        res = cons("p", res)
+    return res
+        
+def python_num(peano):
+    p = peano
+    res = 0
+    while p != w_nil:
+        res += 1
+        p = p.get_child(0)
+    return res
+
+
 __all__ = [
     zero,
     succ, pred,
-    plus, mult
+    plus, mult,
+    peano_num, python_num    
 ]
+
+
