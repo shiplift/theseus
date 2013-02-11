@@ -243,7 +243,6 @@ class W_Lambda(W_Object):
         jit.promote(self)
         w_arguments = []
         for i in range(self.arity()):
-            #w_arguments.insert(0, op_stack._data)
             w_arguments.append(op_stack._data)
             op_stack = op_stack._next
         for rule in self._rules:
@@ -288,7 +287,6 @@ class W_ConstructorEvaluator(W_PureExpression):
         assert isinstance(tag, W_Tag)
         self._tag = tag
         self._children = children or []
-
 
     #
     # Expression behavior
@@ -483,7 +481,6 @@ def generate_call_class(n_arguments):
                 argument = getattr(self, ARG_ATTR_TEMPLATE % x)
                 ex_stack = ExecutionStackElement(argument, ex_stack)
             return (op_stack, ex_stack)
-
 
     call_class.__name__ = call_class_name(n_arguments)
     return call_class
