@@ -324,11 +324,7 @@ class W_VariableExpression(W_PureExpression):
         self.variable = variable
 
     def resolve(self, binding):
-        try:
-            w_result = binding[self.variable.binding_index]
-        except KeyError: # pragma: no cover
-            # should not happen
-            raise VariableUnbound()
+        w_result = binding[self.variable.binding_index]
 
         if w_result is None:
             raise VariableUnbound()
