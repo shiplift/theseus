@@ -253,8 +253,8 @@ class W_Lambda(W_Object):
             except NoMatch:
                 pass
             else:
-                exp_stack = ExecutionStackElement(expression.copy(binding), exp_stack)
-                return (stack, exp_stack)
+                ex_stack = ExecutionStackElement(expression.copy(binding), ex_stack)
+                return (op_stack, ex_stack)
 
         raise NoMatch()
 
