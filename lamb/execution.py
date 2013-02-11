@@ -33,7 +33,7 @@ class W_Tag(W_Object):
     tags = {}
 
     _immutable_fields_ = ['name', 'arity', '_cursor']
-    
+
     def __init__(self, name, arity):
         self.name = name
         self.arity = arity
@@ -215,18 +215,18 @@ class W_Lambda(W_Object):
     """
 
     _immutable_fields_ = ['_rules[*]', '_cursor']
-    
+
     def __init__(self, rules, name=""):
         self._rules = rules
         self._name = name
         self._cursor = W_LambdaCursor(self)
-        
+
     def arity(self):
         assert len(self._rules) > 0
         return self._rules[0].arity()
 
     def call(self, w_arguments):
-        assert len(w_arguments) == self.arity()        
+        assert len(w_arguments) == self.arity()
         for rule in self._rules:
             try:
                 binding = [None] * rule.maximal_number_of_variables
@@ -257,7 +257,7 @@ class W_Lambda(W_Object):
                 return (stack, exp_stack)
 
         raise NoMatch()
-        
+
     #
     # Testing and Debug
     #
@@ -319,7 +319,7 @@ class W_ConstructorEvaluator(W_PureExpression):
 class W_VariableExpression(W_PureExpression):
 
     _immutable_fields_ = ['variable']
-    
+
     def __init__(self, variable):
         self.variable = variable
 
@@ -329,12 +329,12 @@ class W_VariableExpression(W_PureExpression):
         except KeyError: # pragma: no cover
             # should not happen
             raise VariableUnbound()
-        
+
         if w_result is None:
             raise VariableUnbound()
-        else:            
+        else:
             return w_result
-    
+
     def evaluate(self): # pragma: no cover
         # should not happen
         raise VariableUnbound()
@@ -345,7 +345,7 @@ class W_VariableExpression(W_PureExpression):
 
     def copy(self, binding):
         return self.resolve(binding)
-    
+
     #
     # Testing and Debug
     #
@@ -382,7 +382,7 @@ class W_Call(W_PureExpression):
     def interpret(self, op_stack, ex_stack):
         lamb = self.callee
         jit.promote(lamb)
-        assert isinstance(lamb, W_Lambda)        
+        assert isinstance(lamb, W_Lambda)
         ex_stack = ExecutionStackElement(lamb._cursor, ex_stack)
         return (op_stack, ex_stack)
 
@@ -467,16 +467,16 @@ def generate_call_class(n_arguments):
             for x in arguments_iter:
                 result[x] = getattr(self, ARG_ATTR_TEMPLATE % x)
             return result
-        
+
         def get_argument(self, index):
             for x in arguments_iter:
                 if x == index:
                     return getattr(self, ARG_ATTR_TEMPLATE % x)
             raise IndexError
-        
+
         def get_number_of_arguments(self):
             return n_arguments
-        
+
         #
         # Expression behavior
         #
@@ -520,7 +520,7 @@ class W_Cursor(W_PureExpression):
 class W_ConstructorCursor(W_Cursor):
 
     _immutable_fields_ = ['_tag']
-    
+
     def __init__(self, tag):
         self._tag = tag
 
@@ -545,7 +545,7 @@ class W_ConstructorCursor(W_Cursor):
 class W_LambdaCursor(W_Cursor):
 
     _immutable_fields_ = ['_lamb']
-    
+
     def __init__(self, lamb):
         self._lamb = lamb
 
@@ -587,7 +587,7 @@ class Rule(HelperMixin):
         if self.arity() != 0:
             for i in range(self.arity()):
                 self._patterns[i].match(w_arguments[i], binding)
-        return self._expression            
+        return self._expression
 
     #
     # Testing and Debug
@@ -607,7 +607,7 @@ class Variable(HelperMixin):
 
     _immutable_fields_ = ['name', 'binding_index']
 
-    def __init__(self, name):        
+    def __init__(self, name):
         self.name = name
         self.binding_index = -1
 
@@ -644,7 +644,7 @@ class IntegerPattern(Pattern):
     @uni
     def to_repr(self, seen):
         return u"&" + unicode(repr(self.value))
-    
+
 class VariablePattern(Pattern):
 
     _immutable_fields_ = ['variable']
@@ -658,10 +658,10 @@ class VariablePattern(Pattern):
         binding[self.variable.binding_index] = obj
 
     def update_number_of_variables(self, rule):
-        assert self.variable.binding_index == -1 # unbound        
+        assert self.variable.binding_index == -1 # unbound
         self.variable.binding_index = rule.maximal_number_of_variables
         rule.maximal_number_of_variables += 1
-    
+
     #
     # Testing and Debug
     #
