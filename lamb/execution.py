@@ -239,7 +239,7 @@ class W_Lambda(W_Object):
         raise NoMatch()
 
     @jit.unroll_safe
-    def interpret(self, op_stack, ex_stack):
+    def interpret_lambda(self, op_stack, ex_stack):
         jit.promote(self)
         w_arguments = []
         for i in range(self.arity()):
@@ -544,7 +544,7 @@ class W_LambdaCursor(W_Cursor):
 
     def interpret(self, op_stack, ex_stack):
         jit.promote(self)
-        return self._lamb.interpret(op_stack, ex_stack)
+        return self._lamb.interpret_lambda(op_stack, ex_stack)
 
     #
     # Testing and Debug

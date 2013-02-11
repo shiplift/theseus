@@ -548,10 +548,10 @@ class TestInterpret(object):
         res = interpret(execution_stack(mu(l, w_false)))
         assert res == w_true
 
-        res = interpret(execution_stack(l), operand_stack(w_true))
+        res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(w_true))
         assert res == w_false
 
-        res = interpret(execution_stack(l), operand_stack(w_false))
+        res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(w_false))
         assert res == w_true
 
     def test_append(self):
@@ -604,12 +604,12 @@ class TestInterpret(object):
 
         x1 = Variable("x")
         
-        #list_w = [peano_num(1),peano_num(2),peano_num(3)]
-        list_w = [peano_num(1)]
+        list_w = [peano_num(1),peano_num(2),peano_num(3)]
+        #list_w = [peano_num(1)]
 
-        res = interpret(execution_stack(W_LambdaCursor(m)), operand_stack(succ, conslist(list_w)), True)
-        #assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
-        assert plist(res) == [peano_num(2)]
+        res = interpret(execution_stack(W_LambdaCursor(m)), operand_stack(succ, conslist(list_w)))
+        assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
+        #assert plist(res) == [peano_num(2)]
 
     def test_shuffle(self):
         
