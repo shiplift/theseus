@@ -278,7 +278,7 @@ class W_Lambda(W_Object):
 
 class W_PureExpression(W_Object):
     """
-    Objects that only ever live on the expresion stack
+    Objects that only ever live on the expression stack
     """
     pass
 
