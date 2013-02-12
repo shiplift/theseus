@@ -78,27 +78,31 @@ class W_Integer(W_Object):
 
 class W_Constructor(W_Object):
 
-    _immutable_fields_ = ['_tag']
+    _immutable_fields_ = ['_tag', '_shape', '_children[*]']
 
     def __init__(self, tag):
         assert isinstance(tag, W_Tag)
         self._tag = tag
+        self._shape = None
 
     def _init_children(self, children):
-        pass
+        # hack for now
+        import lamb.shape
+        self._shape = lamb.shape.ConstructorShape([lamb.shape.InStorageShape() for i in range(len(children))])
+        self._shape._init_children(self, children)
+
 
     def get_tag(self):
         return self._tag
 
     def get_children(self):
-        return []  
+        return self._shape.get_children(self)
     
     def get_child(self, index):
-        raise IndexError()
+        return self._shape.get_child(self, index)
 
     def get_number_of_children(self):
-        return 0
-
+        return self._shape.get_number_of_direct_children()
     #
     # Expression behavior
     #
@@ -123,89 +127,8 @@ class W_Constructor(W_Object):
             return u""
 
 
-class W_NAryConstructor(W_Constructor):
-
-    _immutable_fields_ = ['_children[*]']
-
-    def _init_children(self, children):
-        self._children = children or []
-
-    def get_children(self):
-        return self._children
-
-    def get_child(self, index):
-        try:
-            return self._children[index]
-        except IndexError as e:
-            raise e
-
-    def get_number_of_children(self):
-        return len(self._children)
-
-    #
-    # Expression behavior
-    #
-    def evaluate(self):
-        return type(self)(self._tag, [child.evaluate() for child in self._children])
-
-    #
-
-CHILD_ATTR_TEMPLATE = "child_%d"
-
-def constructor_class_name(n_children):
-    return 'W_Constructor%d' % n_children
-
-
-def generate_constructor_class(n_children):
-
-    children_iter = unrolling_iterable(range(n_children))
-
-    class constructor_class(W_Constructor):
-        _immutable_fields_ = [(CHILD_ATTR_TEMPLATE % x) for x in children_iter]
-
-        def _init_children(self, children):
-            for x in children_iter:
-                setattr(self, CHILD_ATTR_TEMPLATE % x, children[x])
-
-        def get_children(self):
-            result = [None] * n_children
-            for x in children_iter:
-                result[x] = getattr(self, CHILD_ATTR_TEMPLATE % x)
-            return result
-        
-        def get_child(self, index):
-            for x in children_iter:
-                if x == index:
-                    return getattr(self, CHILD_ATTR_TEMPLATE % x)
-            raise IndexError
-        
-        def get_number_of_children(self):
-            return n_children
-        
-        #
-        # Expression behavior
-        #
-        def evaluate(self):
-            return w_constructor(self._tag, [child.evaluate() for child in self.get_children()])
-
-    constructor_class.__name__ = constructor_class_name(n_children)
-    return constructor_class
-
-constructor_classes = [W_Constructor]
-for n_children in range(1, 10):
-    constructor_classes.append(generate_constructor_class(n_children))
-
-class_iter = unrolling_iterable(enumerate(constructor_classes))
-
 def w_constructor(tag, children):
-    length = len(children)
-    for i, cls in class_iter:
-        if i == length:
-            constr = cls(tag)
-            constr._init_children(children)
-            return constr
-    # otherwise:
-    constr = W_NAryConstructor(tag)
+    constr = W_Constructor(tag)
     constr._init_children(children)
     return constr
 
