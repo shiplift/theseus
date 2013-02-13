@@ -3,6 +3,8 @@
 #
 # Test.
 #
+from rpython.rlib import jit
+
 from lamb.util.repr import uni, who, urepr
 from lamb.util.testing import HelperMixin
 
@@ -11,7 +13,7 @@ class Shape(HelperMixin):
     def _init_children(self, w_c, children):
         pass
 
-    def _update_child(self, new_children, child):
+    def _update_child(self, new_children, children, index):
         pass
     
     def get_child(self, w_c, index):
@@ -30,37 +32,40 @@ class Shape(HelperMixin):
     def to_repr(self, seen):
         res = u"σ"
         res += u"%d" % self.get_number_of_direct_children()
-        return res
+        return res2
 
 class ConstructorShape(Shape):
 
-    def __init__(self, structure):
+    _immutable_files_ = ['_tag', '_structure[*]'] 
+
+    def __init__(self, tag, structure):
         self._structure = structure
-        self._tag = None
+        self._tag = tag
 
+    @jit.unroll_safe
     def _init_children(self, w_c, children):
-        self._tag = w_c._tag
+        assert self._tag == w_c._tag
+        num_storage = self.get_number_of_direct_children()
+        the_storage = [None] * num_children
+        for index in range(num_children):
+            self._structure[index]._update_child(the_storage, children, index)
+        w_c._storage = the_storage
 
-        the_children = []
-        for index in range(self.get_number_of_direct_children()):
-            self._structure[index]._update_child(the_children, children[index])
-        w_c._children = the_children
-
-    def _update_child(self, new_children, child):
+    def _update_child(self, new_storage, storage, index):
         # TODO: optimize here.
-        new_children.append(child)
+        new_storage[index] = storage[index]
         # subshape = child._shape
         # for index in range(subshape.get_number_of_direct_children()):
         #     subshape._structure[index]._update_child(new_children, subshape.get_child(child, index))
 
     def get_child(self, w_c, index):
         try:
-            return w_c._children[index]
+            return w_c._storage[index]
         except IndexError, e:
             raise e
 
     def get_children(self, w_c):
-        return w_c._children
+        return w_c._storage
     
 
     def get_number_of_direct_children(self):
@@ -87,8 +92,8 @@ def singleton(cls):
 @singleton
 class InStorageShape(Shape):
 
-    def _update_child(self, new_children, child):
-        new_children.append(child)
+    def _update_child(self, new_storage, storage, index):
+        new_storage[index] = storage[index]
 
     def get_child(self, w_c, index):
         return w_c

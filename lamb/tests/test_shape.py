@@ -18,19 +18,22 @@ class TestConstructorShapes(object):
     def test_simple_predefined_shape(self):
 
         w_1 = integer(1)
-        
-        shape = ConstructorShape([])
+
+        barf_0 = tag("barf", 0)
+        shape = ConstructorShape(barf_0, [])
         c = cons("barf")
         c._shape = shape
         assert c.get_number_of_children() == 0
 
-        shape = ConstructorShape([InStorageShape()])
+        barf_1 = tag("barf", 1)
+        shape = ConstructorShape(barf_1, [InStorageShape()])
         c = cons("barf", w_1)
         c._shape = shape
         assert c.get_number_of_children() == 1
         assert c.get_child(0)  == w_1
 
-        shape = ConstructorShape([InStorageShape()] * 2)
+        barf_2 = tag("barf", 2)
+        shape = ConstructorShape(barf_2, [InStorageShape()] * 2)
         c = cons("barf", w_1, w_1)
         c._shape = shape
         assert c.get_number_of_children() == 2
@@ -41,13 +44,15 @@ class TestConstructorShapes(object):
 
         w_1 = integer(1)
 
-        shape_1 = ConstructorShape([InStorageShape()])
+        barf_1 = tag("barf", 1)
+        shape_1 = ConstructorShape(barf_1, [InStorageShape()])
         c_1 = cons("barf", w_1)
         c_1._shape = shape_1
         assert c_1.get_number_of_children() == 1
         assert c_1.get_child(0)  == w_1
 
-        shape_2 = ConstructorShape([shape_1, shape_1])
+        zork_2 = tag("zork", 2)
+        shape_2 = ConstructorShape(zork_2, [shape_1, shape_1])
         c_1_1 = cons("barf", w_1)
         c_1_1._shape = shape_1
         c_2 = cons("zork", c_1, c_1_1)
@@ -57,7 +62,9 @@ class TestConstructorShapes(object):
         assert c_2.get_child(0).get_child(0) == w_1
         assert c_2.get_child(1).get_child(0) == w_1
 
-        shape_3 = ConstructorShape([shape_2, shape_2])
+
+        foo_2 = tag("foo", 2)
+        shape_3 = ConstructorShape(foo_2, [shape_2, shape_2])
         c_1_3 = cons("barf", w_1)
         c_1_3._shape = shape_1
         c_1_4 = cons("barf", w_1)

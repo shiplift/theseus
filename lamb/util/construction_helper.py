@@ -39,7 +39,7 @@ def expression(obj):
     if isinstance(obj, Variable):
         return W_VariableExpression(obj)
     if isinstance(obj, W_Constructor):
-        return w_constructor(obj._tag, [expression(x) for x in obj.get_children()])
+        return w_constructor(obj.get_tag(), [expression(x) for x in obj.get_children()])
     else:
         return obj
 

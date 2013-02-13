@@ -11,6 +11,9 @@ from lamb.util.debug import debug_stack
 from lamb.util.testing import HelperMixin
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
+from lamb.shape import ConstructorShape
+
+
 class W_Object(HelperMixin):
 
     #
@@ -78,19 +81,15 @@ class W_Integer(W_Object):
 
 class W_Constructor(W_Object):
 
-    _immutable_fields_ = ['_tag', '_shape', '_children[*]']
+    _immutable_fields_ = ['_shape', '_storage[*]']
 
-    def __init__(self, tag):
-        assert isinstance(tag, W_Tag)
-        self._tag = tag
-        self._shape = None
-
-    def _init_children(self, children):
-        self._shape._init_children(self, children)
-
+    def __init__(self, shape, storage):
+        assert isinstance(shape, ConstructorShape)
+        self._shape = shape
+        self._storage = storage
 
     def get_tag(self):
-        return self._tag
+        return self._shape._tag
 
     def get_children(self):
         return self._shape.get_children(self)
@@ -106,14 +105,14 @@ class W_Constructor(W_Object):
     @jit.unroll_safe
     def copy(self, binding):
         children = [self.get_child(index).copy(binding) for index in range(self.get_number_of_children())]
-        return W_ConstructorEvaluator(self._tag, children)
+        return W_ConstructorEvaluator(self.get_tag(), children)
 
     #
     # Testing and Debug
     #
     @uni
     def to_repr(self, seen):
-        return u"ζ" + u"%s%s" % (urepr(self._tag, seen), self.children_to_repr(seen))
+        return u"ζ" + u"%s%s" % (urepr(self.get_tag(), seen), self.children_to_repr(seen))
 
     # Testing and Debug
     #
@@ -131,10 +130,8 @@ def _shape(w_obj):
         return lamb.shape.InStorageShape()
 
 def w_constructor(tag, children):
-    constr = W_Constructor(tag)
-    import lamb.shape
-    constr._shape = lamb.shape.ConstructorShape([_shape(child) for child in children])
-    constr._init_children(children)
+    shape  = ConstructorShape(tag, [_shape(child) for child in children])
+    constr = W_Constructor(shape, children) # hack for now.
     return constr
 
 class W_Lambda(W_Object):
