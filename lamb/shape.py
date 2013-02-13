@@ -42,22 +42,6 @@ class ConstructorShape(Shape):
         self._structure = structure
         self._tag = tag
 
-    @jit.unroll_safe
-    def _init_children(self, w_c, children):
-        assert self._tag == w_c._tag
-        num_storage = self.get_number_of_direct_children()
-        the_storage = [None] * num_children
-        for index in range(num_children):
-            self._structure[index]._update_child(the_storage, children, index)
-        w_c._storage = the_storage
-
-    def _update_child(self, new_storage, storage, index):
-        # TODO: optimize here.
-        new_storage[index] = storage[index]
-        # subshape = child._shape
-        # for index in range(subshape.get_number_of_direct_children()):
-        #     subshape._structure[index]._update_child(new_children, subshape.get_child(child, index))
-
     def get_child(self, w_c, index):
         try:
             return w_c._storage[index]
@@ -91,9 +75,6 @@ def singleton(cls):
 
 @singleton
 class InStorageShape(Shape):
-
-    def _update_child(self, new_storage, storage, index):
-        new_storage[index] = storage[index]
 
     def get_child(self, w_c, index):
         return w_c

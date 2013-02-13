@@ -122,14 +122,14 @@ class W_Constructor(W_Object):
         else:
             return u""
 
-def _shape(w_obj):
-    import lamb.shape
-    if isinstance(w_obj, W_Constructor):
-        return w_obj._shape
-    else:
-        return lamb.shape.InStorageShape()
 
 def w_constructor(tag, children):
+    def _shape(w_obj):
+        import lamb.shape
+        if isinstance(w_obj, W_Constructor):
+            return w_obj._shape
+        else:
+            return lamb.shape.InStorageShape()
     shape  = ConstructorShape(tag, [_shape(child) for child in children])
     constr = W_Constructor(shape, children) # hack for now.
     return constr
