@@ -86,9 +86,6 @@ class W_Constructor(W_Object):
         self._shape = None
 
     def _init_children(self, children):
-        # hack for now
-        import lamb.shape
-        self._shape = lamb.shape.ConstructorShape([lamb.shape.InStorageShape() for i in range(len(children))])
         self._shape._init_children(self, children)
 
 
@@ -126,9 +123,17 @@ class W_Constructor(W_Object):
         else:
             return u""
 
+def _shape(w_obj):
+    import lamb.shape
+    if isinstance(w_obj, W_Constructor):
+        return w_obj._shape
+    else:
+        return lamb.shape.InStorageShape()
 
 def w_constructor(tag, children):
     constr = W_Constructor(tag)
+    import lamb.shape
+    constr._shape = lamb.shape.ConstructorShape([_shape(child) for child in children])
     constr._init_children(children)
     return constr
 
