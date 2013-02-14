@@ -180,7 +180,7 @@ class TestShapeMerger(object):
         barf_0 = tag("barf", 0)
         shape_0 = RecursiveShape(barf_0, [])
         children = []
-        (new_shape, new_children) = shapemerge(shape_0 , children)
+        (new_shape, new_children) = shape_0.fusion(children)
         assert new_shape == shape_0
         assert new_children == children
 
@@ -188,7 +188,7 @@ class TestShapeMerger(object):
         barf_1 = tag("barf", 1)
         shape_1 = RecursiveShape(barf_1, [InStorageShape()])
         children = [w_1]
-        (new_shape, new_children) = shapemerge(shape_1, children)
+        (new_shape, new_children) = shape_1.fusion(children)
         assert new_shape == shape_1
         assert new_children == children
 
@@ -211,7 +211,7 @@ class TestShapeMerger(object):
         c_2_1 = W_Constructor(shape_2, [c_1_3, c_1_4])
 
         children = [c_2, c_2_1]
-        (new_shape, new_children) = shapemerge(shape_3, children)
+        (new_shape, new_children) = shape_3.fusion(children)
         assert new_shape == shape_3
         assert new_children == children
 
@@ -221,7 +221,7 @@ class TestShapeMerger(object):
         barf_0 = tag("barf", 0)
         shape_0 = RecursiveShape(barf_0, [])
         children = []
-        (new_shape, new_children) = shapemerge(shape_0 , children)
+        (new_shape, new_children) = shape_0 .fusion(children)
         assert new_shape == shape_0
         assert new_children == children
 
@@ -229,7 +229,7 @@ class TestShapeMerger(object):
         barf_1 = tag("barf", 1)
         shape_1 = RecursiveShape(barf_1, [InStorageShape()])
         children = [w_1]
-        (new_shape, new_children) = shapemerge(shape_1, children)
+        (new_shape, new_children) = shape_1.fusion(children)
         assert new_shape == shape_1
         assert new_children == children
 
@@ -252,6 +252,6 @@ class TestShapeMerger(object):
         c_2_1 = W_Constructor(shape_2, [c_1_3, c_1_4])
 
         children = [c_2, c_2_1]
-        (new_shape, new_children) = shapemerge(shape_3, children)
+        (new_shape, new_children) = shape_3.fusion(children)
         assert new_shape == shape_3
         assert new_children == children

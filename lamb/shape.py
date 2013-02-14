@@ -25,6 +25,9 @@ class Shape(HelperMixin):
     def extract_child(self, w_c, index):
         raise NotImplementedError("abstract method")
 
+    def fusion(self, children):
+        return (self, children)
+        
     #
     # Testing and Debug
     #
@@ -41,7 +44,8 @@ class RecursiveShape(Shape):
     def __init__(self, tag, structure):
         self._structure = structure
         self._tag = tag
-
+        self.know_transformations = {}
+    
     def get_child(self, w_c, index):
         try:
             return self.extract_child(w_c, index)
@@ -74,6 +78,36 @@ class RecursiveShape(Shape):
 
     def build_child(self, new_children):
         return self._tag.constructor_class(self, new_children)
+
+    #
+    # shape merge/fusion
+    #
+    def fusion(self, children):
+        u"""
+        fusion ≔ Shape × [W_Object] → Shape' × [W_Object]'
+        """
+        return self.fusion_transforms(children, self.know_transformations)
+
+    def fusion_transforms(self, children, transformations):
+        if len(children) < 1:
+            # nothing to do
+            return (self, children)
+
+        # dynamic programming would be cool here.
+
+        current_children = children
+        index = 0
+        shape = self
+
+        while index < len(current_children):
+            child = current_children[index]
+            subshape = shape._structure[index]
+            new_shape = transformations.get((index, subshape), None)
+            if new_shape is not None:
+                pass
+            index += 1
+        return (shape, current_children)
+
     #
     # Testing and Debug
     #
@@ -108,31 +142,4 @@ class InStorageShape(Shape):
         return new_children[0] 
 
 
-know_transformations = {}
 
-def shapemerge_transforms(initial_shape, children, transformations):
-    if len(children) < 1:
-        # nothing to do
-        return (initial_shape, children)
-    
-    # dynamic programming would be cool here.
-    
-    current_children = children
-    index = 0
-    shape = initial_shape
-    
-    while index < len(current_children):
-        child = current_children[index]
-        subshape = initial_shape._structure[index]
-        new_shape = know_transformations.get((index, subshape), None)
-        if new_shape is not None:
-            pass
-        index += 1
-    return (shape, current_children)
-    
-
-def shapemerge(initial_shape, children):
-    u"""
-    shapemerge ≔ Shape × [W_Object] → Shape' × [W_Object]'
-    """
-    return shapemerge_transforms(initial_shape, children, know_transformations)
