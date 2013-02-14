@@ -11,7 +11,7 @@ from lamb.util.debug import debug_stack
 from lamb.util.testing import HelperMixin
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
-from lamb.shape import RecursiveShape
+from lamb.shape import CompoundShape
 
 
 class W_Object(HelperMixin):
@@ -85,7 +85,7 @@ class W_Constructor(W_Object):
     _immutable_fields_ = ['_shape', '_storage[*]']
 
     def __init__(self, shape, storage):
-        assert isinstance(shape, RecursiveShape)
+        assert isinstance(shape, CompoundShape)
         self._shape = shape
         self._storage = storage
 
@@ -134,7 +134,7 @@ def w_constructor(tag, children):
             return w_obj._shape
         else:
             return lamb.shape.InStorageShape()
-    shape  = RecursiveShape(tag, [_shape(child) for child in children])
+    shape  = CompoundShape(tag, [_shape(child) for child in children])
     constr = W_Constructor(shape, children) # hack for now.
     return constr
 

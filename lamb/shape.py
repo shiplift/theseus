@@ -37,7 +37,7 @@ class Shape(HelperMixin):
         res += u"%d" % self.get_number_of_direct_children()
         return res
 
-class RecursiveShape(Shape):
+class CompoundShape(Shape):
 
     _immutable_files_ = ['_tag', '_structure[*]'] 
 
