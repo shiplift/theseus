@@ -34,7 +34,7 @@ class Shape(HelperMixin):
         res += u"%d" % self.get_number_of_direct_children()
         return res
 
-class ConstructorShape(Shape):
+class RecursiveShape(Shape):
 
     _immutable_files_ = ['_tag', '_structure[*]'] 
 
@@ -57,8 +57,9 @@ class ConstructorShape(Shape):
         return self._tag.arity if self._tag else len(self._structure)
 
     def extract_child(self, w_c, index):
+        storage_index = self.structure_to_storage(index)
         newlen = self._structure[index].storage_width()
-        new_storage = w_c._storage[index:index+newlen]
+        new_storage = w_c._storage[storage_index:storage_index+newlen]
         return self._structure[index].build_child(new_storage)
         
     def structure_to_storage(self, index):
@@ -66,7 +67,7 @@ class ConstructorShape(Shape):
         for i in range(index):
             subshape = self._structure[i]
             offset += subshape.storage_width()
-        return offset + index
+        return offset
 
     def storage_width(self):
         return sum(subshape.storage_width() for subshape in self._structure)
@@ -104,7 +105,7 @@ class InStorageShape(Shape):
         return 1
 
     def build_child(self, new_children):
-        return new_children[0]
+        return new_children[0] 
 
 
 know_transformations = {}

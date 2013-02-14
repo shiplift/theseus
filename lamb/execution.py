@@ -11,7 +11,7 @@ from lamb.util.debug import debug_stack
 from lamb.util.testing import HelperMixin
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
-from lamb.shape import ConstructorShape
+from lamb.shape import RecursiveShape
 
 
 class W_Object(HelperMixin):
@@ -85,7 +85,7 @@ class W_Constructor(W_Object):
     _immutable_fields_ = ['_shape', '_storage[*]']
 
     def __init__(self, shape, storage):
-        assert isinstance(shape, ConstructorShape)
+        assert isinstance(shape, RecursiveShape)
         self._shape = shape
         self._storage = storage
 
@@ -113,16 +113,19 @@ class W_Constructor(W_Object):
     #
     @uni
     def to_repr(self, seen):
-        return u"ζ" + u"%s%s" % (urepr(self.get_tag(), seen), self.children_to_repr(seen))
+        return u"Γ" + u"%s%s" % (urepr(self.get_tag(), seen), self.children_to_repr(seen))
 
-    # Testing and Debug
-    #
     def children_to_repr(self, seen):
         if self.get_number_of_children() > 0:
             return u"(" + u", ".join(map(lambda x: urepr(x, seen), self.get_children())) + u")"
         else:
             return u""
 
+    def __eq__(self, other):
+        if self.__class__ == other.__class__:
+            if self.get_number_of_children() == other.get_number_of_children():
+                return self.get_children() == other.get_children()
+        return False
 
 def w_constructor(tag, children):
     def _shape(w_obj):
@@ -131,7 +134,7 @@ def w_constructor(tag, children):
             return w_obj._shape
         else:
             return lamb.shape.InStorageShape()
-    shape  = ConstructorShape(tag, [_shape(child) for child in children])
+    shape  = RecursiveShape(tag, [_shape(child) for child in children])
     constr = W_Constructor(shape, children) # hack for now.
     return constr
 
