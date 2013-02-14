@@ -41,7 +41,8 @@ class W_Tag(W_Object):
         self.name = name
         self.arity = arity
         self._cursor = W_ConstructorCursor(self)
-
+        #self._builder = w_constructor
+        self.constructor_class = W_Constructor
     #
     # Testing and Debug
     #
