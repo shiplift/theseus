@@ -50,7 +50,7 @@ class CompoundShape(Shape):
         try:
             return self.extract_child(w_c, index)
         except IndexError, e:
-            raise e
+            raise
 
     @jit.unroll_safe
     def get_children(self, w_c):
