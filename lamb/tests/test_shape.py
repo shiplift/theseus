@@ -200,7 +200,7 @@ class TestShapeMerger(object):
         c_1 = W_Constructor(shape_1, [w_1])
 
         zork_2 = tag("zork", 2)
-        shape_2 = CompoundShape(zork_2, [shape_1, shape_1])
+        shape_2 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
         c_1_1 = W_Constructor(shape_1, [w_1])
         c_2 = W_Constructor(shape_2, [c_1, c_1_1])
 
@@ -210,7 +210,7 @@ class TestShapeMerger(object):
         c_1_4 = W_Constructor(shape_1, [w_1])
         c_2_1 = W_Constructor(shape_2, [c_1_3, c_1_4])
 
-        storage = [c_2, c_2_1]
+        storage = [w_1, w_1, w_1, w_1]
         (new_shape, new_storage) = shape_3.fusion(storage)
         assert new_shape == shape_3
         assert new_storage == storage

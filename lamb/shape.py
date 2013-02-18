@@ -104,9 +104,6 @@ class CompoundShape(Shape):
             subshape = shape._structure[index]
             new_shape = transformations.get((index, subshape), None)
 
-            # print "subsh: ", subshape, "newsh: ", new_shape
-            # import pdb; pdb.set_trace()
-            # from pprint import pprint; pprint(locals())
             if new_shape is not None:
                 structure = list(shape._structure)
                 structure[index] = new_shape
@@ -136,6 +133,7 @@ class CompoundShape(Shape):
                 storage_index += num_children
             else:
                 storage_index += subshape.get_number_of_direct_children()
+                #storage_index += 1
 
             index += 1
 
