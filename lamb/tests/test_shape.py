@@ -179,18 +179,18 @@ class TestShapeMerger(object):
         w_1 = integer(1)
         barf_0 = tag("barf", 0)
         shape_0 = CompoundShape(barf_0, [])
-        children = []
-        (new_shape, new_children) = shape_0.fusion(children)
+        storage = []
+        (new_shape, new_storage) = shape_0.fusion(storage)
         assert new_shape == shape_0
-        assert new_children == children
+        assert new_storage == storage
 
         w_1 = integer(1)
         barf_1 = tag("barf", 1)
         shape_1 = CompoundShape(barf_1, [InStorageShape()])
-        children = [w_1]
-        (new_shape, new_children) = shape_1.fusion(children)
+        storage = [w_1]
+        (new_shape, new_storage) = shape_1.fusion(storage)
         assert new_shape == shape_1
-        assert new_children == children
+        assert new_storage == storage
 
     def test_compound_shape_non_merge(self):
         w_1 = integer(1)
@@ -210,48 +210,63 @@ class TestShapeMerger(object):
         c_1_4 = W_Constructor(shape_1, [w_1])
         c_2_1 = W_Constructor(shape_2, [c_1_3, c_1_4])
 
-        children = [c_2, c_2_1]
-        (new_shape, new_children) = shape_3.fusion(children)
+        storage = [c_2, c_2_1]
+        (new_shape, new_storage) = shape_3.fusion(storage)
         assert new_shape == shape_3
-        assert new_children == children
+        assert new_storage == storage
 
-    
-    def test_simple_shape_merge(self):
-        w_1 = integer(1)
-        barf_0 = tag("barf", 0)
-        shape_0 = CompoundShape(barf_0, [])
-        children = []
-        (new_shape, new_children) = shape_0 .fusion(children)
-        assert new_shape == shape_0
-        assert new_children == children
 
-        w_1 = integer(1)
-        barf_1 = tag("barf", 1)
-        shape_1 = CompoundShape(barf_1, [InStorageShape()])
-        children = [w_1]
-        (new_shape, new_children) = shape_1.fusion(children)
-        assert new_shape == shape_1
-        assert new_children == children
-
-    def test_compound_shape_merge(self):
+    def test_compound_shape_merge_1(self):
+        """
+           (zork (barf 1) (barf 1))
+        """
         w_1 = integer(1)
 
         barf_1 = tag("barf", 1)
         shape_1 = CompoundShape(barf_1, [InStorageShape()])
         c_1 = W_Constructor(shape_1, [w_1])
-
-        zork_2 = tag("zork", 2)
-        shape_2 = CompoundShape(zork_2, [shape_1, shape_1])
         c_1_1 = W_Constructor(shape_1, [w_1])
-        c_2 = W_Constructor(shape_2, [c_1, c_1_1])
+        
+        zork_2 = tag("zork", 2)
+        shape_2 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
+        shape_2.know_transformations[(0, InStorageShape())] = shape_1
+        shape_2.know_transformations[(1, InStorageShape())] = shape_1
+
+        storage = [c_1, c_1_1]
+        (new_shape, new_storage) = shape_2.fusion(storage)
+        assert new_shape == CompoundShape(zork_2, [shape_1, shape_1])
+        assert new_storage == [w_1, w_1]
+        
+    def test_compound_shape_merge_2(self):
+        """
+           (foo (zork (barf 1) (barf 1)) (zork (barf 1) (barf 1)))
+        """
+        w_1 = integer(1)
+
+        barf_1 = tag("barf", 1)
+        shape_1 = CompoundShape(barf_1, [InStorageShape()])
+        c_1 = W_Constructor(shape_1, [w_1])
+        c_1_1 = W_Constructor(shape_1, [w_1])
+        
+        zork_2 = tag("zork", 2)
+        shape_2 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
+        shape_2.know_transformations[(0, InStorageShape())] = shape_1
+        shape_2.know_transformations[(1, InStorageShape())] = shape_1
+
+        storage = [c_1, c_1_1]
+        (new_shape, new_storage) = shape_2.fusion(storage)
+        assert new_shape == CompoundShape(zork_2, [shape_1, shape_1])
+        assert new_storage == [w_1, w_1]
+        
+        c_2 = W_Constructor(new_shape, new_storage)
 
         foo_2 = tag("foo", 2)
-        shape_3 = CompoundShape(foo_2, [shape_2, shape_2])
-        c_1_3 = W_Constructor(shape_1, [w_1])
-        c_1_4 = W_Constructor(shape_1, [w_1])
-        c_2_1 = W_Constructor(shape_2, [c_1_3, c_1_4])
+        shape_3 = CompoundShape(foo_2, [shape_2, InStorageShape()])
 
-        children = [c_2, c_2_1]
-        (new_shape, new_children) = shape_3.fusion(children)
-        assert new_shape == shape_3
-        assert new_children == children
+
+        shape_3.know_transformations[(1, InStorageShape())] = shape_2
+        storage = new_storage + [c_2]
+        (new_shape, new_storage) = shape_3.fusion(storage)
+        assert new_shape == CompoundShape(foo_2, [shape_2, shape_2])
+        assert new_storage == [w_1, w_1, c_1, c_1_1]
+        
