@@ -9,6 +9,31 @@ from lamb.util.repr import uni, who, urepr
 from lamb.util.testing import HelperMixin
 
 
+def _splice(array, index, insertion):
+    u"""
+    We splice insertion into array at index:
+
+    index = 1
+    array = [a, b, c]
+    insertion = [x, y]
+    =>
+    new_storage = [a, x, y, c]
+    """
+    array_len = len(array)
+    insertion_len = len(insertion)
+    new_len = array_len + insertion_len - 1
+    new_array = [None] * new_len
+
+    for pre_index in range(index):
+        new_array[pre_index] = array[pre_index]
+    for insert_index in range(insertion_len):
+        new_array[index + insert_index] = insertion[insert_index]
+    for post_index in range(index + 1, array_len):
+        new_array[post_index + insertion_len - 1] = array[post_index]
+
+    return new_array
+
+
 class Shape(HelperMixin):
     def _init_children(self, w_c, children):
         pass
@@ -37,14 +62,15 @@ class Shape(HelperMixin):
         res += u"%d" % self.get_number_of_direct_children()
         return res
 
+
 class CompoundShape(Shape):
 
-    _immutable_files_ = ['_tag', '_structure[*]'] 
+    _immutable_files_ = ['_tag', '_structure[*]']
 
     def __init__(self, tag, structure):
         self._structure = structure
         self._tag = tag
-        self.know_transformations = {}
+        self.known_transformations = {}
 
     def get_child(self, w_c, index):
         try:
@@ -73,6 +99,9 @@ class CompoundShape(Shape):
             offset += subshape.storage_width()
         return offset
 
+    def get_storage(self, w_c):
+        return w_c._storage
+
     def storage_width(self):
         return sum(subshape.storage_width() for subshape in self._structure)
 
@@ -82,60 +111,44 @@ class CompoundShape(Shape):
     #
     # shape merge/fusion
     #
-    def fusion(self, children):
+    def fusion(self, storage):
         u"""
         fusion ≔ Shape × [W_Object] → Shape' × [W_Object]'
         """
-        return self.fusion_transforms(children, self.know_transformations)
+        from lamb.execution import W_Constructor
 
-    def fusion_transforms(self, storage, transformations):
         if len(storage) < 1:
             # nothing to do
             return (self, storage)
 
-        # dynamic programming would be cool here.
-
         current_storage = storage
         storage_index = index = 0
         shape = self
+        structure = shape._structure
 
-        while index < len(shape._structure):
-            child = current_storage[storage_index]
-            subshape = shape._structure[index]
-            new_shape = transformations.get((index, subshape), None)
+        while index < len(structure):
+            subshape = structure[index]
 
-            if new_shape is not None:
-                structure = list(shape._structure)
-                structure[index] = new_shape
-                shape = shape.__class__(shape._tag, structure)
+            new_shape = shape.known_transformations.get((index, subshape), None)
+            if new_shape is not None and new_shape != shape:
 
-                #
-                # We splice the subchildren into ours:
-                #
-                # index = 1
-                # storage = [a, b, c]
-                # b has children [x, y]
-                # =>
-                # new_storage = [a, x, y, c]
-                #
-                num_children = child.get_number_of_children()
-                new_storage = [None] * (len(current_storage) - 1 + num_children)
-
-                for pre_index in range(storage_index):
-                    new_storage[pre_index] = current_storage[pre_index]
-                for child_index in range(num_children):
-                    subchild = child.get_child(child_index)
-                    new_storage[storage_index + child_index] = subchild
-                for post_index in range(storage_index + 1, len(current_storage)):
-                    new_storage[post_index + num_children - 1] = current_storage[post_index]
+                child = current_storage[storage_index]
+                child_storage = child._storage if isinstance(child, W_Constructor) else [child]
+                new_storage = _splice(current_storage, storage_index, child_storage)
 
                 current_storage = new_storage
-                storage_index += num_children
-            else:
-                storage_index += subshape.get_number_of_direct_children()
-                #storage_index += 1
+                structure = new_shape._structure
+                shape = new_shape
 
-            index += 1
+                # rewind over new storage
+                storage_index = index = 0
+            else:
+                storage_index += subshape.storage_width()
+                index += 1
+
+        if structure != shape._structure:
+            shape = shape.__class__(shape._tag, structure)
+
 
         return (shape, current_storage)
 
@@ -144,9 +157,22 @@ class CompoundShape(Shape):
     #
     @uni
     def to_repr(self, seen):
+        def mini_urepr(x):
+            s = set(seen)
+            s.discard(x)
+            return urepr(x, s)
+
+
         res = u"σ"
         res += urepr(self._tag, seen)
+        res += u"["
+        res += ", ".join(map(mini_urepr, self._structure))
+        res += u"]"
         return res
+
+    def print_transforms(self):
+        for (index, src), dest in sorted(self.known_transformations.items()):
+            print "\t(", index, ", ", src, u") ↦ ", dest
 
 
 def singleton(cls):
@@ -172,5 +198,12 @@ class InStorageShape(Shape):
     def build_child(self, new_children):
         return new_children[0]
 
-
+    def get_storage(self, w_c):
+        return [w_c]
+        #
+    # Testing and Debug
+    #
+    @uni
+    def to_repr(self, seen):
+        return u"◊"
 
