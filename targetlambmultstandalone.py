@@ -3,8 +3,8 @@
 
 import sys
 
-from lamb.util.construction_helper import peano_num, python_num, run
-from mu.peano import mult
+from lamb.util.construction_helper import run
+from mu.peano import mult, peano_num, python_num
 
 # __________  Entry point  __________
 

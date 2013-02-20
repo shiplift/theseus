@@ -13,54 +13,6 @@ from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            conslist, plist,
                                            execution_stack, operand_stack)
 
-@py.test.mark.skipif("True")
-class TestCompoundShapes(object):
-
-    def test_simple_automatic_shape(self):
-
-        w_1 = integer(1)
-
-        c = cons("barf") # via w_constructor
-        assert c.get_number_of_children() == 0
-
-        c = cons("barf", w_1) # via w_constructor
-        assert c.get_number_of_children() == 1
-        assert c.get_child(0)  == w_1
-
-        c = cons("barf", w_1, w_1) # via w_constructor
-        assert c.get_number_of_children() == 2
-        assert c.get_child(0)  == w_1
-        assert c.get_child(1)  == w_1
-
-    def test_recursive_automatic_shape(self):
-
-        w_1 = integer(1)
-
-        c_1 = cons("barf", w_1) # via w_constructor
-        assert c_1.get_number_of_children() == 1
-        assert c_1.get_child(0)  == w_1
-
-        c_1_1 = cons("barf", w_1) # via w_constructor
-        c_2 = cons("zork", c_1, c_1_1) # via w_constructor
-        assert c_2.get_number_of_children() == 2
-        assert c_2.get_child(0)  == c_1
-        assert c_2.get_child(0).get_child(0) == w_1
-        assert c_2.get_child(1).get_child(0) == w_1
-
-        c_1_3 = cons("barf", w_1) # via w_constructor
-        c_1_4 = cons("barf", w_1) # via w_constructor
-        c_2_1 = cons("zork", c_1_3, c_1_4) # via w_constructor
-        c_3 = cons("foo", c_2, c_2_1) # via w_constructor
-        assert c_3.get_number_of_children() == 2
-        assert c_3.get_child(0)  == c_2
-        assert c_3.get_child(0).get_child(0) == c_1
-        assert c_3.get_child(0).get_child(0).get_child(0) == w_1
-        assert c_3.get_child(0).get_child(1) == c_1
-        assert c_3.get_child(0).get_child(1).get_child(0) == w_1
-        assert c_3.get_child(1).get_child(0).get_child(0) == w_1
-        assert c_3.get_child(1).get_child(1).get_child(0) == w_1
-
-
 class TestShapeAccess(object):
 
     def test_simple_predefined_shape(self):
