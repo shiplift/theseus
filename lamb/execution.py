@@ -11,11 +11,13 @@ from lamb.util.debug import debug_stack
 from lamb.util.testing import HelperMixin
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
-from lamb.shape import CompoundShape
+from lamb.shape import CompoundShape, InStorageShape
 
 
 class W_Object(HelperMixin):
 
+    def shape(self):
+        return InStorageShape()
     #
     # Expression behavior
     #
@@ -100,6 +102,9 @@ class W_Constructor(W_Object):
 
     def get_number_of_children(self):
         return self._shape.get_number_of_direct_children()
+
+    def shape(self):
+        return self._shape
     #
     # Expression behavior
     #

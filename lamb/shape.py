@@ -122,33 +122,26 @@ class CompoundShape(Shape):
             return (self, storage)
 
         current_storage = storage
-        storage_index = index = 0
+        index = 0
         shape = self
-        structure = shape._structure
 
-        while index < len(structure):
-            subshape = structure[index]
+        while index < len(current_storage):
+            child = current_storage[index]
+            subshape = child.shape()
 
             new_shape = shape.known_transformations.get((index, subshape), None)
             if new_shape is not None and new_shape != shape:
 
-                child = current_storage[storage_index]
                 child_storage = child._storage if isinstance(child, W_Constructor) else [child]
-                new_storage = _splice(current_storage, storage_index, child_storage)
+                new_storage = _splice(current_storage, index, child_storage)
 
                 current_storage = new_storage
-                structure = new_shape._structure
                 shape = new_shape
 
                 # rewind over new storage
-                storage_index = index = 0
+                index = 0
             else:
-                storage_index += subshape.storage_width()
                 index += 1
-
-        if structure != shape._structure:
-            shape = shape.__class__(shape._tag, structure)
-
 
         return (shape, current_storage)
 

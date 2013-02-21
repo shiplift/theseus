@@ -212,12 +212,12 @@ class TestShapeMerger(object):
         shape_2_2 = CompoundShape(zork_2, [InStorageShape(), shape_1])
         shape_2_3 = CompoundShape(zork_2, [shape_1, shape_1])
 
-        shape_2.known_transformations[(0, InStorageShape())] = shape_2_1
-        shape_2.known_transformations[(1, InStorageShape())] = shape_2_2
+        shape_2.known_transformations[(0, shape_1)] = shape_2_1
+        shape_2.known_transformations[(1, shape_1)] = shape_2_2
 
-        shape_2_1.known_transformations[(1, InStorageShape())] = shape_2_3
+        shape_2_1.known_transformations[(1, shape_1)] = shape_2_3
 
-        shape_2_2.known_transformations[(0, InStorageShape())] = shape_2_3
+        shape_2_2.known_transformations[(0, shape_1)] = shape_2_3
 
         storage = [c_1, c_1_1]
 
@@ -244,12 +244,12 @@ class TestShapeMerger(object):
         shape_2_2 = CompoundShape(zork_2, [InStorageShape(), shape_1])
         shape_2_3 = CompoundShape(zork_2, [shape_1, shape_1])
 
-        shape_2.known_transformations[(0, InStorageShape())] = shape_2_1
-        shape_2.known_transformations[(1, InStorageShape())] = shape_2_2
+        shape_2.known_transformations[(0, shape_1)] = shape_2_1
+        shape_2.known_transformations[(1, shape_1)] = shape_2_2
 
-        shape_2_1.known_transformations[(1, InStorageShape())] = shape_2_3
+        shape_2_1.known_transformations[(1, shape_1)] = shape_2_3
 
-        shape_2_2.known_transformations[(0, InStorageShape())] = shape_2_3
+        shape_2_2.known_transformations[(0, shape_1)] = shape_2_3
 
         storage = [c_1, c_1_1]
 
@@ -262,9 +262,9 @@ class TestShapeMerger(object):
 
         shape_3_1 = CompoundShape(foo_2, [shape_2_3, shape_2_3])
 
-        shape_3.known_transformations[(1, InStorageShape())] = shape_3_1
+        shape_3.known_transformations[(2, new_shape)] = shape_3_1
         storage = new_storage + [c_2]
         (new_shape, new_storage) = shape_3.fusion(storage)
-        assert new_shape == CompoundShape(foo_2, [shape_2_3, shape_2_3])
         assert new_storage == [w_1, w_1, w_1, w_1]
+        assert new_shape == CompoundShape(foo_2, [shape_2_3, shape_2_3])
 
