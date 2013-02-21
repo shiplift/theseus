@@ -268,3 +268,35 @@ class TestShapeMerger(object):
         assert new_storage == [w_1, w_1, w_1, w_1]
         assert new_shape == CompoundShape(foo_2, [shape_2_3, shape_2_3])
 
+    def test_cons_list(self):
+
+        w_1 = integer(1)
+
+        cons_ = tag("cons", 2)
+
+        nil_ = tag("nil", 0)
+        nil_shape = CompoundShape(nil_, [])
+        w_nil_ = W_Constructor(nil_shape, [])
+
+        list_default_shape = CompoundShape(cons_, [InStorageShape(), InStorageShape()])
+
+        list_1_shape = CompoundShape(cons_, [InStorageShape(), nil_shape])
+        list_2_shape = CompoundShape(cons_, [InStorageShape(), list_1_shape])
+
+        list_default_shape.known_transformations[(1,nil_shape)] = list_1_shape
+        list_default_shape.known_transformations[(1,list_1_shape)] = list_2_shape
+
+        w_list_0 = w_nil_
+
+        (shape, storage) = list_default_shape.fusion([w_1, w_nil_])
+
+        w_list_1 = W_Constructor(shape, storage)
+
+        list_1_shape.known_transformations[(1, list_1_shape)] = list_2_shape
+
+        (shape, storage) = list_default_shape.fusion([w_1, w_list_1])
+
+        w_list_2 = W_Constructor(shape, storage)
+
+        assert w_list_2._storage == [w_1, w_1]
+
