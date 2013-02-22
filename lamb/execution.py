@@ -91,19 +91,19 @@ class W_Constructor(W_Object):
         self._storage = storage
 
     def get_tag(self):
-        return self._shape._tag
+        return self.shape()._tag
 
     def get_children(self):
-        return self._shape.get_children(self)
+        return self.shape().get_children(self)
     
     def get_child(self, index):
-        return self._shape.get_child(self, index)
+        return self.shape().get_child(self, index)
 
     def get_number_of_children(self):
-        return self._shape.get_number_of_direct_children()
+        return self.shape().get_number_of_direct_children()
 
     def shape(self):
-        return self._shape
+        return jit.promote(self._shape)
     #
     # Expression behavior
     #
@@ -155,7 +155,7 @@ class W_Lambda(W_Object):
 
     def arity(self):
         assert len(self._rules) > 0
-        return self._rules[0].arity()
+        return self._rules[0].arity
 
     def call(self, w_arguments):
         assert len(w_arguments) == self.arity()
@@ -254,7 +254,9 @@ class W_VariableExpression(W_PureExpression):
         self.variable = variable
 
     def resolve(self, binding):
-        w_result = binding[self.variable.binding_index]
+        # var = jit.promote(self.variable)
+        var = self.variable
+        w_result = binding[var.binding_index]
 
         if w_result is None:
             raise VariableUnbound()
@@ -495,22 +497,20 @@ class W_LambdaCursor(W_Cursor):
 
 class Rule(HelperMixin):
 
-    _immutable_fields_ = ['_patterns[*]', '_expression', 'maximal_number_of_variables']
+    _immutable_fields_ = ['_patterns[*]', 'arity', '_expression', 'maximal_number_of_variables']
 
     def __init__(self, patterns, expression):
         self._patterns = patterns
+        self.arity = len(patterns)
         self._expression = expression
         self.maximal_number_of_variables = 0
         for pattern in self._patterns:
             pattern.update_number_of_variables(self)
 
-    def arity(self):
-        return len(self._patterns)
-
     @jit.unroll_safe
     def match_all(self, w_arguments, binding):
-        if self.arity() != 0:
-            for i in range(self.arity()):
+        if self.arity != 0:
+            for i in range(self.arity):
                 self._patterns[i].match(w_arguments[i], binding)
         return self._expression
 
@@ -602,23 +602,18 @@ class ConstructorPattern(Pattern):
     def __init__(self, tag, children=None):
         self._tag = tag
         self._children = children or []
+        assert self._tag.arity == len(self._children)
 
     @jit.unroll_safe
     def match(self, obj, binding):
-        if isinstance(obj, W_Constructor): # pragma: no branch
-            # be sure to use the W_Constructor api
-            tag = jit.promote(obj.get_tag())
-            if (tag == self._tag) and (obj.get_number_of_children() == len(self._children)):
-                for i in range(len(self._children)):
-                    self._children[i].match(obj.get_child(i), binding)
-                return
-        if isinstance(obj, W_ConstructorEvaluator): # pragma: no branch
-            # shortcut to the evaluator properties
-            tag = jit.promote(obj._tag)
-            if (tag == self._tag) and (len(obj._children) == len(self._children)):
-                for i in range(len(self._children)):
-                    self._children[i].match(obj._children[i], binding)
-                return
+        if not isinstance(obj, W_Constructor):
+            raise NoMatch()
+        
+        tag = jit.promote(obj.get_tag())
+        if tag is self._tag:
+            for i in range(tag.arity):
+                self._children[i].match(obj.get_child(i), binding)
+            return
         raise NoMatch()
 
     def update_number_of_variables(self, rule):
@@ -676,10 +671,10 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
         n = e_stack._data if e_stack is not None else None
         if isinstance(n, W_Cursor):
             current_cursor = n
-            # if jit.we_are_jitted():
-            #     print get_printable_location(current_cursor), "True"
-            # else:
-            #     print get_printable_location(current_cursor), "False"
+            if jit.we_are_jitted():
+                print get_printable_location(current_cursor), "True"
+            else:
+                print get_printable_location(current_cursor), "False"
             jitdriver.can_enter_jit(
                 expr=expr, w_stack=w_stack, e_stack=e_stack,
                 current_cursor=current_cursor,

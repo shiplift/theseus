@@ -13,8 +13,10 @@ conftest.option = o
 from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 
 
-from lamb.execution import (interpret,
+from lamb.execution import (interpret, tag,
                             Variable, W_LambdaCursor, OperandStackElement)
+from lamb.shape import InStorageShape, CompoundShape
+
 from lamb.util.construction_helper import (lamb, ziprules, mu, cons, w_nil,
                                            conslist, integer, operand_stack,
                                            execution_stack)
@@ -30,6 +32,36 @@ class TestLLtype(LLJitMixin):
         a2 = Variable("accumulator")
         h = Variable("head")
         t = Variable("tail")
+
+        w_nil_shape = w_nil.shape()
+
+        c = tag("cons", 2)
+        cons_shape = c.default_shape
+        cons_1_shape = CompoundShape(c, [InStorageShape(), w_nil_shape ])
+        cons_2_shape = CompoundShape(c, [InStorageShape(), cons_1_shape])
+        cons_3_shape = CompoundShape(c, [InStorageShape(), cons_2_shape])
+        # cons_4_shape = CompoundShape(c, [InStorageShape(), cons_3_shape])
+        # cons_5_shape = CompoundShape(c, [InStorageShape(), cons_4_shape])
+        cons_shape.known_transformations[(1, w_nil_shape )] = cons_1_shape
+        cons_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
+        cons_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
+        # cons_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        # cons_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+        cons_1_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
+        cons_1_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
+        # cons_1_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        # cons_1_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+        cons_2_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
+        # cons_2_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        # cons_2_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+        # cons_3_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        # cons_3_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+        # cons_4_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
         reverse_acc = lamb()
         reverse_acc._name ="reverse_acc"
         reverse_acc._rules = ziprules(
@@ -41,7 +73,7 @@ class TestLLtype(LLJitMixin):
         reverse._name = "reverse"
 
 
-        nums = 5
+        nums = 100
         list1_w = [integer(x) for x in range(nums)]
         stack_w = operand_stack(conslist(list1_w))
         stack_e = execution_stack(W_LambdaCursor(reverse))

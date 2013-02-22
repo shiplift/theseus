@@ -131,25 +131,29 @@ class TestShapeMerger(object):
         from lamb.shape import _splice
 
         a = [1, 2, 3]
+        len_a = len(a)
         b = [4, 5]
+        len_b = len(b)
         c = []
+        len_c = len(c)
         d = [6]
-        x = _splice(a, 1, b)
+        len_d = len(d)
+        x = _splice(a, len_a, 1, b, len_b)
         assert x == [1, 4 ,5, 3]
 
-        y = _splice(a, 1, c)
+        y = _splice(a, len_a, 1, c, len_c)
         assert y == [1, 3]
 
-        z = _splice(a, 1, d)
+        z = _splice(a, len_a, 1, d, len_d)
         assert z == [1, 6, 3]
 
-        u = _splice(a, 0, d)
+        u = _splice(a, len_a, 0, d, len_d)
         assert u == [6, 2, 3]
 
-        v = _splice(a, 0, b)
+        v = _splice(a,len_a,  0, b, len_b)
         assert v == [4, 5, 2, 3]
 
-        w = _splice(a, 2, b)
+        w = _splice(a, len_a, 2, b, len_b)
         assert w == [1, 2, 4, 5]
 
 
