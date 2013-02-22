@@ -300,3 +300,16 @@ class TestShapeMerger(object):
 
         assert w_list_2._storage == [w_1, w_1]
 
+    def test_default_shape(self):
+
+        w_1 = integer(1)
+
+        barf = tag("barf", 3)
+        w_barf = w_constructor(barf, [w_1, w_1, w_1])
+
+        assert w_barf._shape == CompoundShape(barf, [InStorageShape(), InStorageShape(), InStorageShape()])
+
+        w_barf_1 = w_constructor(barf, [w_1, w_1, w_1])
+
+        assert w_barf_1._shape is w_barf._shape
+

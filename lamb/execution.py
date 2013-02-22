@@ -37,14 +37,13 @@ class W_Object(HelperMixin):
 class W_Tag(W_Object):
     tags = {}
 
-    _immutable_fields_ = ['name', 'arity', '_cursor']
+    _immutable_fields_ = ['name', 'arity', '_cursor', 'default_shape']
 
     def __init__(self, name, arity):
         self.name = name
         self.arity = arity
         self._cursor = W_ConstructorCursor(self)
-        #self._builder = w_constructor
-        self.constructor_class = W_Constructor
+        self.default_shape = CompoundShape(self, [InStorageShape()] * arity)
     #
     # Testing and Debug
     #
@@ -121,8 +120,13 @@ class W_Constructor(W_Object):
         return u"Γ" + u"%s%s" % (urepr(self.get_tag(), seen), self.children_to_repr(seen))
 
     def children_to_repr(self, seen):
+        def mini_urepr(x):
+            s = set(seen)
+            s.discard(x)
+            return urepr(x, s)
+
         if self.get_number_of_children() > 0:
-            return u"(" + u", ".join(map(lambda x: urepr(x, seen), self.get_children())) + u")"
+            return u"(" + u", ".join(map(mini_urepr, self.get_children())) + u")"
         else:
             return u""
 
@@ -133,14 +137,8 @@ class W_Constructor(W_Object):
         return False
 
 def w_constructor(tag, children):
-    def _shape(w_obj):
-        import lamb.shape
-        # if isinstance(w_obj, W_Constructor):
-        #     return w_obj._shape
-        # else:
-        return lamb.shape.InStorageShape()
-    shape  = CompoundShape(tag, [_shape(child) for child in children])
-    constr = W_Constructor(shape, children) # hack for now.
+    shape, storage = tag.default_shape.fusion(children)
+    constr = W_Constructor(shape, storage)
     return constr
 
 class W_Lambda(W_Object):

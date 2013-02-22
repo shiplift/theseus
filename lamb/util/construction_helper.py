@@ -67,14 +67,6 @@ def plist(c_list):
         conses = conses.get_child(1)
     return result
 
-# Not used yet
-#class ForwardReference(object):
-#
-#    def become(self, x):
-#        self.__class__ = x.__class__
-#        self.__dict__.update(x.__dict__)
-
-
 def operand_stack(*elems):
     stack = None
     for elem in reversed(elems):

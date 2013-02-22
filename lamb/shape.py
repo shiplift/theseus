@@ -106,7 +106,10 @@ class CompoundShape(Shape):
         return sum(subshape.storage_width() for subshape in self._structure)
 
     def build_child(self, new_children):
-        return self._tag.constructor_class(self, new_children)
+        from execution import W_Constructor
+        (shape, storage) = self.fusion(new_children)
+        return W_Constructor(shape, storage)
+        #return w_constructor(self._tag, new_children)
 
     #
     # shape merge/fusion
@@ -154,7 +157,6 @@ class CompoundShape(Shape):
             s = set(seen)
             s.discard(x)
             return urepr(x, s)
-
 
         res = u"σ"
         res += urepr(self._tag, seen)
