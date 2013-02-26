@@ -33,31 +33,34 @@ class TestLLtype(LLJitMixin):
         h = Variable("head")
         t = Variable("tail")
 
-        w_nil_shape = w_nil.shape()
+        # w_nil_shape = w_nil.shape()
 
         c = tag("cons", 2)
         cons_shape = c.default_shape
-        cons_1_shape = CompoundShape(c, [InStorageShape(), w_nil_shape ])
+        # cons_1_shape = CompoundShape(c, [InStorageShape(), w_nil_shape ])
+        cons_1_shape = CompoundShape(c, [InStorageShape(), cons_shape])
         cons_2_shape = CompoundShape(c, [InStorageShape(), cons_1_shape])
         cons_3_shape = CompoundShape(c, [InStorageShape(), cons_2_shape])
-        # cons_4_shape = CompoundShape(c, [InStorageShape(), cons_3_shape])
+        cons_4_shape = CompoundShape(c, [InStorageShape(), cons_3_shape])
         # cons_5_shape = CompoundShape(c, [InStorageShape(), cons_4_shape])
-        cons_shape.known_transformations[(1, w_nil_shape )] = cons_1_shape
+
+        # cons_shape.known_transformations[(1, w_nil_shape )] = cons_1_shape
+        cons_shape.known_transformations[(1, cons_shape )] = cons_1_shape
         cons_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
         cons_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-        # cons_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        cons_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
         # cons_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
 
         cons_1_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
         cons_1_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-        # cons_1_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        cons_1_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
         # cons_1_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
 
         cons_2_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-        # cons_2_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        cons_2_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
         # cons_2_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
 
-        # cons_3_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        cons_3_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
         # cons_3_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
 
         # cons_4_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
@@ -73,7 +76,8 @@ class TestLLtype(LLJitMixin):
         reverse._name = "reverse"
 
 
-        nums = 100
+        nums = 149
+        # XXX >= 150 does not work oO
         list1_w = [integer(x) for x in range(nums)]
         stack_w = operand_stack(conslist(list1_w))
         stack_e = execution_stack(W_LambdaCursor(reverse))

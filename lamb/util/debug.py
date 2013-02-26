@@ -64,3 +64,24 @@ def view_stacks():
     """
     view(**_stacks)
 
+
+def storagewalker(l):
+    def sw(l, seen):
+        res = u"["
+        first = True
+        for item in l:
+            if first:
+                first = False
+            else:
+                res += u", "
+            if not item in seen:
+                seen.add(item)
+                if hasattr(item, "get_storage"):
+                    res += sw(item.get_storage(), seen)
+                else:
+                    res += urepr(item)
+            else:
+                res += u"…"
+        res += u"]"
+        return res
+    return sw(l, set())

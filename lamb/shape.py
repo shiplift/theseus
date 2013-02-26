@@ -88,12 +88,12 @@ class CompoundShape(Shape):
         storage_index = self.structure_to_storage(index)
         subshape = self._structure[index]
         if subshape is InStorageShape():
-            return w_c._storage[storage_index]
+            return w_c.get_storage_at(storage_index)
         else:
             newlen = subshape.storage_width()
             endindex = storage_index + newlen
             assert endindex <= self.storage_width()
-            new_storage = w_c._storage[storage_index:endindex]
+            new_storage = (w_c.get_storage())[storage_index:endindex]
             return subshape.build_child(new_storage)
 
     @jit.unroll_safe
@@ -108,7 +108,7 @@ class CompoundShape(Shape):
     def get_storage(self, w_c):
         from execution import W_Constructor
         assert isinstance(w_c, W_Constructor)
-        return w_c._storage
+        return w_c.get_storage()
 
     @jit.unroll_safe
     def storage_width(self):
@@ -118,9 +118,12 @@ class CompoundShape(Shape):
         return sum
 
     def build_child(self, new_children):
-        from execution import W_Constructor
+        from execution import W_Constructor, select_constructor_class
         (shape, storage) = self.fusion(new_children)
-        return W_Constructor(shape, storage)
+        cls = select_constructor_class(storage)
+        constructor = cls(shape)
+        constructor._init_storage(storage)
+        return constructor
 
     #
     # shape merge/fusion
@@ -146,9 +149,9 @@ class CompoundShape(Shape):
             subshape = child.shape()
 
             new_shape = shape.get_transformation(index, subshape)
-            if new_shape is not None and new_shape != shape:
+            if new_shape is not shape:
 
-                child_storage = child._storage if isinstance(child, W_Constructor) else [child]
+                child_storage = child.get_storage() if isinstance(child, W_Constructor) else [child]
                 new_storage = _splice(current_storage, storage_len, index, child_storage, subshape.storage_width())
 
                 current_storage = new_storage
@@ -164,7 +167,7 @@ class CompoundShape(Shape):
 
     @jit.elidable
     def get_transformation(self, index, subshape):
-        return self.known_transformations.get((index, subshape), None)
+        return self.known_transformations.get((index, subshape), self)
 
     #
     # Testing and Debug
@@ -200,7 +203,7 @@ def singleton(cls):
 class InStorageShape(Shape):
 
     def extract_child(self, w_c, index):
-        return w_c._storage[index]
+        return w_c.get_storage_at(index)
 
     def get_number_of_direct_children(self):
         return 0

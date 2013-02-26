@@ -21,18 +21,21 @@ class TestShapeAccess(object):
 
         barf_0 = tag("barf", 0)
         shape = CompoundShape(barf_0, [])
-        c = W_Constructor(shape, [])
+        c = W_NAryConstructor(shape)
+        c._init_storage([])
         assert c.get_number_of_children() == 0
 
         barf_1 = tag("barf", 1)
         shape = CompoundShape(barf_1, [InStorageShape()])
-        c = W_Constructor(shape, [w_1])
+        c = W_NAryConstructor(shape)
+        c._init_storage([w_1])
         assert c.get_number_of_children() == 1
         assert c.get_child(0)  == w_1
 
         barf_2 = tag("barf", 2)
         shape = CompoundShape(barf_2, [InStorageShape()] * 2)
-        c = W_Constructor(shape, [w_1, w_1])
+        c = W_NAryConstructor(shape)
+        c._init_storage([w_1, w_1])
         assert c.get_number_of_children() == 2
         assert c.get_child(0)  == w_1
         assert c.get_child(1)  == w_1
@@ -43,14 +46,17 @@ class TestShapeAccess(object):
 
         barf_1 = tag("barf", 1)
         shape_1 = CompoundShape(barf_1, [InStorageShape()])
-        c_1 = W_Constructor(shape_1, [w_1])
+        c_1 = W_NAryConstructor(shape_1)
+        c_1._init_storage([w_1])
         assert c_1.get_number_of_children() == 1
         assert c_1.get_child(0)  == w_1
 
         zork_2 = tag("zork", 2)
         shape_2 = CompoundShape(zork_2, [shape_1, shape_1])
-        c_1_1 = W_Constructor(shape_1, [w_1])
-        c_2 = W_Constructor(shape_2, [w_1, w_1])
+        c_1_1 = W_NAryConstructor(shape_1)
+        c_1_1._init_storage([w_1])
+        c_2 = W_NAryConstructor(shape_2)
+        c_2._init_storage([w_1, w_1])
         assert c_2.get_number_of_children() == 2
         assert c_2.get_child(0)  == c_1
         assert c_2.get_child(0).get_child(0) == w_1
@@ -59,11 +65,15 @@ class TestShapeAccess(object):
 
         foo_2 = tag("foo", 2)
         shape_3 = CompoundShape(foo_2, [shape_2, shape_2])
-        c_1_3 = W_Constructor(shape_1, [w_1])
-        c_1_4 = W_Constructor(shape_1, [w_1])
-        c_2_1 = W_Constructor(shape_2, [c_1_3, c_1_4])
+        c_1_3 = W_NAryConstructor(shape_1)
+        c_1_3._init_storage([w_1])
+        c_1_4 = W_NAryConstructor(shape_1)
+        c_1_4._init_storage([w_1])
+        c_2_1 = W_NAryConstructor(shape_2)
+        c_2_1._init_storage([c_1_3, c_1_4])
         # foo(zork(barf(1),barf(1)),zork(barf(1),barf(1)))
-        c_3 = W_Constructor(shape_3, [w_1,w_1,w_1,w_1])
+        c_3 = W_NAryConstructor(shape_3)
+        c_3._init_storage([w_1,w_1,w_1,w_1])
         assert c_3.get_number_of_children() == 2
         assert c_3.get_child(0)  == c_2
         assert c_3.get_child(0).get_child(0) == c_1
@@ -79,14 +89,17 @@ class TestShapeAccess(object):
 
         barf_1 = tag("barf", 1)
         shape_1 = CompoundShape(barf_1, [InStorageShape()])
-        c_1 = W_Constructor(shape_1, [w_1])
+        c_1 = W_NAryConstructor(shape_1)
+        c_1._init_storage([w_1])
         assert c_1.get_number_of_children() == 1
         assert c_1.get_child(0)  == w_1
 
         zork_2 = tag("zork", 2)
         shape_2 = CompoundShape(zork_2, [shape_1, shape_1])
-        c_1_1 = W_Constructor(shape_1, [w_1])
-        c_2 = W_Constructor(shape_2, [w_1, w_1])
+        c_1_1 = W_NAryConstructor(shape_1)
+        c_1_1._init_storage([w_1])
+        c_2 = W_NAryConstructor(shape_2)
+        c_2._init_storage([w_1, w_1])
         assert c_2.get_number_of_children() == 2
         assert c_2.get_child(0)  == c_1
         assert c_2.get_child(0).get_child(0) == w_1
@@ -100,12 +113,17 @@ class TestShapeAccess(object):
                             shape_1,
                             InStorageShape()]),
                         InStorageShape()])
-        c_1_3 = W_Constructor(shape_1, [w_1])
-        c_1_4 = W_Constructor(shape_1, [w_1])
-        c_2_1 = W_Constructor(CompoundShape(zork_2, [InStorageShape(), InStorageShape()]), [c_1_3, c_1_4])
+        c_1_3 = W_NAryConstructor(shape_1)
+        c_1_3._init_storage([w_1])
+        c_1_4 = W_NAryConstructor(shape_1)
+        c_1_4._init_storage([w_1])
+        s_2_1 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
+        c_2_1 = W_NAryConstructor(s_2_1)
+        c_2_1._init_storage([c_1_3, c_1_4])
 
         # DIFFERENCE TO other test: not everything is flattened
-        c_3 = W_Constructor(shape_3, [
+        c_3 = W_NAryConstructor(shape_3)
+        c_3._init_storage([
             # zork
             w_1,c_1_1,
             # zork
@@ -179,18 +197,24 @@ class TestShapeMerger(object):
 
         barf_1 = tag("barf", 1)
         shape_1 = CompoundShape(barf_1, [InStorageShape()])
-        c_1 = W_Constructor(shape_1, [w_1])
+        c_1 = W_NAryConstructor(shape_1)
+        c_1._init_storage([w_1])
 
         zork_2 = tag("zork", 2)
         shape_2 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
-        c_1_1 = W_Constructor(shape_1, [w_1])
-        c_2 = W_Constructor(shape_2, [c_1, c_1_1])
+        c_1_1 = W_NAryConstructor(shape_1)
+        c_1_1._init_storage([w_1])
+        c_2 = W_NAryConstructor(shape_2)
+        c_2._init_storage([c_1, c_1_1])
 
         foo_2 = tag("foo", 2)
         shape_3 = CompoundShape(foo_2, [shape_2, shape_2])
-        c_1_3 = W_Constructor(shape_1, [w_1])
-        c_1_4 = W_Constructor(shape_1, [w_1])
-        c_2_1 = W_Constructor(shape_2, [c_1_3, c_1_4])
+        c_1_3 = W_NAryConstructor(shape_1)
+        c_1_3._init_storage([w_1])
+        c_1_4 = W_NAryConstructor(shape_1)
+        c_1_4._init_storage([w_1])
+        c_2_1 = W_NAryConstructor(shape_2)
+        c_2_1._init_storage([c_1_3, c_1_4])
 
         storage = [w_1, w_1, w_1, w_1]
         (new_shape, new_storage) = shape_3.fusion(storage)
@@ -206,8 +230,10 @@ class TestShapeMerger(object):
 
         barf_1 = tag("barf", 1)
         shape_1 = CompoundShape(barf_1, [InStorageShape()])
-        c_1 = W_Constructor(shape_1, [w_1])
-        c_1_1 = W_Constructor(shape_1, [w_1])
+        c_1 = W_NAryConstructor(shape_1)
+        c_1._init_storage([w_1])
+        c_1_1 = W_NAryConstructor(shape_1)
+        c_1_1._init_storage([w_1])
 
         zork_2 = tag("zork", 2)
         shape_2 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
@@ -238,8 +264,10 @@ class TestShapeMerger(object):
 
         barf_1 = tag("barf", 1)
         shape_1 = CompoundShape(barf_1, [InStorageShape()])
-        c_1 = W_Constructor(shape_1, [w_1])
-        c_1_1 = W_Constructor(shape_1, [w_1])
+        c_1 = W_NAryConstructor(shape_1)
+        c_1._init_storage([w_1])
+        c_1_1 = W_NAryConstructor(shape_1)
+        c_1_1._init_storage([w_1])
 
         zork_2 = tag("zork", 2)
         shape_2 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
@@ -259,7 +287,8 @@ class TestShapeMerger(object):
 
         (new_shape, new_storage) = shape_2.fusion(storage)
 
-        c_2 = W_Constructor(new_shape, new_storage)
+        c_2 = W_NAryConstructor(new_shape)
+        c_2._init_storage(new_storage)
 
         foo_2 = tag("foo", 2)
         shape_3 = CompoundShape(foo_2, [shape_2_3, InStorageShape()])
@@ -280,7 +309,8 @@ class TestShapeMerger(object):
 
         nil_ = tag("nil", 0)
         nil_shape = CompoundShape(nil_, [])
-        w_nil_ = W_Constructor(nil_shape, [])
+        w_nil_ = W_NAryConstructor(nil_shape)
+        w_nil_._init_storage([])
 
         list_default_shape = CompoundShape(cons_, [InStorageShape(), InStorageShape()])
 
@@ -294,13 +324,15 @@ class TestShapeMerger(object):
 
         (shape, storage) = list_default_shape.fusion([w_1, w_nil_])
 
-        w_list_1 = W_Constructor(shape, storage)
+        w_list_1 = W_NAryConstructor(shape)
+        w_list_1._init_storage(storage)
 
         list_1_shape.known_transformations[(1, list_1_shape)] = list_2_shape
 
         (shape, storage) = list_default_shape.fusion([w_1, w_list_1])
 
-        w_list_2 = W_Constructor(shape, storage)
+        w_list_2 = W_NAryConstructor(shape)
+        w_list_2._init_storage(storage)
 
         assert w_list_2._storage == [w_1, w_1]
 
@@ -316,4 +348,81 @@ class TestShapeMerger(object):
         w_barf_1 = w_constructor(barf, [w_1, w_1, w_1])
 
         assert w_barf_1._shape is w_barf._shape
+
+    def test_reverse(self):
+
+        debug = True
+
+        if debug:
+            print ""
+
+        a1 = Variable("accumulator")
+        a2 = Variable("accumulator")
+        h = Variable("head")
+        t = Variable("tail")
+
+        w_nil_shape = w_nil.shape()
+
+        c = tag("cons", 2)
+        cons_shape = c.default_shape
+        cons_1_shape = CompoundShape(c, [InStorageShape(), cons_shape ])
+        cons_2_shape = CompoundShape(c, [InStorageShape(), cons_1_shape])
+        cons_3_shape = CompoundShape(c, [InStorageShape(), cons_2_shape])
+        cons_4_shape = CompoundShape(c, [InStorageShape(), cons_3_shape])
+        cons_5_shape = CompoundShape(c, [InStorageShape(), cons_4_shape])
+        cons_shape.known_transformations[(1, cons_shape )] = cons_1_shape
+        cons_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
+        cons_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
+        # cons_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        # cons_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+        cons_1_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
+        cons_1_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
+        # cons_1_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        # cons_1_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+        cons_2_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
+        # cons_2_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        # cons_2_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+        # cons_3_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+        # cons_3_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+        # cons_4_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+        reverse_acc = lamb()
+        reverse_acc._name ="reverse_acc"
+        reverse_acc._rules = ziprules(
+            ([w_nil,              a1], a1),
+            ([cons("cons", h, t), a2], mu(reverse_acc, t, cons("cons", h, a2))))
+
+        l = Variable("l")
+        reverse = lamb(([l], mu(reverse_acc, l, w_nil)))
+        reverse._name = "reverse"
+
+        def stackinspect(d):
+
+            from lamb.util.debug import storagewalker
+
+            w_stack = d['w_stack']
+            e_stack = d['e_stack']
+
+            if w_stack:
+                if isinstance(w_stack._data, W_Constructor):
+                    print "[W]", w_stack._data._shape, " storage: ", storagewalker(w_stack._data.get_storage())
+                else:
+                    print "[W]", w_stack._data
+            else:
+                print "[w] none"
+
+
+        nums = 50
+        list1_w = [integer(x) for x in range(nums)]
+        clist1_w = conslist(list1_w)
+        assert clist1_w.get_tag() is c
+
+        debug_callback = stackinspect if debug else None
+        res = interpret(execution_stack(W_LambdaCursor(reverse)), operand_stack(clist1_w), debug, debug_callback)
+        list1_w.reverse()
+        assert plist(res) == list1_w
 

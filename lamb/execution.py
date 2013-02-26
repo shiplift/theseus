@@ -83,12 +83,23 @@ class W_Integer(W_Object):
 
 class W_Constructor(W_Object):
 
-    _immutable_fields_ = ['_shape', '_storage[*]']
+    _immutable_fields_ = ['_shape']
 
-    def __init__(self, shape, storage):
+    def __init__(self, shape):
         assert isinstance(shape, CompoundShape)
         self._shape = shape
-        self._storage = storage
+
+    def _init_storage(self, stroage):
+        pass
+
+    def get_storage(self):
+        return []
+
+    def get_storage_at(self, index):
+        raise IndexError()
+
+    def get_storage_width(self):
+        return 0
 
     def get_tag(self):
         return self.shape()._tag
@@ -112,6 +123,10 @@ class W_Constructor(W_Object):
         children = [self.get_child(index).copy(binding) for index in range(self.get_number_of_children())]
         return W_ConstructorEvaluator(self.get_tag(), children)
 
+    def evaluate(self):
+        return w_constructor(self.get_tag(), [child.evaluate() for child in self.get_children()])
+
+
     #
     # Testing and Debug
     #
@@ -131,14 +146,84 @@ class W_Constructor(W_Object):
             return u""
 
     def __eq__(self, other):
-        if self.__class__ == other.__class__:
+        if isinstance(other, W_Constructor):
             if self.get_number_of_children() == other.get_number_of_children():
                 return self.get_children() == other.get_children()
         return False
 
+class W_NAryConstructor(W_Constructor):
+
+    _immutable_fields_ = ['_storage[*]']
+
+    def _init_storage(self, storage):
+        self._storage = storage or []
+
+    def get_storage(self):
+        return self._storage
+
+    def get_storage_at(self, index):
+        return self._storage[index]
+
+    def get_storage_width(self):
+        return len(self._storage)
+
+STORAGE_ATTR_TEMPLATE = "storage_%d"
+
+def constructor_class_name(n_storage):
+    return 'W_Constructor%d' % n_storage
+
+
+def generate_constructor_class(n_storage):
+
+    storage_iter = unrolling_iterable(range(n_storage))
+
+    class constructor_class(W_Constructor):
+        _immutable_fields_ = [(STORAGE_ATTR_TEMPLATE % x) for x in storage_iter]
+
+        def _init_storage(self, storage):
+            for x in storage_iter:
+                setattr(self, STORAGE_ATTR_TEMPLATE % x, storage[x])
+
+        def get_storage(self):
+            result = [None] * n_storage
+            for x in storage_iter:
+                result[x] = getattr(self, STORAGE_ATTR_TEMPLATE % x)
+            return result
+        
+        def get_storage_at(self, index):
+            for x in storage_iter:
+                if x == index:
+                    return getattr(self, STORAGE_ATTR_TEMPLATE % x)
+            raise IndexError
+        
+        def get_storage_width(self):
+            return n_storage
+        
+    constructor_class.__name__ = constructor_class_name(n_storage)
+    return constructor_class
+
+constructor_classes = [W_Constructor]
+for n_storage in range(1, 10):
+    constructor_classes.append(generate_constructor_class(n_storage))
+
+class_iter = unrolling_iterable(enumerate(constructor_classes))
+
+def select_constructor_class(storage):
+    length = len(storage)
+    for i, cls in class_iter:
+        if i == length:
+            return cls
+    # otherwise:
+    return W_NAryConstructor
+    
+
 def w_constructor(tag, children):
     shape, storage = tag.default_shape.fusion(children)
-    constr = W_Constructor(shape, storage)
+    # from lamb.util.debug import storagewalker
+    # print "t:", tag, "\n\tc:", children, "\n\tts:", tag.default_shape, "\n\tsh:", shape, "\n\tst:", storagewalker(storage)
+    constr_cls = select_constructor_class(storage)
+    constr = constr_cls(shape)
+    constr._init_storage(storage)   
     return constr
 
 class W_Lambda(W_Object):
@@ -671,10 +756,10 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
         n = e_stack._data if e_stack is not None else None
         if isinstance(n, W_Cursor):
             current_cursor = n
-            if jit.we_are_jitted():
-                print get_printable_location(current_cursor), "True"
-            else:
-                print get_printable_location(current_cursor), "False"
+            # if jit.we_are_jitted():
+            #     print get_printable_location(current_cursor), "True"
+            # else:
+            #     print get_printable_location(current_cursor), "False"
             jitdriver.can_enter_jit(
                 expr=expr, w_stack=w_stack, e_stack=e_stack,
                 current_cursor=current_cursor,
