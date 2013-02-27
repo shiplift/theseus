@@ -63,6 +63,12 @@ class Shape(HelperMixin):
         res += u"%d" % self.get_number_of_direct_children()
         return res
 
+    def merge_point_string(self):
+        return self.merge_point_string_seen([])
+
+    def merge_point_string_seen(self, seen):
+        return "<some shape>"
+
 
 class CompoundShape(Shape):
 
@@ -139,7 +145,7 @@ class CompoundShape(Shape):
         index = 0
         shape = self
         storage_len = shape.storage_width()
-        
+
         if storage_len < 1:
             # nothing to do
             return (self, storage)
@@ -186,6 +192,20 @@ class CompoundShape(Shape):
         res += u"]"
         return res
 
+
+    def merge_point_string_seen(self, seen):
+        seen.append(self)
+        res  = "%s/%d[" % (self._tag.name, self._tag.arity)
+        first = True
+        for subshape in self._structure:
+            if first:
+                first = False
+            else:
+                res += ", "
+            res += subshape.merge_point_string_seen(seen) if not subshape in seen else "."
+        res += "]"
+        return res
+
     def print_transforms(self):
         for (index, src), dest in sorted(self.known_transformations.items()):
             print "\t(", index, ", ", src, u") ↦ ", dest
@@ -224,3 +244,5 @@ class InStorageShape(Shape):
     def to_repr(self, seen):
         return u"◊"
 
+    def merge_point_string_seen(self, seen):
+        return "<>"

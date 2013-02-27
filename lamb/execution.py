@@ -16,6 +16,8 @@ from lamb.shape import CompoundShape, InStorageShape
 
 class W_Object(HelperMixin):
 
+    _attrs_ = []
+
     def shape(self):
         return InStorageShape()
     #
@@ -65,7 +67,7 @@ def tag(name, arity):
     if w_tag is None:
         w_tag = W_Tag(name, arity)
         W_Tag.tags[ (name, arity) ] = w_tag
-    
+
     assert isinstance(w_tag, W_Tag)
     return w_tag
 
@@ -106,7 +108,7 @@ class W_Constructor(W_Object):
 
     def get_children(self):
         return self.shape().get_children(self)
-    
+
     def get_child(self, index):
         return self.shape().get_child(self, index)
 
@@ -189,16 +191,16 @@ def generate_constructor_class(n_storage):
             for x in storage_iter:
                 result[x] = getattr(self, STORAGE_ATTR_TEMPLATE % x)
             return result
-        
+
         def get_storage_at(self, index):
             for x in storage_iter:
                 if x == index:
                     return getattr(self, STORAGE_ATTR_TEMPLATE % x)
             raise IndexError
-        
+
         def get_storage_width(self):
             return n_storage
-        
+
     constructor_class.__name__ = constructor_class_name(n_storage)
     return constructor_class
 
@@ -215,7 +217,7 @@ def select_constructor_class(storage):
             return cls
     # otherwise:
     return W_NAryConstructor
-    
+
 
 def w_constructor(tag, children):
     shape, storage = tag.default_shape.fusion(children)
@@ -223,7 +225,7 @@ def w_constructor(tag, children):
     # print "t:", tag, "\n\tc:", children, "\n\tts:", tag.default_shape, "\n\tsh:", shape, "\n\tst:", storagewalker(storage)
     constr_cls = select_constructor_class(storage)
     constr = constr_cls(shape)
-    constr._init_storage(storage)   
+    constr._init_storage(storage)
     return constr
 
 class W_Lambda(W_Object):
@@ -282,7 +284,7 @@ class W_Lambda(W_Object):
             return unicode(self._name)
         else:
             return who(self)
-    
+
     @uni
     def to_repr(self, seen):
         res = u"λ"
@@ -693,7 +695,7 @@ class ConstructorPattern(Pattern):
     def match(self, obj, binding):
         if not isinstance(obj, W_Constructor):
             raise NoMatch()
-        
+
         tag = jit.promote(obj.get_tag())
         if tag is self._tag:
             for i in range(tag.arity):
@@ -723,50 +725,64 @@ class VariableUnbound(Exception):
 class NoMatch(Exception):
     pass
 
-def get_printable_location(current_cursor): #pragma: no cover
+def get_printable_location(current_cursor, current_arg_shape): #pragma: no cover
+    res = ""
     if current_cursor is None:
-        return "<None>"
+        res += "<None>"
     else:
         if isinstance(current_cursor, W_LambdaCursor):
-            return "Lamb " + current_cursor._lamb._name
+            res += "Lamb " + current_cursor._lamb._name
         elif isinstance(current_cursor, W_ConstructorCursor):
-            return "Cons %s/%s" % (current_cursor._tag.name, current_cursor._tag.arity)
+            res +=  "Cons %s/%s" % (current_cursor._tag.name, current_cursor._tag.arity)
         else:
             return "<Unknown>"
 
+        #res += "(shape %s/%d)" % (current_arg_shape._tag.name, current_arg_shape._tag.arity) if current_arg_shape else "<unknown>"
+        res += " %s" % current_arg_shape.merge_point_string()
+
+    return res
+
 jitdriver = jit.JitDriver(
-    greens=["current_cursor"],
+    greens=["current_cursor", "current_arg_shape"],
     reds=["w_stack", "e_stack", "expr"],
     get_printable_location=get_printable_location,
 )
 
+def e_data_or_none(stack):
+    return stack._data if stack is not None else None
+def w_data_or_none(stack):
+    return stack._data if stack is not None else None
 
-    
+
 
 def interpret(expression_stack, arguments_stack=None, debug=False, debug_callback=None):
 
     w_stack = arguments_stack
     e_stack = expression_stack
+
+    # jit greens
     current_cursor = None
     expr = None
-    
+    current_arg_shape = None
+
     if debug_callback is None: debug_callback = debug_stack
 
     while True:
-        n = e_stack._data if e_stack is not None else None
-        if isinstance(n, W_Cursor):
-            current_cursor = n
-            # if jit.we_are_jitted():
-            #     print get_printable_location(current_cursor), "True"
-            # else:
-            #     print get_printable_location(current_cursor), "False"
+        e_data = e_data_or_none(e_stack)
+        if isinstance(e_data, W_Cursor):
+            current_cursor = e_data
+            if isinstance(current_cursor, W_LambdaCursor):
+                w_data = w_data_or_none(w_stack)
+                if isinstance(w_data, W_Constructor):
+                    current_arg_shape = w_data._shape
+
             jitdriver.can_enter_jit(
                 expr=expr, w_stack=w_stack, e_stack=e_stack,
-                current_cursor=current_cursor,
+                current_cursor=current_cursor, current_arg_shape=current_arg_shape,
             )
         jitdriver.jit_merge_point(
             expr=expr, w_stack=w_stack, e_stack=e_stack,
-            current_cursor=current_cursor,
+            current_cursor=current_cursor, current_arg_shape=current_arg_shape
         )
         if e_stack is None:
             break
