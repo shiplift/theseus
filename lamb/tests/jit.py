@@ -20,13 +20,41 @@ from lamb.shape import InStorageShape, CompoundShape
 from lamb.util.construction_helper import (lamb, ziprules, mu, cons, w_nil,
                                            conslist, integer, operand_stack,
                                            execution_stack)
-from mu.peano import peano_num, mult
+from mu.peano import peano_num, mult, plus, plus_acc
 #
 # Tests
 #
 
 class TestLLtype(LLJitMixin):
     
+    def test_simpleverse(self):
+        # name chosen to not conflict with pytest.py -kreverse
+        a1 = Variable("accumulator")
+        a2 = Variable("accumulator")
+        h = Variable("head")
+        t = Variable("tail")
+
+        reverse_acc = lamb()
+        reverse_acc._name ="reverse_acc"
+        reverse_acc._rules = ziprules(
+            ([w_nil,              a1], a1),
+            ([cons("cons", h, t), a2], mu(reverse_acc, t, cons("cons", h, a2))))
+
+        l = Variable("l")
+        reverse = lamb(([l], mu(reverse_acc, l, w_nil)))
+        reverse._name = "reverse"
+
+
+        nums = 149
+        # XXX >= 150 does not work oO
+        list1_w = [integer(x) for x in range(nums)]
+        stack_w = operand_stack(conslist(list1_w))
+        stack_e = execution_stack(W_LambdaCursor(reverse))
+        def interp_w():
+            return interpret(stack_e, stack_w)
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
     def test_reverse(self):
         a1 = Variable("accumulator")
         a2 = Variable("accumulator")
@@ -122,4 +150,23 @@ class TestLLtype(LLJitMixin):
             return interpret(stack_e, stack_w)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
-        
+
+    def test_plus(self):
+        arg1 = peano_num(100)
+        arg2 = peano_num(100)
+        stack_e = execution_stack(W_LambdaCursor(plus))
+        stack_w = operand_stack(arg1, arg2)
+        def interp_w():
+            return interpret(stack_e, stack_w)
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
+    def test_pluacc(self):
+        arg1 = peano_num(100)
+        arg2 = peano_num(100)
+        stack_e = execution_stack(W_LambdaCursor(plus_acc))
+        stack_w = operand_stack(arg1, arg2)
+        def interp_w():
+            return interpret(stack_e, stack_w)
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)

@@ -3,6 +3,7 @@
 #
 # Test.
 #
+
 from rpython.rlib import jit
 
 from lamb.util.repr import uni, who, urepr
@@ -50,6 +51,9 @@ class Shape(HelperMixin):
 
     def extract_child(self, w_c, index):
         raise NotImplementedError("abstract method")
+
+    def record_shapes(self, children):
+        pass
 
     def fusion(self, children):
         return (self, children)

@@ -720,6 +720,17 @@ class TestInterpret(object):
         res = interpret(ex_stack, op_stack)
         assert python_num(res) == 9
 
+    def test_plus_acc(self):
+
+        a_w = peano_num(4)
+        b_w = peano_num(5)
+
+        ex_stack = execution_stack(W_LambdaCursor(plus_acc))
+        op_stack = operand_stack(a_w, b_w)
+
+        res = interpret(ex_stack, op_stack)
+        assert python_num(res) == 9
+
     def test_mult(self):
 
         a_w = peano_num(2)

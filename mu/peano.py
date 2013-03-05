@@ -74,6 +74,32 @@ def make_plus():
 
 plus = make_plus()
 
+def make_plus_acc():
+    x1 = Variable("x")
+    x2 = Variable("x")
+    x3 = Variable("x")
+    y = Variable("y")
+
+    a1 = Variable("accumulator")
+    a2 = Variable("accumulator")
+    o1 = Variable("op")
+    l_acc = lamb()
+    l_acc._rules = ziprules(
+        ([a1,   zero], a1),
+        ([a2, _p(o1)], mu(l_acc, _p(a2), o1)))
+    
+    l = lamb()
+    l._rules = ziprules(
+        ([zero, zero ], zero),
+        ([x1  , zero ], x1),
+        ([zero, x2   ], x2),
+        ([x3  , y    ], mu(l_acc, x3, y)))
+    l._name = "plus"
+    return l
+
+plus_acc = make_plus_acc()
+
+
 def make_mult():
     _1 = Variable("_")
     _2 = Variable("_")
@@ -106,6 +132,8 @@ def python_num(peano):
         res += 1
         p = p.get_child(0)
     return res
+
+
 
 
 __all__ = [
