@@ -6,12 +6,12 @@
 import py
 
 from lamb.execution import *
+from mu.peano import *
 from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            ziprules, lamb, mu,
                                            w_nil,
                                            conslist, plist,
                                            execution_stack, operand_stack)
-from mu.peano import zero, succ, pred, plus, mult, peano_num, python_num
 #
 # Tests
 #

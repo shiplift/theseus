@@ -219,8 +219,17 @@ def select_constructor_class(storage):
     return W_NAryConstructor
 
 
+def prepare_constructor(tag, children):
+    """
+    create what is necessary to build a constructor.
+    """
+    pre_shape = tag.default_shape
+    pre_shape.record_shapes(children)
+    shape, storage = pre_shape.fusion(children)
+    return (shape, storage)
+
 def w_constructor(tag, children):
-    shape, storage = tag.default_shape.fusion(children)
+    shape, storage = prepare_constructor(tag, children)
     # from lamb.util.debug import storagewalker
     # print "t:", tag, "\n\tc:", children, "\n\tts:", tag.default_shape, "\n\tsh:", shape, "\n\tst:", storagewalker(storage)
     constr_cls = select_constructor_class(storage)

@@ -1,10 +1,38 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from lamb.execution import Variable
+from lamb.execution import Variable, tag
+from lamb.shape import CompoundShape
 from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
                                            plist, conslist,
                                            operand_stack, execution_stack, w_nil)
+
+# the Tag used in peano arithmetic lists
+def _setup_shapes():
+    p_1 = tag("p", 1)
+
+    p_0_shape = p_1.default_shape
+    p_1_shape = CompoundShape(p_1, [p_0_shape])
+    p_2_shape = CompoundShape(p_1, [p_1_shape])
+    p_3_shape = CompoundShape(p_1, [p_2_shape])
+    p_4_shape = CompoundShape(p_1, [p_3_shape])
+
+    p_0_shape.known_transformations[(0, p_0_shape)] = p_1_shape
+
+    p_0_shape.known_transformations[(0, p_1_shape)] = p_2_shape
+    p_1_shape.known_transformations[(0, p_1_shape)] = p_2_shape
+
+    p_0_shape.known_transformations[(0, p_2_shape)] = p_3_shape
+    p_1_shape.known_transformations[(0, p_2_shape)] = p_3_shape
+    p_2_shape.known_transformations[(0, p_2_shape)] = p_3_shape
+
+    p_0_shape.known_transformations[(0, p_3_shape)] = p_4_shape
+    p_1_shape.known_transformations[(0, p_3_shape)] = p_4_shape
+    p_2_shape.known_transformations[(0, p_3_shape)] = p_4_shape
+    p_3_shape.known_transformations[(0, p_3_shape)] = p_4_shape
+
+_setup_shapes()
+
 
 def _p(x):
     return cons("p", x)
@@ -81,10 +109,11 @@ def python_num(peano):
 
 
 __all__ = [
-    zero,
-    succ, pred,
-    plus, mult,
-    peano_num, python_num    
+    'zero',
+    'succ', 'pred',
+    'plus', 'mult',
+    'plus_acc',
+    'peano_num', 'python_num',
 ]
 
 
