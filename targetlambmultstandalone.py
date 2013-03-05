@@ -26,7 +26,7 @@ def target(driver, args):
     return entry_point, None
 
 def jitpolicy(driver):
-    from pypy.jit.codewriter.policy import JitPolicy
+    from rpython.jit.codewriter.policy import JitPolicy
     return JitPolicy()
 
 if __name__ == '__main__':
