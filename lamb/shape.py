@@ -199,7 +199,7 @@ class CompoundShape(Shape):
 
     def merge_point_string_seen(self, seen):
         seen.append(self)
-        res  = "%s/%d[" % (self._tag.name, self._tag.arity)
+        res  = "%s'%d{" % (self._tag.name, self._tag.arity)
         first = True
         for subshape in self._structure:
             if first:
@@ -207,12 +207,18 @@ class CompoundShape(Shape):
             else:
                 res += ", "
             res += subshape.merge_point_string_seen(seen) if not subshape in seen else "."
-        res += "]"
+        res += "}"
         return res
 
     def print_transforms(self):
         for (index, src), dest in sorted(self.known_transformations.items()):
             print "\t(", index, ", ", src, u") ↦ ", dest
+
+    def __eq__(self, other):
+        return (self.__class__  == other.__class__ and
+                self._tag       == other._tag and
+                self._structure == other._structure)
+
 
 
 def singleton(cls):
@@ -249,4 +255,48 @@ class InStorageShape(Shape):
         return u"◊"
 
     def merge_point_string_seen(self, seen):
-        return "<>"
+        return "|"
+
+
+class ShapeTuple(object):
+    """
+    I am a little bit like the python tuple but I can
+    built up myself consecutively and still retain obejct identity.
+    """
+
+    _immutable_fields_ = ["shape", "parent"]
+
+    def __init__(self, shape, parent):
+        self.shape = shape
+        self.parent = parent
+        self._route = {}
+
+    @jit.elidable
+    def tuple_for_shape(self, shape):
+        tup = self._route.get(shape, None)
+        if tup is None:
+            tup = self.__class__(shape, self)
+            self._route[shape] = tup
+        return tup
+
+    def merge_point_string(self):
+        res = ""
+        if self.shape is None and self.parent is None:
+            return res
+
+        if self.parent is not None:
+            res += self.parent.merge_point_string()
+        if self.shape is not None:
+            res += ".%s" % self.shape.merge_point_string()
+        else:
+            res += "."
+        return res
+
+_empty_tuple = ShapeTuple(None, None)
+
+@jit.unroll_safe
+def find_shape_tuple(shape_list):
+    tup = _empty_tuple
+    for shape in shape_list:
+        tup = tup.tuple_for_shape(shape)
+    return tup

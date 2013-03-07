@@ -426,3 +426,17 @@ class TestShapeMerger(object):
         list1_w.reverse()
         assert plist(res) == list1_w
 
+    def test_mult(self):
+        import mu.peano
+        from mu.peano import peano_num, python_num, mult
+
+        n = 10
+        # n = 100
+        arg1 = peano_num(n)
+        arg2 = peano_num(n)
+        stack_e = execution_stack(W_LambdaCursor(mult))
+        stack_w = operand_stack(arg1, arg2)
+        res = interpret(stack_e, stack_w, True)
+        assert python_num(res) == n * n
+
+

@@ -12,7 +12,7 @@ from lamb.util.debug import debug_stack
 from lamb.util.testing import HelperMixin
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
-from lamb.shape import CompoundShape, InStorageShape
+from lamb.shape import CompoundShape, InStorageShape, find_shape_tuple
 
 
 class W_Object(HelperMixin):
@@ -725,155 +725,104 @@ class ConstructorPattern(Pattern):
     def to_repr(self, seen):
         return u"&" + urepr(self._tag, seen) + u"(" + u", ".join(map(lambda x: urepr(x, seen), self._children)) + u")"
 
-
-
-
-
-
 class VariableUnbound(Exception):
     pass
 
 class NoMatch(Exception):
     pass
 
-def get_printable_location(current_cursor, current_args_shape): #pragma: no cover
+#
+#
+#
+#  Support for the JIT.
+#
+#
+
+
+
+def get_printable_location(current_cursor, current_args_shapes): #pragma: no cover
     res = ""
     if current_cursor is None:
         res += "<None>"
     else:
         if isinstance(current_cursor, W_LambdaCursor):
-            res += "Lamb " + current_cursor._lamb._name
+            res += "Lamb[%s/%s] " % (current_cursor._lamb._name, current_cursor._lamb.arity())
         elif isinstance(current_cursor, W_ConstructorCursor):
-            res +=  "Cons %s/%s" % (current_cursor._tag.name, current_cursor._tag.arity)
+            res +=  "Cons[%s/%s] " % (current_cursor._tag.name, current_cursor._tag.arity)
         else:
             return "<Unknown>"
-
-        #res += "(shape %s/%d)" % (current_arg_shape._tag.name, current_arg_shape._tag.arity) if current_arg_shape else "<unknown>"
-        for current_arg_shape in current_args_shape.shapes:
-            if current_arg_shape is not None:
-                res += ".%s" % current_arg_shape.merge_point_string()
-            else:
-                res += "./"
-
+        res += current_args_shapes.merge_point_string()
     return res
 
 jitdriver = jit.JitDriver(
-    greens=["current_cursor", "current_args_shape"],
-    reds=["w_stack", "e_stack", "expr"],
+    greens=["current_cursor", "current_args_shapes"],
+    reds=["op_stack", "ex_stack", "expr"],
     get_printable_location=get_printable_location,
 )
 
-def e_data_or_none(stack):
-    return stack._data if stack is not None else None
-def w_data_or_none(stack):
-    return stack._data if stack is not None else None
-
-
-class ShapeContainer(object):
-
-    _immutable_fields_ = ['shapes', 'shapes_length']
-
-    def __init__(self, shapes):
-        self.shapes = shapes
-        self.shapes_length = len(shapes)
-
-    @jit.unroll_safe
-    def is_equal(self, other):
-        if other.__class__ != self.__class__:
-            return False
-        if self.shapes_length != other.shapes_length:
-            return False
-        our_shapes = self.shapes
-        other_shapes = other.shapes
-        for i in range(self.shapes_length):
-            if our_shapes[i] is not other_shapes[i]:
-                return False
-        return True
-
-    @jit.unroll_safe
-    def the_hash(self):
-        h = self.shapes_length
-        shapes = self.shapes
-        for i in range(self.shapes_length):
-            shape = shapes[i]
-            n = compute_identity_hash(shape) if shape is not None else i
-            h = h ^ i
-        return h
-
-def _eq_shapes(a, b):
-    assert isinstance(a, ShapeContainer)
-    return a.is_equal(b)
-
-def _hash_shapes(a):
-    assert isinstance(a, ShapeContainer)
-    return a.the_hash()
-
-
-_arg_shapes = r_dict(_eq_shapes, _hash_shapes)
-
-def _canonical_shapes(shapes):
-    the_shapes = _arg_shapes.get(shapes, None)
-    if the_shapes is None:
-        _arg_shapes[shapes] = shapes
-        the_shapes = shapes
-    return the_shapes
+# shortcuts to access stack content.
+def ex_data_or_none(stack): return stack._data if stack is not None else None
+def op_data_or_none(stack): return stack._data if stack is not None else None
 
 
 @jit.unroll_safe
-def _stack_to_list(w_stack, length):
-    w_s = w_stack
-    shapes = [None] * length
-    for i in range(length):
-        w = w_data_or_none(w_s)
+def _stack_to_list(op_stack, depth):
+    """
+    transform `op_stack` of (possibly) W_Constructors into
+    list of Shapes, if they have
+    """
+    op_s = op_stack
+    shapes = [None] * depth
+    for i in range(depth):
+        w = op_data_or_none(op_s)
         shapes[i] = w._shape if isinstance(w, W_Constructor) else None
-        w_s = w_s._next if w_s is not None else None
-    return ShapeContainer(shapes)
+        op_s = op_s._next if op_s is not None else None
+    return shapes
 
-def shapes_of_current_lambda_args(current_lambda, w_stack):
-    length = current_lambda.arity()
-    shapes = _stack_to_list(w_stack, length)
-
-    s = jit.promote(_canonical_shapes(shapes))
-    return s
-
+def shapes_of_current_args(depth, op_stack):
+    shapes = _stack_to_list(op_stack, depth)
+    tup = find_shape_tuple(shapes)
+    return tup
 
 def interpret(expression_stack, arguments_stack=None, debug=False, debug_callback=None):
 
-    w_stack = arguments_stack
-    e_stack = expression_stack
+    op_stack = arguments_stack
+    ex_stack = expression_stack
 
     # jit greens
-    current_cursor = None
     expr = None
-    current_args_shape = None
+    current_cursor = None
+    current_args_shapes = None
 
     if debug_callback is None: debug_callback = debug_stack
 
     while True:
-        e_data = e_data_or_none(e_stack)
-        if isinstance(e_data, W_Cursor):
-            current_cursor = e_data
+        ex_data = ex_data_or_none(ex_stack)
+        if isinstance(ex_data, W_Cursor):
+            current_cursor = ex_data
             if isinstance(current_cursor, W_LambdaCursor):
-                current_args_shape = shapes_of_current_lambda_args(current_cursor._lamb, w_stack)
+                current_args_shapes = shapes_of_current_args(current_cursor._lamb.arity(), op_stack)
+            # elif isinstance(current_cursor, W_ConstructorCursor):
+            #     current_args_shapes = shapes_of_current_args(current_cursor._tag.arity, op_stack)
 
             jitdriver.can_enter_jit(
-                expr=expr, w_stack=w_stack, e_stack=e_stack,
-                current_cursor=current_cursor, current_args_shape=current_args_shape,
+                expr=expr, op_stack=op_stack, ex_stack=ex_stack,
+                current_cursor=current_cursor, current_args_shapes=current_args_shapes,
             )
         jitdriver.jit_merge_point(
-            expr=expr, w_stack=w_stack, e_stack=e_stack,
-            current_cursor=current_cursor, current_args_shape=current_args_shape
+            expr=expr, op_stack=op_stack, ex_stack=ex_stack,
+            current_cursor=current_cursor, current_args_shapes=current_args_shapes
         )
-        if e_stack is None:
+        if ex_stack is None:
             break
 
 
-        if debug: debug_callback({'e_stack':e_stack, 'w_stack':w_stack})
-        expr = e_stack._data
-        e_stack = e_stack._next
-        (w_stack, e_stack) = expr.interpret(w_stack, e_stack)
+        if debug: debug_callback({'ex_stack':ex_stack, 'op_stack':op_stack})
+        expr = ex_stack._data
+        ex_stack = ex_stack._next
+        (op_stack, ex_stack) = expr.interpret(op_stack, ex_stack)
 
-    if debug: debug_callback({'e_stack':e_stack, 'w_stack':w_stack})
-    return w_stack._data
+    if debug: debug_callback({'ex_stack':ex_stack, 'op_stack':op_stack})
+    return op_stack._data
 
 
