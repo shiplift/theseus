@@ -20,7 +20,7 @@ from lamb.shape import InStorageShape, CompoundShape
 from lamb.util.construction_helper import (lamb, ziprules, mu, cons, w_nil,
                                            conslist, integer, operand_stack,
                                            execution_stack)
-from mu.peano import peano_num, mult, plus, plus_acc
+from mu.peano import *
 #
 # Tests
 #
@@ -142,8 +142,8 @@ class TestLLtype(LLJitMixin):
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_mult(self):
-        arg1 = peano_num(100)
-        arg2 = peano_num(100)
+        arg1 = peano_num(50)
+        arg2 = peano_num(50)
         stack_e = execution_stack(W_LambdaCursor(mult))
         stack_w = operand_stack(arg1, arg2)
         def interp_w():
@@ -151,9 +151,19 @@ class TestLLtype(LLJitMixin):
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
+    def test_mulacc(self):
+        arg1 = peano_num(50)
+        arg2 = peano_num(50)
+        stack_e = execution_stack(W_LambdaCursor(mult_acc))
+        stack_w = operand_stack(arg1, arg2)
+        def interp_w():
+            return interpret(stack_e, stack_w)
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
     def test_plus(self):
-        arg1 = peano_num(100)
-        arg2 = peano_num(100)
+        arg1 = peano_num(50)
+        arg2 = peano_num(50)
         stack_e = execution_stack(W_LambdaCursor(plus))
         stack_w = operand_stack(arg1, arg2)
         def interp_w():

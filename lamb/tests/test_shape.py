@@ -404,14 +404,14 @@ class TestShapeMerger(object):
 
             from lamb.util.debug import storagewalker
 
-            w_stack = d['w_stack']
-            e_stack = d['e_stack']
+            op_stack = d['op_stack']
+            ex_stack = d['ex_stack']
 
-            if w_stack:
-                if isinstance(w_stack._data, W_Constructor):
-                    print "[W]", w_stack._data._shape, " storage: ", storagewalker(w_stack._data.get_storage())
+            if op_stack:
+                if isinstance(op_stack._data, W_Constructor):
+                    print "[W]", op_stack._data._shape, " storage: ", storagewalker(op_stack._data.get_storage())
                 else:
-                    print "[W]", w_stack._data
+                    print "[W]", op_stack._data
             else:
                 print "[w] none"
 

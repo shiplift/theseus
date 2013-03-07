@@ -799,11 +799,11 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
     while True:
         ex_data = ex_data_or_none(ex_stack)
         if isinstance(ex_data, W_Cursor):
-            current_cursor = ex_data
+            current_cursor = jit.promote(ex_data)
             if isinstance(current_cursor, W_LambdaCursor):
                 current_args_shapes = shapes_of_current_args(current_cursor._lamb.arity(), op_stack)
-            # elif isinstance(current_cursor, W_ConstructorCursor):
-            #     current_args_shapes = shapes_of_current_args(current_cursor._tag.arity, op_stack)
+            elif isinstance(current_cursor, W_ConstructorCursor):
+                current_args_shapes = shapes_of_current_args(current_cursor._tag.arity, op_stack)
 
             jitdriver.can_enter_jit(
                 expr=expr, op_stack=op_stack, ex_stack=ex_stack,
@@ -824,5 +824,3 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
 
     if debug: debug_callback({'ex_stack':ex_stack, 'op_stack':op_stack})
     return op_stack._data
-
-

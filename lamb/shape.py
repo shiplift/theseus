@@ -298,5 +298,5 @@ _empty_tuple = ShapeTuple(None, None)
 def find_shape_tuple(shape_list):
     tup = _empty_tuple
     for shape in shape_list:
-        tup = tup.tuple_for_shape(shape)
+        tup = tup.tuple_for_shape(jit.promote(shape))
     return tup

@@ -62,7 +62,7 @@ def make_plus():
     x2 = Variable("x")
     x3 = Variable("x")
     y = Variable("y")
-    
+
     l = lamb()
     l._rules = ziprules(
         ([zero, zero ], zero),
@@ -87,7 +87,8 @@ def make_plus_acc():
     l_acc._rules = ziprules(
         ([a1,   zero], a1),
         ([a2, _p(o1)], mu(l_acc, _p(a2), o1)))
-    
+    l_acc.name = "plus/a"
+
     l = lamb()
     l._rules = ziprules(
         ([zero, zero ], zero),
@@ -117,6 +118,42 @@ def make_mult():
 
 mult = make_mult()
 
+def make_mult_acc():
+
+    _f1 = Variable("_")
+    _f2 = Variable("_")
+    a1 = Variable("accumulator")
+    a2 = Variable("accumulator")
+    a3 = Variable("accumulator")
+    a4 = Variable("accumulator")
+
+    f1 = Variable("factor1")
+    f2 = Variable("factor2")
+    l_acc = lamb()
+    l_acc._rules = ziprules(
+        ([zero, zero, a1], a1),
+        ([_f1,  zero, a2], a2),
+        ([zero,  _f2, a3], a3),
+        ([f1, _p(f2), a4], mu(l_acc, f1, f2, mu(plus_acc, a4, f1))))
+    l_acc.name = "mult/a"
+
+    _1 = Variable("_")
+    _2 = Variable("_")
+    x = Variable("x")
+    y = Variable("y")
+
+    l = lamb()
+    l._rules = ziprules(
+        ([_1  , zero ], zero),
+        ([zero, _2   ], zero),
+        ([x   , y    ], mu(l_acc, x, y, zero)))
+        # ([x   , _p(y)], mu(plus, mu(l, x, y), x)))
+        #([x   , _p(y)], mu(plus, x, mu(l, x, y))))
+    l._name = "mult"
+    return l
+
+mult_acc = make_mult_acc()
+
 
 
 def peano_num(pynum):
@@ -124,7 +161,7 @@ def peano_num(pynum):
     for i in range(pynum):
         res = cons("p", res)
     return res
-        
+
 def python_num(peano):
     p = peano
     res = 0
@@ -140,8 +177,6 @@ __all__ = [
     'zero',
     'succ', 'pred',
     'plus', 'mult',
-    'plus_acc',
+    'plus_acc', 'mult_acc',
     'peano_num', 'python_num',
 ]
-
-
