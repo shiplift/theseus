@@ -442,3 +442,55 @@ class TestShapeMerger(object):
         assert python_num(res) == n * n
 
 
+
+class TestShapeRecorder(object):
+
+    def test_simple_record(self):
+        w_1 = integer(1)
+        ferb_1 = tag("ferb_0", 1)
+        s = ferb_1.default_shape
+
+        children = [w_1]
+        new_shape, new_storage = s.merge(children)
+        s.record_shapes(new_shape, new_storage)
+
+        assert hasattr(s, "_count_for")
+        assert s._count_for( (w_1, 0) ) == 0
+
+        children = [w_nil]
+        new_shape, new_storage = s.merge(children)
+        s.record_shapes(new_shape, new_storage)
+
+        assert hasattr(s, "_count_for")
+        assert s._count_for( (w_nil, 0) ) == 1
+
+    def test_simple_autosubsititution(self):
+        CompoundShape._subsititution_threshold = 1
+
+        ferb_1 = tag("ferb_1", 1)
+        shape = ferb_1.default_shape
+
+        children = [w_nil]
+        new_shape, new_storage = shape.merge(children)
+        shape.record_shapes(new_shape, new_storage)
+
+        assert hasattr(shape, "_hist")
+        assert len(shape._hist) > 0
+        assert new_shape is shape
+
+        c = W_NAryConstructor(new_shape)
+        c._init_storage(new_storage)
+
+        children_1 = [c]
+        new_shape_1, new_storage_1 = shape.merge(children_1)
+        shape.record_shapes(new_shape_1, new_storage_1)
+
+        assert len(shape._hist) > 1
+        assert new_shape_1 is shape
+
+        children_2 = [c]
+        new_shape_2, new_storage_2 = shape.merge(children_2)
+        # shape.record_shapes(new_shape_1, new_storage_1)
+
+        # assert len(shape._hist) > 1
+        assert new_shape_2 is not shape

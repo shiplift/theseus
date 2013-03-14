@@ -78,10 +78,14 @@ class CompoundShape(Shape):
 
     _immutable_fields_ = ['_tag', '_structure[*]']
 
+    _subsititution_threshold = 5
+
     def __init__(self, tag, structure):
         self._structure = structure
         self._tag = tag
+        self._hist = {}
         self.known_transformations = {}
+
 
     def get_child(self, w_c, index):
         return self.extract_child(w_c, index)
@@ -136,11 +140,39 @@ class CompoundShape(Shape):
         constructor._init_storage(storage)
         return constructor
 
+    def _count_for(self, key):
+        return self._hist.get(key, 0)
+
+    def record_shapes(self, new_shape, storage):
+        from execution import W_Constructor
+
+        for i in range(len(storage)):
+            child = storage[i]
+            if isinstance(child, W_Constructor):
+                    key = (child, i)
+                    new_count = self._count_for(key) + 1
+                    self._hist[key] = new_count
+                    if new_count >= self._subsititution_threshold:
+                        self.recognize_transformation(new_shape, child, i)
+
+    def recognize_transformation(self, previous_shape, child, i):
+        structure_length = len(previous_shape._structure)
+        structure = (
+            [previous_shape._structure[j] if i != j else child._shape \
+             for j in range(structure_length)])
+        new_shape = CompoundShape(previous_shape._tag, structure)
+        self.known_transformations[(i, child._shape)] = new_shape
+
+    def fusion(self, storage):
+        new_shape, new_storage = self.merge(storage)
+        self.record_shapes(new_shape, new_storage)
+        return (new_shape, new_storage)
+
     #
     # shape merge/fusion
     #
     @jit.unroll_safe
-    def fusion(self, storage):
+    def merge(self, storage):
         u"""
         fusion ≔ Shape × [W_Object] → Shape' × [W_Object]'
         """

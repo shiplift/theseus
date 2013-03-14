@@ -225,7 +225,6 @@ def prepare_constructor(tag, children):
     create what is necessary to build a constructor.
     """
     pre_shape = tag.default_shape
-    pre_shape.record_shapes(children)
     shape, storage = pre_shape.fusion(children)
     return (shape, storage)
 
