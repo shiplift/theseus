@@ -88,7 +88,8 @@ class CompoundShape(Shape):
 
     @jit.unroll_safe
     def get_children(self, w_c):
-        return [self.get_child(w_c, index) for index in range(self.get_number_of_direct_children())]
+        new_length = self.get_number_of_direct_children()
+        return [self.get_child(w_c, index) for index in range(new_length)]
 
 
     def get_number_of_direct_children(self):
@@ -161,8 +162,12 @@ class CompoundShape(Shape):
             new_shape = shape.get_transformation(index, subshape)
             if new_shape is not shape:
 
-                child_storage = child.get_storage() if isinstance(child, W_Constructor) else [child]
-                new_storage = _splice(current_storage, storage_len, index, child_storage, subshape.storage_width())
+                if isinstance(child, W_Constructor):
+                    child_storage = child.get_storage()
+                else:
+                    child_storage = [child]
+                new_storage = _splice(current_storage, storage_len, index,
+                                      child_storage, subshape.storage_width())
 
                 current_storage = new_storage
                 shape = new_shape

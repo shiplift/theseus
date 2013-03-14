@@ -13,6 +13,7 @@ from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            conslist, plist,
                                            execution_stack, operand_stack)
 
+
 class TestShapeAccess(object):
 
     def test_simple_predefined_shape(self):
@@ -30,15 +31,15 @@ class TestShapeAccess(object):
         c = W_NAryConstructor(shape)
         c._init_storage([w_1])
         assert c.get_number_of_children() == 1
-        assert c.get_child(0)  == w_1
+        assert c.get_child(0) == w_1
 
         barf_2 = tag("barf", 2)
         shape = CompoundShape(barf_2, [InStorageShape()] * 2)
         c = W_NAryConstructor(shape)
         c._init_storage([w_1, w_1])
         assert c.get_number_of_children() == 2
-        assert c.get_child(0)  == w_1
-        assert c.get_child(1)  == w_1
+        assert c.get_child(0) == w_1
+        assert c.get_child(1) == w_1
 
     def test_recursive_predefined_shape(self):
 
@@ -49,7 +50,7 @@ class TestShapeAccess(object):
         c_1 = W_NAryConstructor(shape_1)
         c_1._init_storage([w_1])
         assert c_1.get_number_of_children() == 1
-        assert c_1.get_child(0)  == w_1
+        assert c_1.get_child(0) == w_1
 
         zork_2 = tag("zork", 2)
         shape_2 = CompoundShape(zork_2, [shape_1, shape_1])
@@ -58,10 +59,9 @@ class TestShapeAccess(object):
         c_2 = W_NAryConstructor(shape_2)
         c_2._init_storage([w_1, w_1])
         assert c_2.get_number_of_children() == 2
-        assert c_2.get_child(0)  == c_1
+        assert c_2.get_child(0) == c_1
         assert c_2.get_child(0).get_child(0) == w_1
         assert c_2.get_child(1).get_child(0) == w_1
-
 
         foo_2 = tag("foo", 2)
         shape_3 = CompoundShape(foo_2, [shape_2, shape_2])
@@ -75,7 +75,8 @@ class TestShapeAccess(object):
         c_3 = W_NAryConstructor(shape_3)
         c_3._init_storage([w_1,w_1,w_1,w_1])
         assert c_3.get_number_of_children() == 2
-        assert c_3.get_child(0)  == c_2
+
+        assert c_3.get_child(0) == c_2
         assert c_3.get_child(0).get_child(0) == c_1
         assert c_3.get_child(0).get_child(0).get_child(0) == w_1
         assert c_3.get_child(0).get_child(1) == c_1
@@ -92,7 +93,7 @@ class TestShapeAccess(object):
         c_1 = W_NAryConstructor(shape_1)
         c_1._init_storage([w_1])
         assert c_1.get_number_of_children() == 1
-        assert c_1.get_child(0)  == w_1
+        assert c_1.get_child(0) == w_1
 
         zork_2 = tag("zork", 2)
         shape_2 = CompoundShape(zork_2, [shape_1, shape_1])
@@ -101,7 +102,7 @@ class TestShapeAccess(object):
         c_2 = W_NAryConstructor(shape_2)
         c_2._init_storage([w_1, w_1])
         assert c_2.get_number_of_children() == 2
-        assert c_2.get_child(0)  == c_1
+        assert c_2.get_child(0) == c_1
         assert c_2.get_child(0).get_child(0) == w_1
         assert c_2.get_child(1).get_child(0) == w_1
 
@@ -129,13 +130,14 @@ class TestShapeAccess(object):
             # zork
             c_2_1])
         assert c_3.get_number_of_children() == 2
-        assert c_3.get_child(0)  == c_2
+        assert c_3.get_child(0) == c_2
         assert c_3.get_child(0).get_child(0) == c_1
         assert c_3.get_child(0).get_child(0).get_child(0) == w_1
         assert c_3.get_child(0).get_child(1) == c_1
         assert c_3.get_child(0).get_child(1).get_child(0) == w_1
         assert c_3.get_child(1).get_child(0).get_child(0) == w_1
         assert c_3.get_child(1).get_child(1).get_child(0) == w_1
+
 
 class TestShapeMerger(object):
     u"""

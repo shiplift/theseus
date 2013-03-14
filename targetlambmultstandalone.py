@@ -8,6 +8,7 @@ from mu.peano import mult, peano_num, python_num
 
 # __________  Entry point  __________
 
+
 def entry_point(argv):
     argno = len(argv)
     if argno == 3:
@@ -21,13 +22,16 @@ def entry_point(argv):
 
 # _____ Define and setup target ___
 
+
 def target(driver, args):
     driver.exe_name = 'lambmult-%(backend)s'
     return entry_point, None
 
+
 def jitpolicy(driver):
     from rpython.jit.codewriter.policy import JitPolicy
     return JitPolicy()
+
 
 if __name__ == '__main__':
     entry_point(sys.argv)
