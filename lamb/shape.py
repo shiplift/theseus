@@ -79,6 +79,7 @@ class CompoundShape(Shape):
     _immutable_fields_ = ['_tag', '_structure[*]']
 
     _substitution_threshold = 17
+    _max_storage_width = 23
 
     def __init__(self, tag, structure):
         self._structure = structure
@@ -159,7 +160,9 @@ class CompoundShape(Shape):
                     count = self._hist.get(key, 0)
                     if count <= self._substitution_threshold:
                         self._hist[key] = count + 1
-                        if self._hist[key] >= self._substitution_threshold:
+                        width = child.get_storage_width()
+                        if (width <= self._max_storage_width and
+                            self._hist[key] >= self._substitution_threshold):
                             self.recognize_transformation(i, child._shape)
 
     def recognize_transformation(self, i, shape):
@@ -307,6 +310,10 @@ class InStorageShape(Shape):
     def merge_point_string_seen(self, seen):
         return "|"
 
+@jit.unroll_safe
+def default_shape(tag, arity):
+    shape = CompoundShape(tag, [InStorageShape()] * arity)
+    return shape
 
 class ShapeTuple(object):
     """
@@ -350,8 +357,3 @@ def find_shape_tuple(shape_list):
     for shape in shape_list:
         tup = tup.tuple_for_shape(jit.promote(shape))
     return tup
-
-
-def default_shape(tag, arity):
-    shape = CompoundShape(tag, [InStorageShape()] * arity)
-    return shape

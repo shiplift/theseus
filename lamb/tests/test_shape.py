@@ -714,3 +714,38 @@ class TestShapeRecognizer(object):
             (1, c.default_shape): cons_2.shape(),
             (1, cons_2.shape()): cons_5.shape(),
         }
+
+
+    def test_bounded_deep_structures(self):
+        w_1 = integer(1)
+        c = clean_tag("cons", 2)
+
+        def _cons(*children):
+            ch = list(children)
+            pre_shape = c.default_shape
+            shape, storage = pre_shape.fusion(children)
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+        def _conslist(p_list):
+            result = w_nil
+            for element in reversed(p_list):
+                result = _cons(element, result)
+            return result
+
+        c.default_shape._substitution_threshold = 17
+
+        def check_width(c, width):
+            if c is not w_nil and isinstance(c, W_Constructor):
+                assert c.get_storage_width() < width
+                # We deliberately use a n-ary Constructor, hence,
+                # know that _structure is there
+                for child in c._storage:
+                    check_width(child, width)
+
+        sys.setrecursionlimit(100000)
+        for num in [50, 100, 1000, 10000, 50000]:
+            l = _cons(w_1, w_nil)
+            for i in range(num):
+                l = _cons(w_1, l)
+            check_width(l, 25)
