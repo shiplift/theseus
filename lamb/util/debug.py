@@ -17,7 +17,7 @@ def debug_stack(d):
     #print "%: Cursor, !: Expression, μ: Call, #: Value, λ: Lambda, &: Pattern, {}: Rule, _ Variable"
 
     length = 60
-    
+
     def i_(o):
         if hasattr(o, 'linearize'):
             return o.linearize()
@@ -26,21 +26,21 @@ def debug_stack(d):
         else: return o
     def t_(o):
         return o[:length] if len(o) > length else o
-    
-    from itertools import izip_longest 
+
+    from itertools import izip_longest
     k = d.keys()
     v = map(list, map(list, map(i_, d.values())))
 
     update_stack_mappings(d)
 
-    stacklists = map(list, map(reversed, zip(*list(izip_longest(*v, fillvalue=""))))) 
+    stacklists = map(list, map(reversed, zip(*list(izip_longest(*v, fillvalue="")))))
     stackreprs = map(lambda x: map(lambda y: t_(urepr(y)) if y else u"", x), stacklists)
     stacks = map(lambda x: map(lambda y: (u"[%%-%ds]" % length) % y, x), stackreprs)
 
     tops = map(lambda x: [(u"%%-%ds" % (length + 3)) % x], k)
     stat = map(lambda x: x[0] + x[1], list(zip(tops,stacks)))
     lines = map(lambda x: u" ".join(x), map(list, zip(*stat)))
-    print u"\n".join(lines)
+    print "\n".join(map(lambda x: x.encode("utf-8"), lines))
 
 def update_stack_mappings(d):
     """
@@ -55,7 +55,7 @@ def update_stack_mappings(d):
         localkey = "_%03d%s" % (_iteration, k[i])
         _stacks[localkey] = copy.copy(d[k[i]])
     _iteration += 1
-        
+
 
 
 def view_stacks():

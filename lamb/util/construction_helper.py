@@ -58,7 +58,7 @@ def conslist(p_list):
     for element in reversed(p_list):
         result = cons("cons", element, result)
     return result
-    
+
 def plist(c_list):
     result = []
     conses = c_list
@@ -72,7 +72,7 @@ def operand_stack(*elems):
     for elem in reversed(elems):
         stack = OperandStackElement(elem, stack)
     return stack
-    
+
 def execution_stack(*elems):
     stack = None
     for elem in reversed(elems):

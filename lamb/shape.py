@@ -78,7 +78,7 @@ class CompoundShape(Shape):
 
     _immutable_fields_ = ['_tag', '_structure[*]']
 
-    _subsititution_threshold = 5
+    _substitution_threshold = 17
 
     def __init__(self, tag, structure):
         self._structure = structure
@@ -97,7 +97,7 @@ class CompoundShape(Shape):
 
 
     def get_number_of_direct_children(self):
-        return self._tag.arity #if self._tag else len(self._structure)
+        return self._tag.arity
 
     def extract_child(self, w_c, index):
         storage_index = self.structure_to_storage(index)
@@ -140,33 +140,42 @@ class CompoundShape(Shape):
         constructor._init_storage(storage)
         return constructor
 
-    def _count_for(self, key):
-        return self._hist.get(key, 0)
+    def replace(self, storage_index, new_shape):
+        structure = self._structure[:]
+        for i, child in enumerate(structure):
+            if storage_index < child.storage_width():
+                structure[i] = child.replace(storage_index, new_shape)
+                return CompoundShape(self._tag, structure)
+            storage_index -= child.storage_width()
 
-    def record_shapes(self, new_shape, storage):
+    def record_shapes(self, storage):
         from execution import W_Constructor
 
         for i in range(len(storage)):
             child = storage[i]
             if isinstance(child, W_Constructor):
-                    key = (child, i)
-                    new_count = self._count_for(key) + 1
-                    self._hist[key] = new_count
-                    if new_count >= self._subsititution_threshold:
-                        self.recognize_transformation(new_shape, child, i)
+                key = (i, child._shape)
+                if key not in self.known_transformations:
+                    count = self._hist.get(key, 0)
+                    if count <= self._substitution_threshold:
+                        self._hist[key] = count + 1
+                        if self._hist[key] >= self._substitution_threshold:
+                            self.recognize_transformation(i, child._shape)
 
-    def recognize_transformation(self, previous_shape, child, i):
-        structure_length = len(previous_shape._structure)
-        structure = (
-            [previous_shape._structure[j] if i != j else child._shape \
-             for j in range(structure_length)])
-        new_shape = CompoundShape(previous_shape._tag, structure)
-        self.known_transformations[(i, child._shape)] = new_shape
+    def recognize_transformation(self, i, shape):
+        new_shape = self.replace(i, shape)
+        # print u" in ",
+        # print urepr(self).encode("utf-8"),
+        # print ": ", shape ,"@", i,\
+        #     " >> ", new_shape, "/", structure
+        self.known_transformations[i, shape] = new_shape
+        # self.print_transforms()
 
     def fusion(self, storage):
+        self.record_shapes(storage)
         new_shape, new_storage = self.merge(storage)
-        self.record_shapes(new_shape, new_storage)
         return (new_shape, new_storage)
+
 
     #
     # shape merge/fusion
@@ -284,7 +293,11 @@ class InStorageShape(Shape):
 
     def get_storage(self, w_c):
         return [w_c]
-        #
+
+    def replace(self, storage_index, new_shape):
+        assert storage_index == 0
+        return new_shape
+    #
     # Testing and Debug
     #
     @uni
@@ -337,3 +350,8 @@ def find_shape_tuple(shape_list):
     for shape in shape_list:
         tup = tup.tuple_for_shape(jit.promote(shape))
     return tup
+
+
+def default_shape(tag, arity):
+    shape = CompoundShape(tag, [InStorageShape()] * arity)
+    return shape

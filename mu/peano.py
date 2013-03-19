@@ -31,7 +31,7 @@ def _setup_shapes():
     p_2_shape.known_transformations[(0, p_3_shape)] = p_4_shape
     p_3_shape.known_transformations[(0, p_3_shape)] = p_4_shape
 
-_setup_shapes()
+# _setup_shapes()
 
 
 def _p(x):

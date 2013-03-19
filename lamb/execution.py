@@ -12,7 +12,8 @@ from lamb.util.debug import debug_stack
 from lamb.util.testing import HelperMixin
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
-from lamb.shape import CompoundShape, InStorageShape, find_shape_tuple
+from lamb.shape import (default_shape, find_shape_tuple,
+                        CompoundShape, InStorageShape)
 
 
 class W_Object(HelperMixin):
@@ -46,7 +47,7 @@ class W_Tag(W_Object):
         self.name = name
         self.arity = arity
         self._cursor = W_ConstructorCursor(self)
-        self.default_shape = CompoundShape(self, [InStorageShape()] * arity)
+        self.default_shape = default_shape(self, arity)
     #
     # Testing and Debug
     #
@@ -230,8 +231,6 @@ def prepare_constructor(tag, children):
 
 def w_constructor(tag, children):
     shape, storage = prepare_constructor(tag, children)
-    # from lamb.util.debug import storagewalker
-    # print "t:", tag, "\n\tc:", children, "\n\tts:", tag.default_shape, "\n\tsh:", shape, "\n\tst:", storagewalker(storage)
     constr_cls = select_constructor_class(storage)
     constr = constr_cls(shape)
     constr._init_storage(storage)
@@ -555,7 +554,8 @@ class W_ConstructorCursor(W_Cursor):
         for i in range(self._tag.arity):
             children.append(op_stack._data)
             op_stack = op_stack._next
-        op_stack = OperandStackElement(w_constructor(self._tag, children), op_stack)
+        new_top = w_constructor(self._tag, children)
+        op_stack = OperandStackElement(new_top, op_stack)
         return (op_stack, ex_stack)
 
 
