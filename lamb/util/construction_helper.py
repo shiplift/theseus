@@ -5,6 +5,7 @@
 #
 # Construction Helper
 #
+from rpython.rlib.unroll import unrolling_iterable
 from lamb.execution import *
 
 
@@ -87,4 +88,4 @@ def run(lamb, args):
         op = OperandStackElement(args[i], op)
     return interpret(ex, op)
 
-w_nil = cons("nil")
+w_nil = w_constructor(tag("nil", 0), [])

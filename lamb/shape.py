@@ -78,8 +78,9 @@ class CompoundShape(Shape):
 
     _immutable_fields_ = ['_tag', '_structure[*]']
 
-    _substitution_threshold = 17
-    _max_storage_width = 23
+    # _substitution_threshold = 17
+    _substitution_threshold = 37
+    _max_storage_width = 7
 
     def __init__(self, tag, structure):
         self._structure = structure
@@ -149,6 +150,7 @@ class CompoundShape(Shape):
                 return CompoundShape(self._tag, structure)
             storage_index -= child.storage_width()
 
+    @jit.unroll_safe
     def record_shapes(self, storage):
         from execution import W_Constructor
 
@@ -175,7 +177,10 @@ class CompoundShape(Shape):
         # self.print_transforms()
 
     def fusion(self, storage):
-        self.record_shapes(storage)
+        # We do not record statistics in jitted code,
+        # it should be stable beforehand
+        if not jit.we_are_jitted():
+            self.record_shapes(storage)
         new_shape, new_storage = self.merge(storage)
         return (new_shape, new_storage)
 
@@ -324,6 +329,7 @@ class ShapeTuple(object):
     _immutable_fields_ = ["shape", "parent"]
 
     def __init__(self, shape, parent):
+        assert isinstance(shape, Shape) or shape is None
         self.shape = shape
         self.parent = parent
         self._route = {}

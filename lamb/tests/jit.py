@@ -26,7 +26,7 @@ from mu.peano import *
 #
 
 class TestLLtype(LLJitMixin):
-    
+
     def test_simpleverse(self):
         # name chosen to not conflict with pytest.py -kreverse
         a1 = Variable("accumulator")
@@ -48,12 +48,14 @@ class TestLLtype(LLJitMixin):
         nums = 149
         # XXX >= 150 does not work oO
         list1_w = [integer(x) for x in range(nums)]
-        stack_w = operand_stack(conslist(list1_w))
+        clist1_w = conslist(list1_w)
+        stack_w = operand_stack(clist1_w)
         stack_e = execution_stack(W_LambdaCursor(reverse))
         def interp_w():
             return interpret(stack_e, stack_w)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+        clist1_w.get_tag().default_shape.print_transforms()
 
     def test_reverse(self):
         a1 = Variable("accumulator")
@@ -126,9 +128,9 @@ class TestLLtype(LLJitMixin):
             ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(map, f, y))),
             ([_, w_nil], w_nil))
         map._name = "map"
-        
+
         x1 = Variable("x")
-        
+
         list_w = [peano_num(x) for x in range(30)]
         clist_w = conslist(list_w)
 
