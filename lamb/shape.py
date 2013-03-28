@@ -74,13 +74,19 @@ class Shape(HelperMixin):
         return "<some shape>"
 
 
+class ShapeConfig(object):
+
+    def __init__(self, substitution_threshold, max_storage_width):
+        self.substitution_threshold = substitution_threshold
+        self.max_storage_width = max_storage_width
+
+
 class CompoundShape(Shape):
 
     _immutable_fields_ = ['_tag', '_structure[*]']
 
-    # _substitution_threshold = 17
-    _substitution_threshold = 37
-    _max_storage_width = 7
+    _config = ShapeConfig(substitution_threshold=17,
+                          max_storage_width=7)
 
     def __init__(self, tag, structure):
         self._structure = structure
@@ -160,11 +166,11 @@ class CompoundShape(Shape):
                 key = (i, child._shape)
                 if key not in self.known_transformations:
                     count = self._hist.get(key, 0)
-                    if count <= self._substitution_threshold:
+                    if count <= self._config.substitution_threshold:
                         self._hist[key] = count + 1
                         width = child.get_storage_width()
-                        if (width <= self._max_storage_width and
-                            self._hist[key] >= self._substitution_threshold):
+                        if (width <= self._config.max_storage_width and
+                            self._hist[key] >= self._config.substitution_threshold):
                             self.recognize_transformation(i, child._shape)
 
     def recognize_transformation(self, i, shape):

@@ -57,9 +57,9 @@ def entry_point(argv):
     if argno >= 2:
         nums = int(argv[1])
     if argno >= 3:
-        CompoundShape._substitution_threshold = int(argv[2])
-    if argno >= 3:
-        CompoundShape._max_storage_width = int(argv[3])
+        CompoundShape._config.substitution_threshold = int(argv[2])
+    if argno >= 4:
+        CompoundShape._config.max_storage_width = int(argv[3])
     clist1_w = w_nil
     for number in range(nums):
         clist1_w = _cons(integer(number), clist1_w)

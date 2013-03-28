@@ -383,17 +383,17 @@ class TestShapeMerger(object):
             return result
 
         cons_shape = c.default_shape
-        cons_shape._substitution_threshold = sys.maxint
+        cons_shape._config.substitution_threshold = sys.maxint
         cons_1_shape = CompoundShape(c, [InStorageShape(), cons_shape ])
         cons_2_shape = CompoundShape(c, [InStorageShape(), cons_1_shape])
         cons_3_shape = CompoundShape(c, [InStorageShape(), cons_2_shape])
         cons_4_shape = CompoundShape(c, [InStorageShape(), cons_3_shape])
         cons_5_shape = CompoundShape(c, [InStorageShape(), cons_4_shape])
-        cons_1_shape._substitution_threshold = sys.maxint
-        cons_2_shape._substitution_threshold = sys.maxint
-        cons_3_shape._substitution_threshold = sys.maxint
-        cons_4_shape._substitution_threshold = sys.maxint
-        cons_5_shape._substitution_threshold = sys.maxint
+        cons_1_shape._config.substitution_threshold = sys.maxint
+        cons_2_shape._config.substitution_threshold = sys.maxint
+        cons_3_shape._config.substitution_threshold = sys.maxint
+        cons_4_shape._config.substitution_threshold = sys.maxint
+        cons_5_shape._config.substitution_threshold = sys.maxint
         cons_shape.known_transformations[(1, cons_shape )] = cons_1_shape
         cons_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
         cons_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
@@ -522,7 +522,7 @@ class TestShapeRecorder(object):
         }
 
     def test_simple_autosubstitution(self):
-        CompoundShape._substitution_threshold = 1
+        CompoundShape._config.substitution_threshold = 1
 
         ferb_1 = clean_tag("ferb_1", 1)
         shape = ferb_1.default_shape
@@ -667,7 +667,7 @@ class TestShapeRecognizer(object):
                 result = _cons(element, result)
             return result
 
-        c.default_shape._substitution_threshold = 2
+        c.default_shape._config.substitution_threshold = 2
 
         print ""
         cons_0 = _cons(w_1, w_nil)
@@ -733,7 +733,7 @@ class TestShapeRecognizer(object):
                 result = _cons(element, result)
             return result
 
-        c.default_shape._substitution_threshold = 17
+        c.default_shape._config.substitution_threshold = 17
 
         def check_width(c, width):
             if c is not w_nil and isinstance(c, W_Constructor):
