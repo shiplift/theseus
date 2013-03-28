@@ -169,12 +169,7 @@ class CompoundShape(Shape):
 
     def recognize_transformation(self, i, shape):
         new_shape = self.replace(i, shape)
-        # print u" in ",
-        # print urepr(self).encode("utf-8"),
-        # print ": ", shape ,"@", i,\
-        #     " >> ", new_shape, "/", structure
         self.known_transformations[i, shape] = new_shape
-        # self.print_transforms()
 
     def fusion(self, storage):
         # We do not record statistics in jitted code,
@@ -341,6 +336,14 @@ class ShapeTuple(object):
             tup = self.__class__(shape, self)
             self._route[shape] = tup
         return tup
+
+    # #
+    # # Testing and Debug
+    # #
+    # @uni
+    # def to_repr(self, seen):
+    #     return self.merge_point_string()
+
 
     def merge_point_string(self):
         res = ""

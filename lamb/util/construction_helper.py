@@ -32,6 +32,7 @@ def cons(t, *children):
     ch = list(children)
     return w_constructor(tag(t, len(ch)), ch)
 
+
 def integer(value):
     assert isinstance(value, int)
     return W_Integer(value)

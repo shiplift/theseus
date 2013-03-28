@@ -804,9 +804,12 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
             elif isinstance(current_cursor, W_ConstructorCursor):
                 current_args_shapes = shapes_of_current_args(current_cursor._tag.arity, op_stack)
 
+            # print "cursor", current_cursor
+            # print "args\t", current_args_shapes
             jitdriver.can_enter_jit(
                 expr=expr, op_stack=op_stack, ex_stack=ex_stack,
-                current_cursor=current_cursor, current_args_shapes=current_args_shapes,
+                current_cursor=current_cursor,
+                current_args_shapes=current_args_shapes,
             )
         jitdriver.jit_merge_point(
             expr=expr, op_stack=op_stack, ex_stack=ex_stack,
