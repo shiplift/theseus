@@ -22,7 +22,8 @@ def pattern(obj):
 
 def pattern_from_constructor(w_constructor):
     _tag = w_constructor.get_tag()
-    _children = [pattern(w_constructor.get_child(i)) for i in range(w_constructor.get_number_of_children())]
+    _children = [pattern(w_constructor.get_child(i)) \
+                 for i in range(w_constructor.get_number_of_children())]
     return ConstructorPattern(_tag, _children)
 
 def pattern_from_integer(w_integer):
@@ -41,12 +42,14 @@ def expression(obj):
     if isinstance(obj, Variable):
         return W_VariableExpression(obj)
     if isinstance(obj, W_Constructor):
-        return w_constructor(obj.get_tag(), [expression(x) for x in obj.get_children()])
+        return w_constructor(obj.get_tag(),
+                             [expression(x) for x in obj.get_children()])
     else:
         return obj
 
 def ziprules(*tuples):
-    return [Rule([pattern(p) for p in item[0]], expression(item[1])) for item in tuples]
+    return [Rule([pattern(p) for p in item[0]],
+                 expression(item[1])) for item in tuples]
 
 def lamb(*tuples):
     """ new lambda """
