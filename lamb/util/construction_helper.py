@@ -5,6 +5,7 @@
 #
 # Construction Helper
 #
+from rpython.rlib.unroll import unrolling_iterable
 from lamb.execution import *
 
 
@@ -21,7 +22,8 @@ def pattern(obj):
 
 def pattern_from_constructor(w_constructor):
     _tag = w_constructor.get_tag()
-    _children = [pattern(w_constructor.get_child(i)) for i in range(w_constructor.get_number_of_children())]
+    _children = [pattern(w_constructor.get_child(i)) \
+                 for i in range(w_constructor.get_number_of_children())]
     return ConstructorPattern(_tag, _children)
 
 def pattern_from_integer(w_integer):
@@ -31,6 +33,7 @@ def cons(t, *children):
     ch = list(children)
     return w_constructor(tag(t, len(ch)), ch)
 
+
 def integer(value):
     assert isinstance(value, int)
     return W_Integer(value)
@@ -39,12 +42,14 @@ def expression(obj):
     if isinstance(obj, Variable):
         return W_VariableExpression(obj)
     if isinstance(obj, W_Constructor):
-        return w_constructor(obj._tag, [expression(x) for x in obj.get_children()])
+        return w_constructor(obj.get_tag(),
+                             [expression(x) for x in obj.get_children()])
     else:
         return obj
 
 def ziprules(*tuples):
-    return [Rule([pattern(p) for p in item[0]], expression(item[1])) for item in tuples]
+    return [Rule([pattern(p) for p in item[0]],
+                 expression(item[1])) for item in tuples]
 
 def lamb(*tuples):
     """ new lambda """
@@ -58,7 +63,7 @@ def conslist(p_list):
     for element in reversed(p_list):
         result = cons("cons", element, result)
     return result
-    
+
 def plist(c_list):
     result = []
     conses = c_list
@@ -67,20 +72,12 @@ def plist(c_list):
         conses = conses.get_child(1)
     return result
 
-# Not used yet
-#class ForwardReference(object):
-#
-#    def become(self, x):
-#        self.__class__ = x.__class__
-#        self.__dict__.update(x.__dict__)
-
-
 def operand_stack(*elems):
     stack = None
     for elem in reversed(elems):
         stack = OperandStackElement(elem, stack)
     return stack
-    
+
 def execution_stack(*elems):
     stack = None
     for elem in reversed(elems):
@@ -95,4 +92,4 @@ def run(lamb, args):
         op = OperandStackElement(args[i], op)
     return interpret(ex, op)
 
-w_nil = cons("nil")
+w_nil = w_constructor(tag("nil", 0), [])

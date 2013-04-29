@@ -3,10 +3,11 @@
 
 import sys
 
-from lamb.util.construction_helper import peano_num, python_num, run
-from mu.peano import mult
+from lamb.util.construction_helper import run
+from mu.peano import mult, peano_num, python_num
 
 # __________  Entry point  __________
+
 
 def entry_point(argv):
     argno = len(argv)
@@ -21,13 +22,16 @@ def entry_point(argv):
 
 # _____ Define and setup target ___
 
+
 def target(driver, args):
     driver.exe_name = 'lambmult-%(backend)s'
     return entry_point, None
 
+
 def jitpolicy(driver):
-    from pypy.jit.codewriter.policy import JitPolicy
+    from rpython.jit.codewriter.policy import JitPolicy
     return JitPolicy()
+
 
 if __name__ == '__main__':
     entry_point(sys.argv)

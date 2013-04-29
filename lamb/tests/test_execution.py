@@ -6,12 +6,13 @@
 import py
 
 from lamb.execution import *
-from lamb.util.construction_helper import (pattern, cons, integer, expression,
-                                           ziprules, lamb, mu,
+from mu.peano import *
+from lamb.util.construction_helper import (pattern, cons, integer,
+                                           expression, ziprules,
+                                           lamb,mu,
                                            w_nil,
                                            conslist, plist,
                                            execution_stack, operand_stack)
-from mu.peano import zero, succ, pred, plus, mult, peano_num, python_num
 #
 # Tests
 #
@@ -39,7 +40,7 @@ class TestTag(object):
         assert w_res1 is not w_res2
 
 class TestInteger(object):
-    
+
     def test_futile(self):
         w_int = integer(1)
         assert isinstance(w_int, W_Integer)
@@ -108,7 +109,7 @@ class TestPattern(object):
         w_int = integer(1)
         pat = pattern(w_int)
         w_obj = integer(1)
-        
+
         binding = []
         pat.match(w_obj, binding)
         assert True # should not raise.
@@ -117,7 +118,7 @@ class TestPattern(object):
         with py.test.raises(NoMatch) as e:
             pat.match(w_obj, binding)
 
-        
+
 
     def test_catch_all(self):
         var = Variable("x")
@@ -127,8 +128,8 @@ class TestPattern(object):
         var.binding_index = 0
         pat.match(w_obj, binding)
         assert binding[var.binding_index] == w_obj
-        
-        
+
+
     def test_simple_constructor(self):
         w_cons = cons("barf")
         pat = pattern(w_cons)
@@ -155,12 +156,12 @@ class TestPattern(object):
         w_obj = cons("zork", integer(2))
         with py.test.raises(NoMatch) as e:
             pat.match(w_obj, binding)
-        
+
 
     def test_nested_constructor(self):
         pat = pattern(cons("barf", cons("zork")))
         w_obj = cons("barf", cons("zork"))
-        
+
         binding = []
         pat.match(w_obj, binding)
         assert binding == []
@@ -248,7 +249,7 @@ class TestExpression(object):
 
         with py.test.raises(VariableUnbound) as e:
             expr.evaluate_with_binding([None])
-        
+
     def test_simple_constructor_expression(self):
 
         expr = w_constructor(tag("barf", 0), [])
@@ -259,7 +260,7 @@ class TestExpression(object):
         assert w_res.get_number_of_children() is 0
 
     def test_constructor_with_int(self):
-        for num in range(0, 12):        
+        for num in range(0, 12):
             w_int = integer(1)
             w_children = [w_int] * num
             w_cons = cons("zork", *w_children)
@@ -339,15 +340,15 @@ class TestExpression(object):
         w_child1 = w_res.get_child(1)
         assert w_child1.get_tag() is tag("zork", 0)
 
-        
-        
+
+
 class TestRule(object):
 
     def test_catch_all(self):
         w_int = integer(1)
-    
+
         rule = Rule([], expression(w_int))
-        assert rule.arity() == 0
+        assert rule.arity == 0
 
         expr = rule.match_all([integer(2)], [])
         assert expr.evaluate_with_binding([]) is w_int
@@ -356,7 +357,7 @@ class TestRule(object):
         w_int = integer(1)
         expr = expression(w_int)
         rule = Rule([pattern(w_int)], expr)
-        assert rule.arity() == 1
+        assert rule.arity == 1
 
         res = rule.match_all([w_int], [])
         assert res.evaluate_with_binding([]) is w_int
@@ -371,14 +372,14 @@ class TestRule(object):
 
         expr = expression(w_int0)
         rule = Rule([pattern(w_int1), pattern(w_int2)], expr)
-        assert rule.arity() == 2
+        assert rule.arity == 2
 
         res = rule.match_all([w_int1, w_int2], [])
         assert res.evaluate_with_binding([]) is w_int0
 
         with py.test.raises(NoMatch) as e:
             rule.match_all([w_int2, w_int1], [])
-       
+
     def test_var_rule(self):
         w_int = integer(1)
         var = Variable("x")
@@ -388,8 +389,8 @@ class TestRule(object):
         binding = [None] * rule.maximal_number_of_variables
         res = rule.match_all([w_int], binding)
         result = res.evaluate_with_binding(binding)
-        assert result is w_int        
-        
+        assert result is w_int
+
 class TestLambda(object):
 
     def test_simple_lambda(self):
@@ -410,7 +411,7 @@ class TestLambda(object):
         l = lamb( ([x], x) )
         w_int = integer(1)
         assert l.call([w_int]) is w_int
-        
+
     def test_lambda_not(self):
 
         w_true = cons("true")
@@ -423,7 +424,7 @@ class TestLambda(object):
         assert l.call([w_false]) == w_true
 
     def test_append(self):
-        
+
         x1 = Variable("x")
         x2 = Variable("x")
         h = Variable("head")
@@ -439,7 +440,7 @@ class TestLambda(object):
         assert plist(l.call([conslist(list1_w), conslist(list2_w)])) == list1_w + list2_w
 
     def test_shuffle(self):
-        
+
         for i in range(20):
             vars = [Variable("x%s" % n) for n in range(i)]
 
@@ -452,7 +453,7 @@ class TestLambda(object):
             assert res == cons("cons", *(list1[1:] + list1[:1]))
 
     def test_muffle(self):
-        
+
         for i in range(20):
             vars = [Variable("x%s" % n) for n in range(i)]
 
@@ -482,7 +483,7 @@ class TestLambda(object):
                  ((pair? lis)
                   (cons (proc (car lis))
                         (map proc (cdr lis))))))
-         
+
         nil ≔ (nil)
         map ≔ λ:
             F, (cons X, Y) ↦ (cons μ(F, X), μ(map, F, Y))
@@ -501,9 +502,9 @@ class TestLambda(object):
             ([_, w_nil], w_nil))
 
         x1 = Variable("x")
-        
+
         list_w = [peano_num(1),peano_num(2),peano_num(3)]
-        
+
         # succ = lamb( ([x1], cons("p", x1)) )
 
         res = map.call([succ, conslist(list_w)])
@@ -532,7 +533,7 @@ class TestInterpret(object):
         w_int = integer(1)
         res = interpret(execution_stack(mu(l, w_int)))
         assert res is w_int
-        
+
     def test_lambda_not(self):
 
         w_true = cons("true")
@@ -555,7 +556,7 @@ class TestInterpret(object):
         assert res == w_true
 
     def test_append(self):
-        
+
         x1 = Variable("x")
         x2 = Variable("x")
         h = Variable("head")
@@ -567,10 +568,10 @@ class TestInterpret(object):
             ([w_nil, x1], x1),
             ([cons("cons", h, t), x2], cons("cons", h, mu(l, t, x2))))
 
-       
+
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
-        
+
         res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(conslist(list1_w), conslist(list2_w)))
         assert plist(res) == list1_w + list2_w
 
@@ -583,7 +584,7 @@ class TestInterpret(object):
                  ((pair? lis)
                   (cons (proc (car lis))
                         (map proc (cdr lis))))))
-         
+
         nil ≔ (nil)
         map ≔ λ:
             F, (cons X, Y) ↦ (cons μ(F, X), μ(map, F, Y))
@@ -603,7 +604,7 @@ class TestInterpret(object):
             ([_, w_nil], w_nil))
 
         x1 = Variable("x")
-        
+
         list_w = [peano_num(1),peano_num(2),peano_num(3)]
         #list_w = [peano_num(1)]
 
@@ -612,7 +613,7 @@ class TestInterpret(object):
         #assert plist(res) == [peano_num(2)]
 
     def test_shuffle(self):
-        
+
         for i in range(20):
             vars = [Variable("x%s" % n) for n in range(i)]
 
@@ -625,7 +626,7 @@ class TestInterpret(object):
             assert res == cons("cons", *(list1[1:] + list1[:1]))
 
     def test_muffle(self):
-        
+
         for i in range(20):
             vars = [Variable("x%s" % n) for n in range(i)]
 
@@ -654,7 +655,7 @@ class TestInterpret(object):
         t = Variable("tail")
         reverse_acc = lamb()
         reverse_acc._name = "r_acc"
-        
+
         reverse_acc._rules = ziprules(
             ([w_nil,              a1], a1),
             ([cons("cons", h, t), a2], mu(reverse_acc, t, cons("cons", h, a2))))
@@ -663,23 +664,23 @@ class TestInterpret(object):
         reverse = lamb(([l], mu(reverse_acc, l, w_nil)))
         reverse._name = "reverse"
 
-        global w_stack_max
-        global e_stack_max
+        global op_stack_max
+        global ex_stack_max
 
-        w_stack_max = 0
-        e_stack_max = 0
+        op_stack_max = 0
+        ex_stack_max = 0
 
         def maxdepth(d):
-            w_stack = d['w_stack']
-            e_stack = d['e_stack']
-            
-            global w_stack_max
-            global e_stack_max
-            w_stack_list = w_stack.linearize() if w_stack is not None else []
-            e_stack_list = e_stack.linearize() if e_stack is not None else []
-            
-            w_stack_max = max(w_stack_max, len(w_stack_list))
-            e_stack_max = max(e_stack_max, len(e_stack_list))
+            op_stack = d['op_stack']
+            ex_stack = d['ex_stack']
+
+            global op_stack_max
+            global ex_stack_max
+            op_stack_list = op_stack.linearize() if op_stack is not None else []
+            ex_stack_list = ex_stack.linearize() if ex_stack is not None else []
+
+            op_stack_max = max(op_stack_max, len(op_stack_list))
+            ex_stack_max = max(ex_stack_max, len(ex_stack_list))
 
         nums = 10
         list1_w = [integer(x) for x in range(nums)]
@@ -687,27 +688,27 @@ class TestInterpret(object):
         list1_w.reverse()
         assert plist(res) == list1_w
 
-        e_stack_max1 = e_stack_max
+        ex_stack_max1 = ex_stack_max
 
-        w_stack_max = 0
-        e_stack_max = 0
+        op_stack_max = 0
+        ex_stack_max = 0
 
         nums = 100
         list1_w = [integer(x) for x in range(nums)]
         interpret(execution_stack(W_LambdaCursor(reverse)), operand_stack(conslist(list1_w)), True, maxdepth)
-        e_stack_max2 = e_stack_max
+        ex_stack_max2 = ex_stack_max
 
-        assert e_stack_max2  == e_stack_max1
+        assert ex_stack_max2  == ex_stack_max1
 
-        w_stack_max = 0
-        e_stack_max = 0
+        op_stack_max = 0
+        ex_stack_max = 0
 
         nums = 1000
         list1_w = [integer(x) for x in range(nums)]
         interpret(execution_stack(W_LambdaCursor(reverse)), operand_stack(conslist(list1_w)), True, maxdepth)
-        e_stack_max3 = e_stack_max
+        ex_stack_max3 = ex_stack_max
 
-        assert e_stack_max3 == e_stack_max2
+        assert ex_stack_max3 == ex_stack_max2
 
     def test_plus(self):
 
@@ -715,6 +716,17 @@ class TestInterpret(object):
         b_w = peano_num(5)
 
         ex_stack = execution_stack(W_LambdaCursor(plus))
+        op_stack = operand_stack(a_w, b_w)
+
+        res = interpret(ex_stack, op_stack)
+        assert python_num(res) == 9
+
+    def test_plus_acc(self):
+
+        a_w = peano_num(4)
+        b_w = peano_num(5)
+
+        ex_stack = execution_stack(W_LambdaCursor(plus_acc))
         op_stack = operand_stack(a_w, b_w)
 
         res = interpret(ex_stack, op_stack)
@@ -730,5 +742,3 @@ class TestInterpret(object):
 
         res = interpret(ex_stack, op_stack)
         assert python_num(res) == 6
-
-        
