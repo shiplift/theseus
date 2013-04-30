@@ -5,18 +5,18 @@ import sys
 
 from rpython.rlib import jit
 
-from lamb.util.construction_helper import interpret
+from lamb.util.construction_helper import interpret, w_nil
 from lamb.stack import ExecutionStackElement, OperandStackElement
 from lamb.execution import jitdriver
 
 from lamb.shape import CompoundShape
 
-from mu.functions import all_functions
+from mu.functions import all_functions, format
 
-
-Nums = 1000
-Verbose = False
-
+config = {
+    "Nums": 1000,
+    "Verbose": False,
+}
 
 def shape_representation(shape):
     return shape.merge_point_string()
@@ -46,7 +46,7 @@ Usage: %s [-h|--help] [--jit arg] [-v|--verbose] [-s num] [-w num] [-n num] fun 
     argv[0],
     CompoundShape._config.substitution_threshold,
     CompoundShape._config.max_storage_width,
-    Nums,
+    config["Nums"],
     fun_list_string())
 
 def fun_list_string():
@@ -81,8 +81,7 @@ def parse_options(argv):
             ret = 0
             break
         elif argv[i] in ["-v", "--verbose"]:
-            global Verbose
-            Verbose = True
+            config["Verbose"] = True
         elif argv[i] == "-s":
             if len(argv) == i + 1:
                 print "missing argument after -s"
@@ -102,8 +101,7 @@ def parse_options(argv):
                 print "missing argument after -n"
                 ret = 2
                 break
-            global Nums
-            Nums = int(argv[i + 1])
+            config["Nums"] = int(argv[i + 1])
             i += 1
         else:
             fun = lookup_fun(argv[i])
@@ -137,11 +135,14 @@ def entry_point(argv):
         print_help(argv)
         return ret # quit early.
 
-    if Verbose:
+    if config["Verbose"]:
+        print "Args"
         for op in ops:
-            print op
+            print format(op)
+        print "---"
 
-    for _ in range(Nums):
+    result = w_nil
+    for _ in range(config["Nums"]):
         stack_w = None
         for op in ops:
             stack_w = OperandStackElement(op, stack_w)
@@ -150,7 +151,7 @@ def entry_point(argv):
         result = interpret(stack_e, stack_w)
 
     print fun.format_ret(result)
-    if Verbose:
+    if config["Verbose"]:
         print_transforms_for_rpython(result.get_tag().default_shape)
     return 0
 

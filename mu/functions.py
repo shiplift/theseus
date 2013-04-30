@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from lamb.util.construction_helper import (integer, w_nil, conslist, run)
-from lamb.execution import W_Integer
+from lamb.execution import W_Integer, W_Object
 
 from mu.lists import *
 from mu.peano import *
@@ -25,7 +25,7 @@ def parse(fmt, arg):
         return parse_list(arg)
     elif "f" == fmt:
         try:
-            return all_functions[arg]
+            return all_functions[arg].lamb
         except KeyError:
             raise ValueError("unknown function")
     else:
@@ -48,8 +48,10 @@ def parse_list(arg):
 
     for index in range(max_index):
         if index >= elements_given:
-            assert fun is not None
-            l[index] = fun.apply_to(l[index - 1])
+            if fun is None:
+                l[index] = l[index - 1]
+            else:
+                l[index] = fun.apply_to(l[index - 1])
         else:
             fmt, e = elements[index].split(":")
             if fmt == "f":
@@ -69,7 +71,7 @@ def list_fun(arg):
             raise ValueError("unknown function")
 
 def format(ret):
-    from lamb.execution import W_Constructor
+    from lamb.execution import W_Constructor, W_Lambda
     if isinstance(ret, W_Integer):
         return "%d" % ret._value
     elif isinstance(ret, W_Constructor):
@@ -79,12 +81,13 @@ def format(ret):
         elif t == "cons":
             return "(" + ",".join(format_list(ret)) + ")"
         else:
-            raise ValueError("unknown retfmt")
+            raise ValueError("unknown constr")
+    elif isinstance(ret, W_Lambda):
+        return ret._name
     else:
         raise ValueError("unknown retfmt")
 
 def format_list(c_list):
-    from lamb.execution import W_Constructor
     result = []
     conses = c_list
     while conses != w_nil:
@@ -93,7 +96,12 @@ def format_list(c_list):
         conses = conses.get_child(1)
     return result
 
-class Function(object):
+class CanApply(object):
+    def apply_to(self, arg):
+        raise NotImplementedError("abstract")
+
+
+class Function(CanApply):
     """
     Lambda function wrapper.
     fmt is a string consisting of one char per argument.
@@ -118,7 +126,7 @@ class Function(object):
     def apply_to(self, arg):
         return run(self.lamb, [arg])
 
-class PrimitiveFunction(Function):
+class PrimitiveFunction(CanApply):
     def __init__(self, fun):
         self.fun = fun
 
@@ -126,22 +134,25 @@ class PrimitiveFunction(Function):
         return self.fun(arg)
 
 def plus_one(arg):
+    assert isinstance(arg, W_Integer)
     return integer(arg._value + 1)
 def minus_one(arg):
+    assert isinstance(arg, W_Integer)
     return integer(arg._value - 1)
 def mult_two(arg):
+    assert isinstance(arg, W_Integer)
     return integer(arg._value * 2)
-def rand_int(arg):
-    # no arg
-    import random
-    return integer(random.randint(0,1024))
+# def rand_int(arg):
+#     # no arg
+#     import random
+#     return integer(random.randint(0,1024))
 
 
 primitive_functions = {
     "+": PrimitiveFunction(plus_one),
     "-": PrimitiveFunction(minus_one),
     "*": PrimitiveFunction(mult_two),
-    "r": PrimitiveFunction(rand_int),
+    # "r": PrimitiveFunction(rand_int),
 }
 
 
