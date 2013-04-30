@@ -5,7 +5,8 @@ from lamb.execution import Variable, tag
 from lamb.shape import CompoundShape
 from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
                                            plist, conslist,
-                                           operand_stack, execution_stack, w_nil)
+                                           operand_stack, execution_stack,
+                                           w_nil, t_nil)
 
 # the Tag used in peano arithmetic lists
 def _setup_shapes():
@@ -165,7 +166,7 @@ def peano_num(pynum):
 def python_num(peano):
     p = peano
     res = 0
-    while p != w_nil:
+    while p.get_tag() is not t_nil:
         res += 1
         p = p.get_child(0)
     return res
