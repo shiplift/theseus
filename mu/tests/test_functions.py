@@ -100,3 +100,14 @@ class TestFormatting(object):
         l = conslist([peano_num(42), conslist([peano_num(42)])])
         assert format_list(l) == ["42", "(42)"]
         assert format(l) == "(42,(42))"
+
+class TestFunctions(object):
+
+    def test_simple_append_processing(self):
+        fun = all_functions["append"]
+        ops = [fun.parse_arg(i, a) for i, a in enumerate(["1;i:1", "1;i:1"])]
+        assert ops == [conslist([integer(1)]), conslist([integer(1)])]
+
+        ret = run(fun.lamb, ops)
+        assert plist(ret) == [integer(1), integer(1)]
+        assert fun.format_ret(ret) == "(1,1)"
