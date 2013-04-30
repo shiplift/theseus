@@ -8,6 +8,9 @@
 from rpython.rlib.unroll import unrolling_iterable
 from lamb.execution import *
 
+t_nil = tag("nil", 0)
+w_nil = w_constructor(t_nil, [])
+
 
 def pattern(obj):
     if isinstance(obj, Variable):
@@ -59,7 +62,7 @@ def mu(l, *args):
     return w_call(expression(l), [expression(i) for i in args])
 
 def conslist(p_list):
-    result = cons("nil")
+    result = w_nil
     for element in reversed(p_list):
         result = cons("cons", element, result)
     return result
@@ -92,4 +95,3 @@ def run(lamb, args):
         op = OperandStackElement(args[i], op)
     return interpret(ex, op)
 
-w_nil = w_constructor(tag("nil", 0), [])

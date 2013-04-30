@@ -1,11 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from lamb.util.construction_helper import (integer, w_nil, conslist, run)
+from lamb.util.construction_helper import (integer, t_nil, conslist, run)
 from lamb.execution import W_Integer, W_Object
 
 from mu.lists import *
 from mu.peano import *
+
+class UnknownFunction(ValueError):
+    pass
+class ArgfmtError(ValueError):
+    pass
+class CannotFormat(ValueError):
+    pass
 
 def parse(fmt, arg):
     """
@@ -27,19 +34,22 @@ def parse(fmt, arg):
         try:
             return all_functions[arg].lamb
         except KeyError:
-            raise ValueError("unknown function")
+            raise UnknownFunction(arg)
     else:
-        raise ValueError("unknown argfmt")
+        raise ArgfmtError(fmt)
 
 def parse_list(arg):
     """
     [num;]fmt:elem,fmt:elem[,f:func]
     """
     num = -1
-    num_elem = arg.split(";")
+    num_elem = arg.split(";", 1)
+    elements = None
     if len(num_elem) > 1:
         num = int(num_elem[0])
-    elements = num_elem[-1].split(",")
+        elements = num_elem[1].split(",", -1)
+    else:
+        elements = num_elem[0].split(",", -1)
     elements_given = len(elements)
     max_index = num if num > -1 else elements_given
 
@@ -53,7 +63,7 @@ def parse_list(arg):
             else:
                 l[index] = fun.apply_to(l[index - 1])
         else:
-            fmt, e = elements[index].split(":")
+            fmt, e = elements[index].split(":", 1)
             if fmt == "f":
                 fun = list_fun(e)
                 l[index] = fun.apply_to(l[index - 1])
@@ -68,7 +78,7 @@ def list_fun(arg):
         try:
             return primitive_functions[arg]
         except KeyError:
-            raise ValueError("unknown function")
+            raise UnknownFunction(arg)
 
 def format(ret):
     from lamb.execution import W_Constructor, W_Lambda
@@ -81,17 +91,16 @@ def format(ret):
         elif t == "cons":
             return "(" + ",".join(format_list(ret)) + ")"
         else:
-            raise ValueError("unknown constr")
+            raise CannotFormat("unknown constr")
     elif isinstance(ret, W_Lambda):
         return ret._name
     else:
-        raise ValueError("unknown retfmt")
+        raise CannotFormat()
 
 def format_list(c_list):
     result = []
     conses = c_list
-    while conses != w_nil:
-        print conses.get_tag().name
+    while conses.get_tag() is not t_nil:
         res = conses.get_child(0)
         result.append(format(res))
         conses = conses.get_child(1)

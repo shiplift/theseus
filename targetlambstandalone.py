@@ -4,10 +4,13 @@
 import sys
 
 from rpython.rlib import jit
+from rpython.config.config import OptionDescription, BoolOption, StrOption
+from rpython.config.config import Config, to_optparse
 
 from lamb.util.construction_helper import interpret, w_nil
 from lamb.stack import ExecutionStackElement, OperandStackElement
 from lamb.execution import jitdriver
+
 
 from lamb.shape import CompoundShape
 
@@ -15,7 +18,7 @@ from mu.functions import all_functions, format
 
 config = {
     "Nums": 1000,
-    "Verbose": False,
+    "Verbose": True,
 }
 
 def shape_representation(shape):
@@ -58,6 +61,23 @@ def fun_list_string():
 def lookup_fun(fun):
     return all_functions.get(fun, None)
 
+# TBD
+# cmdline_optiondescr = OptionDescription("lamb", "the options of lamb", [
+#     BoolOption("verbose", "turn on verbose output",
+#                default=False, cmdline="-v --verbose"),
+#     IntOption("substitiution",
+#               "set substitution threshold to num",
+#               default=17, cmdline="-s"),
+#     IntOption("width",
+#               "set maximal storage with to consider for substitution to num",
+#               default=7, cmdline="-w"),
+#     IntOption("repetitions",
+#               "number of repetitionsset substitution threshold to num",
+#                default=1000, cmdline="-s"),
+#     StrOption("jit",
+#               "pass arg to the JIT, may be 'default', 'off', or 'param=value,param=value' list",
+#               default=None, cmdline="--jit"),
+#     ])
 
 
 
@@ -113,7 +133,8 @@ def parse_options(argv):
                 ret = 3
                 break
             while (i < to):
-                ops.append(fun.parse_arg(i - k, argv[i]))
+                arg = fun.parse_arg(i - k, argv[i])
+                ops.append(arg)
                 i += 1
             break
         i += 1
@@ -169,4 +190,4 @@ def jitpolicy(driver):
 
 
 if __name__ == '__main__':
-    exit(entry_point(sys.argv))
+    sys.exit(entry_point(sys.argv))
