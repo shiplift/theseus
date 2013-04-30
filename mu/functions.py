@@ -91,6 +91,7 @@ def format_list(c_list):
     result = []
     conses = c_list
     while conses != w_nil:
+        print conses.get_tag().name
         res = conses.get_child(0)
         result.append(format(res))
         conses = conses.get_child(1)

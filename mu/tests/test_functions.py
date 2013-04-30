@@ -60,5 +60,43 @@ class TestParsing(object):
         l = [integer(2), integer(10), integer(11)]
         assert parse_list("3;i:2,i:10,f:+") == conslist(l)
 
+    def test_parse_list(self):
+        l = [integer(2), integer(10), integer(11)]
+        assert parse("l", "3;i:2,i:10,f:+") == conslist(l)
+
 class TestFormatting(object):
-    pass
+
+    def test_format_int(self):
+        assert format(integer(42)) == "42"
+
+    def test_format_peano_num(self):
+        assert format(peano_num(42)) == "42"
+
+    def test_format_fun(self):
+        assert format(all_functions["succ"].lamb) == "succ"
+
+    def test_format_list_simple(self):
+        l = conslist([integer(42)])
+        assert format_list(l) == ["42"]
+        assert format(l) == "(42)"
+
+        l = conslist([peano_num(42)])
+        assert format_list(l) == ["42"]
+        assert format(l) == "(42)"
+
+        l = conslist([integer(42), integer(43)])
+        assert format_list(l) == ["42", "43"]
+        assert format(l) == "(42,43)"
+
+        l = conslist([peano_num(42), peano_num(43)])
+        assert format_list(l) == ["42", "43"]
+        assert format(l) == "(42,43)"
+
+    def test_format_list_nest(self):
+        l = conslist([integer(42), conslist([integer(42)])])
+        assert format_list(l) == ["42", "(42)"]
+        assert format(l) == "(42,(42))"
+
+        l = conslist([peano_num(42), conslist([peano_num(42)])])
+        assert format_list(l) == ["42", "(42)"]
+        assert format(l) == "(42,(42))"
