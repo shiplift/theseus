@@ -18,7 +18,8 @@ from mu.functions import all_functions, format
 
 config = {
     "Nums": 1000,
-    "Verbose": True,
+    "Verbose": False,
+    "Print": False,
 }
 
 def shape_representation(shape):
@@ -35,11 +36,12 @@ def print_transforms_for_rpython(shape):
 
 def print_help(argv):
     print """Lamb
-Usage: %s [-h|--help] [--jit arg] [-v|--verbose] [-s num] [-w num] [-n num] fun op ...
+Usage: %s [-h|--help] [--jit arg] [-v|--verbose] [-p] [-s num] [-w num] [-n num] fun op ...
 
     -h --help        print this help and exit
        --jit arg     pass arg to the JIT, may be 'default', 'off', or 'param=value,param=value' list
     -v --verbose     turn on verbose output
+    -p               print the result expression (default: %s)
     -s num           set substitution threshold to num (default: %d)
     -w num           set maximal storage with to consider for substitution to num (default: %d)
     -n num           number of repetitions (default: %d)
@@ -47,6 +49,7 @@ Usage: %s [-h|--help] [--jit arg] [-v|--verbose] [-s num] [-w num] [-n num] fun 
     op ...           operand(s) to fun
 """ % (
     argv[0],
+    ('on' if config["Print"] else 'off'),
     CompoundShape._config.substitution_threshold,
     CompoundShape._config.max_storage_width,
     config["Nums"],
@@ -87,6 +90,7 @@ def parse_options(argv):
     ret = -1
     i = 1
     to = len(argv)
+    config = {}
     while (i < to):
         if argv[i] == "--jit":
             if len(argv) == i + 1:
@@ -102,6 +106,9 @@ def parse_options(argv):
             break
         elif argv[i] in ["-v", "--verbose"]:
             config["Verbose"] = True
+            config["Print"] = True
+        elif argv[i] == "-p":
+            config["Print"] = True
         elif argv[i] == "-s":
             if len(argv) == i + 1:
                 print "missing argument after -s"
@@ -124,22 +131,29 @@ def parse_options(argv):
             config["Nums"] = int(argv[i + 1])
             i += 1
         else:
-            fun = lookup_fun(argv[i])
-            i += 1
-            k = i
-            if (to - k) < fun.arity():
-                print "too few arguments for fun"
-                fun = None
-                ret = 3
-                break
-            while (i < to):
-                arg = fun.parse_arg(i - k, argv[i])
-                ops.append(arg)
+            try:
+                fun = lookup_fun(argv[i])
                 i += 1
-            break
+                k = i
+                if (to - k) < fun.arity():
+                    print "too few arguments for fun"
+                    fun = None
+                    ret = 3
+                    break
+                while (i < to):
+                    arg = fun.parse_arg(i - k, argv[i])
+                    ops.append(arg)
+                    i += 1
+                break
+            except ValueError, e:
+                print "something's wrong with the fun: ",
+                print e
+                ret = 4
+                fun = None
+                break
         i += 1
 
-    return (fun, ops, ret)
+    return (fun, ops, ret, config)
 
 
 
@@ -150,7 +164,8 @@ def parse_options(argv):
 
 def entry_point(argv):
 
-    (fun, ops, ret) = parse_options(argv)
+    (fun, ops, ret, conf) = parse_options(argv)
+    config.update(conf)
 
     if fun is None:
         print_help(argv)
@@ -171,7 +186,8 @@ def entry_point(argv):
 
         result = interpret(stack_e, stack_w)
 
-    print fun.format_ret(result)
+    if config["Print"]:
+        print fun.format_ret(result)
     if config["Verbose"]:
         print_transforms_for_rpython(result.get_tag().default_shape)
     return 0
