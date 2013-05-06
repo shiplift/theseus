@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from rpython.rlib import jit
+
 from lamb.util.construction_helper import (integer, t_nil, conslist, run)
 from lamb.execution import W_Integer, W_Object
 
@@ -13,6 +15,17 @@ class ArgfmtError(ValueError):
     pass
 class CannotFormat(ValueError):
     pass
+
+# def get_printable_location():
+#     pass
+
+# startupjit = jit.JitDriver(
+#     greens=[],
+#     reds=[],
+#     get_printable_location=get_printable_location
+# )
+
+
 
 def parse(fmt, arg):
     """

@@ -16,10 +16,10 @@ from lamb.shape import CompoundShape
 
 from mu.functions import all_functions, format
 
-config = {
+default_config = {
     "Nums": 1000,
     "Verbose": False,
-    "Print": False,
+    "Print": True,
 }
 
 def shape_representation(shape):
@@ -34,21 +34,22 @@ def print_transforms_for_rpython(shape):
 
 # ___________ Helper ________________
 
-def print_help(argv):
+def print_help(argv, config):
     print """Lamb
-Usage: %s [-h|--help] [--jit arg] [-v|--verbose] [-p] [-s num] [-w num] [-n num] fun op ...
+Usage: %s [-h|--help] [--jit arg] [-v|--verbose] [-np] [-s num] [-w num] [-n num] fun op ...
 
     -h --help        print this help and exit
        --jit arg     pass arg to the JIT, may be 'default', 'off', or 'param=value,param=value' list
-    -v --verbose     turn on verbose output
-    -p               print the result expression (default: %s)
-    -s num           set substitution threshold to num (default: %d)
-    -w num           set maximal storage with to consider for substitution to num (default: %d)
-    -n num           number of repetitions (default: %d)
+    -v --verbose     turn on verbose output (is %s)
+    -np              don't print the result expression (is %s)
+    -s num           set substitution threshold to num (is %d)
+    -w num           set maximal storage with to consider for substitution to num (is %d)
+    -n num           number of repetitions (is %d)
     fun              function to run, one of %s
     op ...           operand(s) to fun
 """ % (
     argv[0],
+    ('on' if config["Verbose"] else 'off'),
     ('on' if config["Print"] else 'off'),
     CompoundShape._config.substitution_threshold,
     CompoundShape._config.max_storage_width,
@@ -84,13 +85,12 @@ def lookup_fun(fun):
 
 
 
-def parse_options(argv):
+def parse_options(argv, config):
     fun = None
     ops = []
     ret = -1
     i = 1
     to = len(argv)
-    config = {}
     while (i < to):
         if argv[i] == "--jit":
             if len(argv) == i + 1:
@@ -107,8 +107,8 @@ def parse_options(argv):
         elif argv[i] in ["-v", "--verbose"]:
             config["Verbose"] = True
             config["Print"] = True
-        elif argv[i] == "-p":
-            config["Print"] = True
+        elif argv[i] == "-np":
+            config["Print"] = False
         elif argv[i] == "-s":
             if len(argv) == i + 1:
                 print "missing argument after -s"
@@ -164,11 +164,11 @@ def parse_options(argv):
 
 def entry_point(argv):
 
-    (fun, ops, ret, conf) = parse_options(argv)
-    config.update(conf)
+    (fun, ops, ret, conf) = parse_options(argv, default_config)
+    config  = conf
 
     if fun is None:
-        print_help(argv)
+        print_help(argv, config)
         return ret # quit early.
 
     if config["Verbose"]:

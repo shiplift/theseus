@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
+from rpython.rlib import jit
+
 from lamb.execution import Variable, tag
 from lamb.shape import CompoundShape
 from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
@@ -156,11 +159,26 @@ def make_mult_acc():
 mult_acc = make_mult_acc()
 
 
+def ppeano(num, shape):
+    return "%d: %s" % (num, shape.merge_point_string())
+
+peano_jit = jit.JitDriver(
+    greens=["num", "shape"],
+    reds=["i", "res"],
+    get_printable_location=ppeano,
+)
+
 
 def peano_num(pynum):
+    i = 0
     res = w_nil
-    for i in range(pynum):
+    shape = None
+    peano_jit.can_enter_jit(num=pynum, shape=shape, i=i, res=res)
+    while i  < pynum:
+        shape = res._shape
+        peano_jit.jit_merge_point(num=pynum, shape=shape, i=i, res=res)
         res = cons("p", res)
+        i += 1
     return res
 
 def python_num(peano):
