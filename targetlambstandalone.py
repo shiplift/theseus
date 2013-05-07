@@ -10,8 +10,6 @@ from rpython.config.config import Config, to_optparse
 from lamb.util.construction_helper import interpret, w_nil
 from lamb.stack import ExecutionStackElement, OperandStackElement
 from lamb.execution import jitdriver
-
-
 from lamb.shape import CompoundShape
 
 from mu.functions import all_functions, format
@@ -22,17 +20,18 @@ default_config = {
     "Print": True,
 }
 
-def shape_representation(shape):
-    return shape.merge_point_string()
-
-def print_transforms_for_rpython(shape):
-    num = 0
-    for (index, src), dest in shape.known_transformations.items():
-        num += 1
-        print num, "\t(", index, ", ", shape_representation(src), \
-          u") -> ", shape_representation(dest)
-
 # ___________ Helper ________________
+
+def print_statistics():
+    print "=Stats"
+    print "shapes:", len(CompoundShape._shapes)
+    print "transformationrules:", num_transformationrules()
+
+def num_transformationrules():
+    num = 0
+    for shape in CompoundShape._shapes:
+        num += len(shape.known_transformations)
+
 
 def print_help(argv, config):
     print """Lamb
@@ -62,8 +61,10 @@ def fun_list_string():
     return "\n\t\t" + "\n\t\t".join(docs)
 
 
+@jit.elidable
 def lookup_fun(fun):
     return all_functions.get(fun, None)
+
 
 # TBD
 # cmdline_optiondescr = OptionDescription("lamb", "the options of lamb", [
@@ -107,6 +108,7 @@ def parse_options(argv, config):
         elif argv[i] in ["-v", "--verbose"]:
             config["Verbose"] = True
             config["Print"] = True
+            CompoundShape._config.log_transformations = True
         elif argv[i] == "-np":
             config["Print"] = False
         elif argv[i] == "-s":
@@ -155,9 +157,6 @@ def parse_options(argv, config):
 
     return (fun, ops, ret, config)
 
-
-
-
 # __________  Entry point  __________
 
 
@@ -171,7 +170,7 @@ def entry_point(argv):
         print_help(argv, config)
         return ret # quit early.
 
-    if config["Verbose"]:
+    if config["Verbose"] and config["Print"]:
         print "Args"
         for op in ops:
             print format(op)
@@ -189,7 +188,10 @@ def entry_point(argv):
     if config["Print"]:
         print fun.format_ret(result)
     if config["Verbose"]:
-        print_transforms_for_rpython(result.get_tag().default_shape)
+        for shape in CompoundShape._shapes:
+            print shape.merge_point_string()
+            shape.print_transforms()
+        print_statistics()
     return 0
 
 # _____ Define and setup target ___

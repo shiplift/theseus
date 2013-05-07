@@ -79,7 +79,7 @@ class ShapeConfig(object):
     def __init__(self, substitution_threshold, max_storage_width):
         self.substitution_threshold = substitution_threshold
         self.max_storage_width = max_storage_width
-
+        self.log_transformations = False
 
 class CompoundShape(Shape):
 
@@ -88,12 +88,14 @@ class CompoundShape(Shape):
     _config = ShapeConfig(substitution_threshold=17,
                           max_storage_width=7)
 
+    _shapes = []
+
     def __init__(self, tag, structure):
         self._structure = structure
         self._tag = tag
         self._hist = {}
         self.known_transformations = {}
-
+        self._shapes.append(self)
 
     def get_child(self, w_c, index):
         return self.extract_child(w_c, index)
@@ -176,6 +178,11 @@ class CompoundShape(Shape):
     def recognize_transformation(self, i, shape):
         new_shape = self.replace(i, shape)
         self.known_transformations[i, shape] = new_shape
+        if self._config.log_transformations:
+            print "%s/%d\t(%d,%s)\n\t->%s" % (
+                self._tag.name, self._tag.arity,
+                i, shape.merge_point_string(),
+                new_shape.merge_point_string())
 
     def fusion(self, storage):
         # We do not record statistics in jitted code,
@@ -254,7 +261,7 @@ class CompoundShape(Shape):
 
     def merge_point_string_seen(self, seen):
         seen.append(self)
-        res  = "%s'%d{" % (self._tag.name, self._tag.arity)
+        res  = "%s%d{" % (self._tag.name, self._tag.arity)
         first = True
         for subshape in self._structure:
             if first:
@@ -266,8 +273,9 @@ class CompoundShape(Shape):
         return res
 
     def print_transforms(self):
-        for (index, src), dest in sorted(self.known_transformations.items()):
-            print "\t(", index, ", ", src, u") ↦ ", dest
+        for (index, src), dest in self.known_transformations.items():
+            print "\t(%d,%s) -> %s" % (
+                index, src.merge_point_string(), dest.merge_point_string())
 
     def __eq__(self, other):
         return (self.__class__  == other.__class__ and
