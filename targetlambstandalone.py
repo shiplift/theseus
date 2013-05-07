@@ -23,15 +23,18 @@ default_config = {
 # ___________ Helper ________________
 
 def print_statistics():
+    shapes, transf = stats()
     print "=Stats"
-    print "shapes:", len(CompoundShape._shapes)
-    print "transformationrules:", num_transformationrules()
+    print "shapes:", shapes
+    print "transformationrules:", transf
 
-def num_transformationrules():
-    num = 0
+def stats():
+    num_transf = 0
+    num_shapes = 0
     for shape in CompoundShape._shapes:
-        num += len(shape.known_transformations)
-
+        num_shapes += 1
+        num_transf += len(shape.known_transformations)
+    return num_shapes, num_transf
 
 def print_help(argv, config):
     print """Lamb
