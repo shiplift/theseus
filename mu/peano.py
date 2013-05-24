@@ -7,9 +7,9 @@ from rpython.rlib import jit
 from lamb.execution import Variable, tag
 from lamb.shape import CompoundShape
 from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
-                                           plist, conslist,
+                                           plist, conslist, expression,
                                            operand_stack, execution_stack,
-                                           w_nil, t_nil)
+                                           w_nil, is_nil)
 
 # the Tag used in peano arithmetic lists
 def _setup_shapes():
@@ -38,14 +38,28 @@ def _setup_shapes():
 # _setup_shapes()
 
 
+t_p = tag("p", 1)
+
+# Value
+def p(x):
+    from lamb.execution import w_constructor
+    return w_constructor(t_p, x)
+
+# Pattern
 def _p(x):
-    return cons("p", x)
+    from lamb.execution import ConstructorPattern
+    return ConstructorPattern(t_p, [pattern(x)])
+
+# Expression
+def p_(x):
+    from lamb.execution import w_constructor
+    return w_constructor(t_p, [expression(x)])
 
 zero = w_nil
 
 def make_succ():
     x = Variable("x")
-    l = lamb( ([x], _p(x)) )
+    l = lamb( ([x], p_(x)) )
     l._name = "succ"
     return l
 
@@ -72,7 +86,7 @@ def make_plus():
         ([zero, zero ], zero),
         ([x1  , zero ], x1),
         ([zero, x2   ], x2),
-        ([x3  , _p(y)], _p(mu(l, x3, y))))
+        ([x3  , _p(y)], p_(mu(l, x3, y))))
     l._name = "plus"
     return l
 
@@ -90,7 +104,7 @@ def make_plus_acc():
     l_acc = lamb()
     l_acc._rules = ziprules(
         ([a1,   zero], a1),
-        ([a2, _p(o1)], mu(l_acc, _p(a2), o1)))
+        ([a2, _p(o1)], mu(l_acc, p_(a2), o1)))
     l_acc.name = "plus/a"
 
     l = lamb()
@@ -184,7 +198,7 @@ def peano_num(pynum):
 def python_num(peano):
     p = peano
     res = 0
-    while p.get_tag() is not t_nil:
+    while not is_nil(p):
         res += 1
         p = p.get_child(0)
     return res
