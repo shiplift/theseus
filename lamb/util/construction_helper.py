@@ -18,6 +18,8 @@ def is_nil(constructor):
 
 
 def pattern(obj):
+    if isinstance(obj, Pattern):
+        return obj
     if isinstance(obj, Variable):
         return VariablePattern(obj)
     elif isinstance(obj, W_Integer):
@@ -100,3 +102,4 @@ def run(lamb, args):
         op = OperandStackElement(args[i], op)
     return interpret(ex, op)
 
+# EOF
