@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import time
 
 from rpython.rlib import jit
 from rpython.config.config import OptionDescription, BoolOption, StrOption
@@ -18,17 +19,23 @@ default_config = {
     "Nums": 1000,
     "Verbose": False,
     "Print": True,
+    "Stats": False,
 }
 
 # ___________ Helper ________________
 
-def print_statistics():
-    shapes, transf = stats()
-    print "=Stats"
-    print "shapes:", shapes
-    print "transformationrules:", transf
+def print_statistics(config, timings):
+    shapes, transf = stats(config)
+    total, cpu = timings
+    print "Stats{"
+    print "N:shapes:", shapes
+    print "N:transformationrules:", transf
+    print "N:iterations:", config["Nums"]
+    print "Ts:total:", total
+    print "Ts:cpu:", cpu
+    print "}Stats"
 
-def stats():
+def stats(config):
     num_transf = 0
     num_shapes = 0
     for shape in CompoundShape._shapes:
@@ -38,25 +45,37 @@ def stats():
 
 def print_help(argv, config):
     print """Lamb
-Usage: %s [-h|--help] [--jit arg] [-v|--verbose] [-np] [-s num] [-w num] [-n num] fun op ...
+Usage: %(lamb)s [options] fun op ...
 
+Options:
+  General:
     -h --help        print this help and exit
+  Printing:
+    -v --verbose     turn on verbose output (is %(verbose)s)
+    -S --statistics  print statistics (is %(stats)s)
+    -E               don't print the result expression (is %(print)s)
+  Running:
+    -N num           number of repetitions (is %(nums)d)
+  Altering Behavior:
        --jit arg     pass arg to the JIT, may be 'default', 'off', or 'param=value,param=value' list
-    -v --verbose     turn on verbose output (is %s)
-    -np              don't print the result expression (is %s)
-    -s num           set substitution threshold to num (is %d)
-    -w num           set maximal storage with to consider for substitution to num (is %d)
-    -n num           number of repetitions (is %d)
-    fun              function to run, one of %s
+    -n               ignore nils in substitution (is %(nils)s)
+    -s num           set substitution threshold to num (is %(subst)d)
+    -w num           set maximal storage with to consider for substitution to num (is %(width)d)
+
+Operations:
+    fun              function to run, one of %(funs)s
     op ...           operand(s) to fun
-""" % (
-    argv[0],
-    ('on' if config["Verbose"] else 'off'),
-    ('on' if config["Print"] else 'off'),
-    CompoundShape._config.substitution_threshold,
-    CompoundShape._config.max_storage_width,
-    config["Nums"],
-    fun_list_string())
+""" % {
+    "lamb": argv[0],
+    "verbose": ('on' if config["Verbose"] else 'off'),
+    "stats": ('on' if config["Stats"] else 'off'),
+    "print": ('on' if config["Print"] else 'off'),
+    "subst": CompoundShape._config.substitution_threshold,
+    "width": CompoundShape._config.max_storage_width,
+    "nils": ('on' if CompoundShape._config.ignore_nils else 'off'),
+    "nums": config["Nums"],
+    "funs": fun_list_string(),
+}
 
 def fun_list_string():
     funs = all_functions.items()
@@ -185,6 +204,12 @@ def entry_point(argv):
             print format(op)
         print "---"
 
+
+    start_time = time.time()
+    start_cpu = time.clock()
+    #
+    # Main run stuff.
+    #
     result = w_nil
     for _ in range(config["Nums"]):
         stack_w = None
@@ -193,6 +218,12 @@ def entry_point(argv):
         stack_e = ExecutionStackElement(fun.lamb._cursor, None)
 
         result = interpret(stack_e, stack_w)
+    #
+    #
+    #
+    stop_cpu = time.clock()
+    stop_time = time.time()
+    timing = (stop_time - start_time, stop_cpu - start_cpu)
 
     if config["Print"]:
         print fun.format_ret(result)
@@ -201,7 +232,8 @@ def entry_point(argv):
             print shape.merge_point_string()
             shape.print_hist()
             shape.print_transforms()
-        print_statistics()
+    if config["Verbose"] or config["Stats"]:
+        print_statistics(config, timing)
     return 0
 
 # _____ Define and setup target ___
