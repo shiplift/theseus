@@ -288,6 +288,11 @@ class CompoundShape(Shape):
             print "\t(%d,%s) -> %s" % (
                 index, src.merge_point_string(), dest.merge_point_string())
 
+    def print_hist(self):
+        for (index, src), count in self._hist.items():
+            print "\t%d: (%d,%s)" % (
+                count, index, src.merge_point_string())
+
     def __eq__(self, other):
         return (self.__class__  == other.__class__ and
                 self._tag       == other._tag and

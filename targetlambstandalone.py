@@ -199,6 +199,7 @@ def entry_point(argv):
     if config["Verbose"]:
         for shape in CompoundShape._shapes:
             print shape.merge_point_string()
+            shape.print_hist()
             shape.print_transforms()
         print_statistics()
     return 0
