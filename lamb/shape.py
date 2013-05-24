@@ -76,17 +76,19 @@ class Shape(HelperMixin):
 
 class ShapeConfig(object):
 
-    def __init__(self, substitution_threshold, max_storage_width):
+    def __init__(self, substitution_threshold, max_storage_width, ignore_nils):
         self.substitution_threshold = substitution_threshold
         self.max_storage_width = max_storage_width
         self.log_transformations = False
+        self.ignore_nils = ignore_nils
 
 class CompoundShape(Shape):
 
     _immutable_fields_ = ['_tag', '_structure[*]']
 
     _config = ShapeConfig(substitution_threshold=17,
-                          max_storage_width=7)
+                          max_storage_width=7,
+                          ignore_nils=False)
 
     _shapes = []
 
@@ -158,22 +160,31 @@ class CompoundShape(Shape):
                 return CompoundShape(self._tag, structure)
             storage_index -= child.storage_width()
 
+    @jit.elidable
+    def may_subsitute(self, constructor):
+        from util.construction_helper import is_nil
+        if self._config.ignore_nils:
+            return not is_nil(constructor)
+        else:
+            return True
+
     @jit.unroll_safe
     def record_shapes(self, storage):
         from execution import W_Constructor
 
         for i in range(len(storage)):
             child = storage[i]
-            if isinstance(child, W_Constructor):
+            if isinstance(child, W_Constructor) and self.may_subsitute(child):
                 key = (i, child._shape)
-                if key not in self.known_transformations:
-                    count = self._hist.get(key, 0)
-                    if count <= self._config.substitution_threshold:
-                        self._hist[key] = count + 1
-                        width = child.get_storage_width()
-                        if (width <= self._config.max_storage_width and
-                            self._hist[key] >= self._config.substitution_threshold):
-                            self.recognize_transformation(i, child._shape)
+                count = self._hist.get(key, 0)
+                width = child.get_storage_width()
+                if (key not in self.known_transformations and
+                    width <= self._config.max_storage_width and
+                    count <= self._config.substitution_threshold):
+                    self._hist[key] = count + 1
+                    if self._hist[key] >= self._config.substitution_threshold:
+                        self.recognize_transformation(i, child._shape)
+
 
     def recognize_transformation(self, i, shape):
         new_shape = self.replace(i, shape)

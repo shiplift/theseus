@@ -101,9 +101,9 @@ def parse_options(argv, config):
                 print "missing argument after --jit"
                 ret = 2
                 break
-            jitarg = argv[i + 1]
-            jit.set_user_param(jitdriver, jitarg)
             i += 1
+            jitarg = argv[i]
+            jit.set_user_param(jitdriver, jitarg)
         elif argv[i] in ["-h", "--help"]:
             # printing done by caller
             ret = 0
@@ -111,30 +111,36 @@ def parse_options(argv, config):
         elif argv[i] in ["-v", "--verbose"]:
             config["Verbose"] = True
             config["Print"] = True
+            config["Stats"] = True
             CompoundShape._config.log_transformations = True
-        elif argv[i] == "-np":
+        elif argv[i] in ["-S", "--statistics"]:
+            config["Stats"] = True
+        elif argv[i] == "-E":
             config["Print"] = False
         elif argv[i] == "-s":
             if len(argv) == i + 1:
                 print "missing argument after -s"
                 ret = 2
                 break
-            CompoundShape._config.substitution_threshold = int(argv[i + 1])
             i += 1
+            CompoundShape._config.substitution_threshold = int(argv[i])
         elif argv[i] == "-w":
             if len(argv) == i + 1:
                 print "missing argument after -w"
                 ret = 2
                 break
-            CompoundShape._config.max_storage_width = int(argv[i + 1])
             i += 1
+            CompoundShape._config.max_storage_width = int(argv[i])
         elif argv[i] == "-n":
+            CompoundShape._config.ignore_nils = True
+        elif argv[i] == "-N":
             if len(argv) == i + 1:
-                print "missing argument after -n"
+                print "missing argument after -N"
                 ret = 2
                 break
-            config["Nums"] = int(argv[i + 1])
             i += 1
+            n = int(argv[i])
+            config["Nums"] = n if n > 0 else 1
         else:
             try:
                 fun = lookup_fun(argv[i])

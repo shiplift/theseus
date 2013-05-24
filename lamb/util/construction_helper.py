@@ -5,11 +5,16 @@
 #
 # Construction Helper
 #
+from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from lamb.execution import *
 
 t_nil = tag("nil", 0)
 w_nil = w_constructor(t_nil, [])
+
+@jit.elidable
+def is_nil(constructor):
+    return constructor.get_tag() is t_nil
 
 
 def pattern(obj):
