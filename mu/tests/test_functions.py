@@ -105,9 +105,36 @@ class TestFunctions(object):
 
     def test_simple_append_processing(self):
         fun = all_functions["append"]
-        ops = [fun.parse_arg(i, a) for i, a in enumerate(["1;i:1", "1;i:1"])]
+        args = ["1;i:1", "1;i:1"]
+        ops = [fun.parse_arg(i, a) for i, a in enumerate(args)]
         assert ops == [conslist([integer(1)]), conslist([integer(1)])]
 
         ret = run(fun.lamb, ops)
         assert plist(ret) == [integer(1), integer(1)]
         assert fun.format_ret(ret) == "(1,1)"
+
+    def test_mapping(self):
+        fun = all_functions["map"]
+        args = ["succ", "5;p:1,f:succ"]
+        l = 5
+        ops = [fun.parse_arg(i, a) for i, a in enumerate(args)]
+        assert ops[0] == all_functions["succ"].lamb
+        assert ops[1] == conslist([peano_num(i + 1) for i in range(l)])
+        
+        ret = run(fun.lamb, ops)
+        assert plist(ret) == [peano_num(i + 2) for i in range(l)]
+
+    def test_mapping_cliissue(self):
+        from lamb.shape import CompoundShape
+        fun = all_functions["map"]
+        args = ["succ", "10;p:1,f:succ"]
+        l = 10
+        CompoundShape._config.substitution_threshold = 1
+        CompoundShape._config.max_storage_width
+        ops = [fun.parse_arg(i, a) for i, a in enumerate(args)]
+        assert ops[0] == all_functions["succ"].lamb
+        assert ops[1] == conslist([peano_num(i + 1) for i in range(l)])
+        
+        ret = run(fun.lamb, ops)
+        assert plist(ret) == [peano_num(i + 2) for i in range(l)]
+
