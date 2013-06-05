@@ -12,8 +12,10 @@ from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
                                            w_nil, is_nil)
 
 # the Tag used in peano arithmetic lists
+t_p = tag("p", 1)
+
 def _setup_shapes():
-    p_1 = tag("p", 1)
+    p_1 = t_p
 
     p_0_shape = p_1.default_shape
     p_1_shape = CompoundShape(p_1, [p_0_shape])
@@ -38,7 +40,6 @@ def _setup_shapes():
 # _setup_shapes()
 
 
-t_p = tag("p", 1)
 
 # Value
 def p(x):

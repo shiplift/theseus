@@ -236,12 +236,26 @@ def entry_point(argv):
         print_statistics(config, timing)
     return 0
 
+def entry_point_i(argv):
+    from mu.lists import _setup_shapes as lists_setup
+    from mu.peano import _setup_shapes as peano_setup
+    CompoundShape._config._inhibit_recognition = True
+    lists_setup()
+    peano_setup()
+
+    return entry_point(argv)
+
+
 # _____ Define and setup target ___
 
 
 def target(driver, args):
-    driver.exe_name = 'lamb-%(backend)s'
-    return entry_point, None
+    if "--inhibit-recognition" in args:
+        driver.exe_name = 'lambi-%(backend)s'
+        return entry_point_i, None
+    else:
+        driver.exe_name = 'lamb-%(backend)s'
+        return entry_point, None
 
 
 def jitpolicy(driver):

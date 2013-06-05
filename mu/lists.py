@@ -2,10 +2,44 @@
 # -*- coding: utf-8 -*-
 
 from lamb.execution import Variable, tag
-from lamb.shape import CompoundShape
+from lamb.shape import CompoundShape, InStorageShape
 from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
                                            plist, conslist,
                                            operand_stack, execution_stack, w_nil)
+
+t_cons = tag("cons", 2)
+
+def _setup_shapes():
+    cons_2 = t_cons
+
+    cons_0_shape = cons_2.default_shape
+    cons_1_shape = CompoundShape(cons_2, [InStorageShape(), cons_0_shape])
+    cons_2_shape = CompoundShape(cons_2, [InStorageShape(), cons_1_shape])
+    cons_3_shape = CompoundShape(cons_2, [InStorageShape(), cons_2_shape])
+    cons_4_shape = CompoundShape(cons_2, [InStorageShape(), cons_3_shape])
+    cons_5_shape = CompoundShape(cons_2, [InStorageShape(), cons_4_shape])
+
+    cons_0_shape.known_transformations[(1, cons_0_shape)] = cons_1_shape
+    cons_0_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
+    cons_0_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
+    cons_0_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+    cons_0_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+    cons_1_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
+    cons_1_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
+    cons_1_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+    cons_1_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+    cons_2_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
+    cons_2_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+    cons_2_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+    cons_3_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
+    cons_3_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+    cons_4_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+
+
 
 def make_append():
     x1 = Variable("x")
