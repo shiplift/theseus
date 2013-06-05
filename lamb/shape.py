@@ -52,7 +52,7 @@ class Shape(HelperMixin):
     def extract_child(self, w_c, index):
         raise NotImplementedError("abstract method")
 
-    def record_shapes(self, children):
+    def record_shapes(self, storage):
         pass
 
     def fusion(self, children):
