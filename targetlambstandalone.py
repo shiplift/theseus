@@ -24,12 +24,13 @@ default_config = {
 
 # ___________ Helper ________________
 
-def print_statistics(config, timings):
+def print_statistics(config, timings, fun):
     shapes, transf = stats(config)
     total, cpu = timings
     print "Stats{"
-    print "N:shapes:", shapes
-    print "N:transformationrules:", transf
+    print "B:%s:" % fun
+    print "C:shapes:", shapes
+    print "C:transformationrules:", transf
     print "N:iterations:", config["Nums"]
     print "Ts:total:", total
     print "Ts:cpu:", cpu
@@ -45,37 +46,37 @@ def stats(config):
 
 def print_help(argv, config):
     print """Lamb
-Usage: %(lamb)s [options] fun op ...
+Usage: %s [options] fun op ...
 
 Options:
   General:
     -h --help        print this help and exit
   Printing:
-    -v --verbose     turn on verbose output (is %(verbose)s)
-    -S --statistics  print statistics (is %(stats)s)
-    -E               don't print the result expression (is %(print)s)
+    -v --verbose     turn on verbose output (is %s)
+    -S --statistics  print statistics (is %s)
+    -E               don't print the result expression (is %s)
   Running:
-    -N num           number of repetitions (is %(nums)d)
+    -N num           number of repetitions (is %d)
   Altering Behavior:
        --jit arg     pass arg to the JIT, may be 'default', 'off', or 'param=value,param=value' list
-    -n               ignore nils in substitution (is %(nils)s)
-    -s num           set substitution threshold to num (is %(subst)d)
-    -w num           set maximal storage with to consider for substitution to num (is %(width)d)
+    -n               ignore nils in substitution (is %s)
+    -s num           set substitution threshold to num (is %d)
+    -w num           set maximal storage with to consider for substitution to num (is %d)
 
 Operations:
-    fun              function to run, one of %(funs)s
+    fun              function to run, one of %s
     op ...           operand(s) to fun
-""" % {
-    "lamb": argv[0],
-    "verbose": ('on' if config["Verbose"] else 'off'),
-    "stats": ('on' if config["Stats"] else 'off'),
-    "print": ('on' if config["Print"] else 'off'),
-    "subst": CompoundShape._config.substitution_threshold,
-    "width": CompoundShape._config.max_storage_width,
-    "nils": ('on' if CompoundShape._config.ignore_nils else 'off'),
-    "nums": config["Nums"],
-    "funs": fun_list_string(),
-}
+""" % (
+    argv[0],
+    ('on' if config["Verbose"] else 'off'),
+    ('on' if config["Stats"] else 'off'),
+    ('on' if config["Print"] else 'off'),
+    config["Nums"],
+    ('on' if CompoundShape._config.ignore_nils else 'off'),
+    CompoundShape._config.substitution_threshold,
+    CompoundShape._config.max_storage_width,
+    fun_list_string(),
+)
 
 def fun_list_string():
     funs = all_functions.items()
@@ -161,10 +162,14 @@ def parse_options(argv, config):
             n = int(argv[i])
             config["Nums"] = n if n > 0 else 1
         else:
+            fun = lookup_fun(argv[i])
+            if fun is None:
+                print "I don't know this func:", argv[i]
+                ret = 5
+                break
+            i += 1
+            k = i
             try:
-                fun = lookup_fun(argv[i])
-                i += 1
-                k = i
                 if (to - k) < fun.arity():
                     print "too few arguments for fun"
                     fun = None
@@ -185,7 +190,7 @@ def parse_options(argv, config):
 
     return (fun, ops, ret, config)
 
-# __________  Entry point  __________
+# __________  Entry points  __________
 
 
 
@@ -233,7 +238,7 @@ def entry_point(argv):
             shape.print_hist()
             shape.print_transforms()
     if config["Verbose"] or config["Stats"]:
-        print_statistics(config, timing)
+        print_statistics(config, timing, fun.lamb._name)
     return 0
 
 def entry_point_i(argv):

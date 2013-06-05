@@ -85,13 +85,10 @@ def parse_list(arg):
     return conslist(l)
 
 def list_fun(arg):
-    try:
-        return all_functions[arg]
-    except KeyError:
-        try:
-            return primitive_functions[arg]
-        except KeyError:
-            raise UnknownFunction(arg)
+    fun = all_functions.get(arg, None) or primitive_functions.get(arg, None)
+    if fun is None:
+        raise UnknownFunction(arg)
+    return fun
 
 def format(ret):
     from lamb.execution import W_Constructor, W_Lambda
