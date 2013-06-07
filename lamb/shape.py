@@ -82,6 +82,7 @@ class ShapeConfig(object):
         self.log_transformations = False
         self.ignore_nils = ignore_nils
         self._inhibit_recognition = False
+        self._inhibit_all = False
 
 class CompoundShape(Shape):
 
@@ -197,6 +198,10 @@ class CompoundShape(Shape):
                 new_shape.merge_point_string())
 
     def fusion(self, storage):
+
+        if self._config._inhibit_all:
+            return (self, storage)
+
         if not self._config._inhibit_recognition:
             # We do not record statistics in jitted code,
             # it should be stable beforehand

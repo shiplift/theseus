@@ -241,6 +241,12 @@ def entry_point(argv):
         print_statistics(config, timing, fun.lamb._name)
     return 0
 
+
+def entry_point_n(argv):
+    CompoundShape._config._inhibit_all= True
+    return entry_point(argv)
+
+
 def entry_point_i(argv):
     from mu.lists import _setup_shapes as lists_setup
     from mu.peano import _setup_shapes as peano_setup
@@ -258,6 +264,9 @@ def target(driver, args):
     if "--inhibit-recognition" in args:
         driver.exe_name = 'lambi-%(backend)s'
         return entry_point_i, None
+    elif "--inhibit-all" in args:
+        driver.exe_name = 'lambn-%(backend)s'
+        return entry_point_n, None
     else:
         driver.exe_name = 'lamb-%(backend)s'
         return entry_point, None
