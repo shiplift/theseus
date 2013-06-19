@@ -608,7 +608,8 @@ class TestInterpret(object):
         list_w = [peano_num(1),peano_num(2),peano_num(3)]
         #list_w = [peano_num(1)]
 
-        res = interpret(execution_stack(W_LambdaCursor(m)), operand_stack(succ, conslist(list_w)))
+        res = interpret(execution_stack(W_LambdaCursor(m)),
+                        operand_stack(succ, conslist(list_w)))
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
         #assert plist(res) == [peano_num(2)]
 
