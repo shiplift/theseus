@@ -179,6 +179,7 @@ def parse_options(argv, config):
                     arg = fun.parse_arg(i - k, argv[i])
                     ops.append(arg)
                     i += 1
+                ops.reverse()
                 break
             except ValueError, e:
                 print "something's wrong with the fun: ",
