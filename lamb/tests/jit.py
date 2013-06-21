@@ -27,6 +27,11 @@ from mu.peano import *
 
 class TestLLtype(LLJitMixin):
 
+    def test_simplyverse(self):
+        """ simpleverse without anything """
+        CompoundShape._config._inhibit_all = True
+        return self.test_reverse()
+
     def test_simpleverse(self):
         # name chosen to not conflict with pytest.py -kreverse
         a1 = Variable("accumulator")
@@ -56,6 +61,12 @@ class TestLLtype(LLJitMixin):
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
         clist1_w.get_tag().default_shape.print_transforms()
+
+
+    def test_iverse(self):
+        """ reverse without anything """
+        CompoundShape._config._inhibit_all = True
+        return self.test_reverse()
 
     def test_reverse(self):
         a1 = Variable("accumulator")
