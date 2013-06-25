@@ -7,15 +7,28 @@ from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 
-from lamb.util.repr import uni, who, urepr
 from lamb.stack import ExecutionStackElement, OperandStackElement
-
 
 from lamb.object import Object
 from lamb.pattern import NoMatch
-from lamb.model import W_Object, W_Lambda, w_constructor
+from lamb.model import W_Object, W_Lambda, W_Constructor, w_constructor
 
 
+#
+# Resolved copy behavior
+#
+class __extend__(W_Object):
+    def copy(self, binding):
+        return self
+
+class __extend__(W_Constructor):
+    @jit.unroll_safe
+    def copy(self, binding):
+        from lamb.expression import W_ConstructorEvaluator
+        children = [self.get_child(index).copy(binding) for index in range(self.get_number_of_children())]
+        return W_ConstructorEvaluator(self.get_tag(), children)
+
+###############################################################################
 
 class W_PureExpression(W_Object):
     """
@@ -31,31 +44,9 @@ class W_ConstructorEvaluator(W_PureExpression):
         self._tag = tag
         self._children = children or []
 
-    #
-    # Expression behavior
-    #
-    def evaluate(self):
-        return w_constructor(self._tag, [child.evaluate() for child in self._children])
-
-    @jit.unroll_safe
-    def interpret(self, op_stack, ex_stack):
-        ex_stack = ExecutionStackElement(self._tag._cursor, ex_stack)
-        for child in self._children:
-            ex_stack = ExecutionStackElement(child, ex_stack)
-        return (op_stack, ex_stack)
-
-
     @jit.unroll_safe
     def copy(self, binding):
         return W_ConstructorEvaluator(self._tag, [child.copy(binding) for child in self._children])
-
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return u"^" + urepr(self._tag, seen) + ( (u"(" + u", ".join(map(lambda x: urepr(x, seen), self._children)) + u")") if len(self._children) > 0 else "")
-
 
 class W_VariableExpression(W_PureExpression):
 
@@ -71,26 +62,10 @@ class W_VariableExpression(W_PureExpression):
 
         if w_result is None:
             raise VariableUnbound()
-        else:
-            return w_result
-
-    def evaluate(self): # pragma: no cover
-        # should not happen
-        raise VariableUnbound()
-
-    def interpret(self, op_stack, ex_stack): # pragma: no cover
-        # should not happen
-        raise VariableUnbound()
+        return w_result
 
     def copy(self, binding):
         return self.resolve(binding)
-
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return u"!" + urepr(self.variable, seen)
 
 class W_Call(W_PureExpression):
 
@@ -111,45 +86,12 @@ class W_Call(W_PureExpression):
     def get_number_of_arguments(self):
         return 0
 
-    #
-    # Expression behavior
-    #
-    def evaluate(self):
-        return self.callee.evaluate().call([argument.evaluate() for argument in self.get_arguments()])
-
-    @jit.unroll_safe
-    def interpret(self, op_stack, ex_stack):
-        lamb = self.callee
-        jit.promote(lamb)
-        assert isinstance(lamb, W_Lambda)
-        ex_stack = ExecutionStackElement(lamb._cursor, ex_stack)
-        return (op_stack, ex_stack)
 
     @jit.unroll_safe
     def copy(self, binding):
-        return w_call(self.callee.copy(binding), [argument.copy(binding) for argument in self.get_arguments()])
+        args = [argument.copy(binding) for argument in self.get_arguments()]
+        return w_call(self.callee.copy(binding), args)
 
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        res = u"μ"
-        if isinstance(self.callee, W_Lambda):
-            res += unicode(self.callee._name)
-        else:
-            res += urepr(self.callee, seen)
-        res += self.children_to_repr(seen)
-        return res
-
-    #
-    # Testing and Debug
-    #
-    def children_to_repr(self, seen):
-        if self.get_number_of_arguments() > 0:
-            return u"(" + u", ".join(map(lambda x: urepr(x, seen), self.get_arguments())) + u")"
-        else:
-            return u""
 
 class W_NAryCall(W_Call):
 
@@ -170,20 +112,6 @@ class W_NAryCall(W_Call):
     def get_number_of_arguments(self):
         return len(self.arguments)
 
-    #
-    # Expression behavior
-    #
-    @jit.unroll_safe
-    def interpret(self, op_stack, ex_stack):
-        # super
-        (op_stack, ex_stack) = W_Call.interpret(self, op_stack, ex_stack)
-        for index in range(self.get_number_of_arguments()):
-            arg = self.get_argument(index)
-            ex_stack = ExecutionStackElement(arg, ex_stack)
-        return (op_stack, ex_stack)
-
-
-
 ARG_ATTR_TEMPLATE = "arg_%d"
 
 def call_class_name(n_arguments):
@@ -195,7 +123,6 @@ def generate_call_class(n_arguments):
 
     class call_class(W_Call):
         _immutable_fields_ = [(ARG_ATTR_TEMPLATE % x) for x in arguments_iter]
-
 
         def _init_arguments(self, arguments):
             for x in arguments_iter:
@@ -217,7 +144,9 @@ def generate_call_class(n_arguments):
             return n_arguments
 
         #
-        # Expression behavior
+        # >> Expression behavior
+        # Note: this is done here and not in execution because of the
+        #       arguments_iter
         #
         def interpret(self, op_stack, ex_stack):
             # super
@@ -252,8 +181,7 @@ class W_Cursor(W_PureExpression):
     """
     Cursors are no actual expressions but act as such on the expression stack.
     """
-    def evaluate(self):
-        raise NotImplementedError("only meaningfull in non-recursive implementation")
+    pass
 
 class W_ConstructorCursor(W_Cursor):
 
@@ -262,42 +190,12 @@ class W_ConstructorCursor(W_Cursor):
     def __init__(self, tag):
         self._tag = tag
 
-    @jit.unroll_safe
-    def interpret(self, op_stack, ex_stack):
-        jit.promote(self)
-        children = []
-        for i in range(self._tag.arity):
-            children.append(op_stack._data)
-            op_stack = op_stack._next
-        new_top = w_constructor(self._tag, children)
-        op_stack = OperandStackElement(new_top, op_stack)
-        return (op_stack, ex_stack)
-
-
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return u"%" + urepr(self._tag, seen)
-
 class W_LambdaCursor(W_Cursor):
 
     _immutable_fields_ = ['_lamb']
 
     def __init__(self, lamb):
         self._lamb = lamb
-
-    def interpret(self, op_stack, ex_stack):
-        jit.promote(self)
-        return self._lamb.interpret_lambda(op_stack, ex_stack)
-
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return u"%" + urepr(self._lamb, seen)
 
     #
     # to avoid recursion in _lamb._cursor
@@ -326,20 +224,6 @@ class Rule(Object):
                 self._patterns[i].match(w_arguments[i], binding)
         return self._expression
 
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        res = u""
-        pats_seen = set(seen)
-        res += u"{%s}" % (u", ".join(map(lambda x: urepr(x, pats_seen), self._patterns)))
-        res += u" ↦ "
-        exp_seen = set(seen)
-        res += urepr(self._expression, exp_seen)
-        return res
-
-
 class Variable(Object):
 
     _immutable_fields_ = ['name', 'binding_index']
@@ -348,15 +232,5 @@ class Variable(Object):
         self.name = name
         self.binding_index = -1
 
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return self.name + u"_" + who(self)  + ("@%s" % self.binding_index if self.binding_index != -1 else "")
-
-
-
 class VariableUnbound(Exception):
     pass
-

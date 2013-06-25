@@ -7,14 +7,144 @@ from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 
-from lamb.util.debug import debug_stack
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
 from lamb.pattern import NoMatch
-from lamb.model import W_Object, W_Constructor, W_Lambda
+from lamb.model import W_Object, W_Constructor, W_Lambda, w_constructor
 from lamb.shape import (default_shape, find_shape_tuple,
                         CompoundShape, InStorageShape)
-from lamb.expression import W_LambdaCursor, W_ConstructorCursor, W_Cursor
+from lamb.expression import (W_LambdaCursor, W_ConstructorCursor, W_Cursor,
+                             W_ConstructorEvaluator, W_VariableExpression,
+                             W_Call, W_NAryCall)
+
+#
+# Execution behavior.
+#
+class __extend__(W_Object):
+    def evaluate_with_binding(self, binding):
+        return self.copy(binding).evaluate()
+
+    def evaluate(self):
+        return self
+
+    def interpret(self, op_stack, ex_stack):
+        return (OperandStackElement(self, op_stack), ex_stack)
+
+class __extend__(W_Constructor):
+    def evaluate(self):
+        return w_constructor(self.get_tag(), [child.evaluate() for child in self.get_children()])
+
+class __extend__(W_Lambda):
+    def call(self, w_arguments):
+        assert len(w_arguments) == self.arity()
+        for rule in self._rules:
+            try:
+                binding = [None] * rule.maximal_number_of_variables
+                expression = rule.match_all(w_arguments, binding)
+            except NoMatch:
+                pass
+            else:
+                return expression.copy(binding).evaluate()
+
+        raise NoMatch()
+
+    @jit.unroll_safe
+    def interpret_lambda(self, op_stack, ex_stack):
+        jit.promote(self)
+        w_arguments = []
+        for i in range(self.arity()):
+            w_arguments.append(op_stack._data)
+            op_stack = op_stack._next
+        for rule in self._rules:
+            try:
+                binding = [None] * rule.maximal_number_of_variables
+                expression = rule.match_all(w_arguments, binding)
+            except NoMatch:
+                pass
+            else:
+                ex_stack = ExecutionStackElement(expression.copy(binding), ex_stack)
+                return (op_stack, ex_stack)
+
+        raise NoMatch()
+
+class __extend__(W_ConstructorEvaluator):
+    def evaluate(self):
+        return w_constructor(self._tag, [child.evaluate() for child in self._children])
+
+    @jit.unroll_safe
+    def interpret(self, op_stack, ex_stack):
+        ex_stack = ExecutionStackElement(self._tag._cursor, ex_stack)
+        for child in self._children:
+            ex_stack = ExecutionStackElement(child, ex_stack)
+        return (op_stack, ex_stack)
+
+class __extend__(W_VariableExpression):
+    def evaluate(self): # pragma: no cover
+        # should not happen
+        raise VariableUnbound()
+
+    def interpret(self, op_stack, ex_stack): # pragma: no cover
+        # should not happen
+        raise VariableUnbound()
+
+class __extend__(W_Call):
+    def evaluate(self):
+        args = [argument.evaluate() for argument in self.get_arguments()]
+        return self.callee.evaluate().call(args)
+
+    @jit.unroll_safe
+    def interpret(self, op_stack, ex_stack):
+        lamb = self.callee
+        jit.promote(lamb)
+        assert isinstance(lamb, W_Lambda)
+        ex_stack = ExecutionStackElement(lamb._cursor, ex_stack)
+        return (op_stack, ex_stack)
+
+class __extend__(W_NAryCall):
+    @jit.unroll_safe
+    def interpret(self, op_stack, ex_stack):
+        # super
+        (op_stack, ex_stack) = W_Call.interpret(self, op_stack, ex_stack)
+        for index in range(self.get_number_of_arguments()):
+            arg = self.get_argument(index)
+            ex_stack = ExecutionStackElement(arg, ex_stack)
+        return (op_stack, ex_stack)
+
+#
+# XXX:
+# Attention: interpret for W_Call1..10 is defined inline
+#            because of generated classes.
+#
+#class __extend__(W_Call1): pass
+#
+
+class __extend__(W_Cursor):
+    def evaluate(self):
+        raise NotImplementedError("only meaningfull in non-recursive implementation")
+
+class __extend__(W_ConstructorCursor):
+    @jit.unroll_safe
+    def interpret(self, op_stack, ex_stack):
+        jit.promote(self)
+        children = []
+        for i in range(self._tag.arity):
+            children.append(op_stack._data)
+            op_stack = op_stack._next
+        new_top = w_constructor(self._tag, children)
+        op_stack = OperandStackElement(new_top, op_stack)
+        return (op_stack, ex_stack)
+
+class __extend__(W_LambdaCursor):
+    def interpret(self, op_stack, ex_stack):
+        jit.promote(self)
+        return self._lamb.interpret_lambda(op_stack, ex_stack)
+
+
+
+
+
+
+###############################################################################
 #
 #
 #
@@ -75,7 +205,9 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
     current_cursor = None
     current_args_shapes = None
 
-    if debug_callback is None: debug_callback = debug_stack
+    if debug_callback is None:
+        from lamb.util.debug import debug_stack
+        debug_callback = debug_stack
 
     while True:
         ex_data = ex_data_or_none(ex_stack)

@@ -7,8 +7,6 @@ from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 
-from lamb.util.repr import uni, who, urepr
-
 from lamb.object import Object
 
 from lamb.shape import CompoundShape, InStorageShape, default_shape
@@ -21,20 +19,6 @@ class W_Object(Object):
 
     def shape(self):
         return InStorageShape()
-    #
-    # Expression behavior
-    #
-    def evaluate_with_binding(self, binding):
-        return self.copy(binding).evaluate()
-
-    def evaluate(self):
-        return self
-
-    def interpret(self, op_stack, ex_stack):
-        return (OperandStackElement(self, op_stack), ex_stack)
-
-    def copy(self, binding):
-        return self
 
 
 class W_Tag(W_Object):
@@ -48,12 +32,6 @@ class W_Tag(W_Object):
         self.arity = arity
         self._cursor = W_ConstructorCursor(self)
         self.default_shape = default_shape(self, arity)
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return u"%s/%d" % (self.name, self.arity)
 
     #
     # Tags compare by identity
@@ -77,13 +55,6 @@ class W_Integer(W_Object):
 
     def __init__(self, value):
         self._value = value
-
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return u"#%d" % self._value
 
 class W_Constructor(W_Object):
 
@@ -119,36 +90,6 @@ class W_Constructor(W_Object):
 
     def shape(self):
         return jit.promote(self._shape)
-    #
-    # Expression behavior
-    #
-    @jit.unroll_safe
-    def copy(self, binding):
-        from lamb.expression import W_ConstructorEvaluator
-        children = [self.get_child(index).copy(binding) for index in range(self.get_number_of_children())]
-        return W_ConstructorEvaluator(self.get_tag(), children)
-
-    def evaluate(self):
-        return w_constructor(self.get_tag(), [child.evaluate() for child in self.get_children()])
-
-
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return u"Γ" + u"%s%s" % (urepr(self.get_tag(), seen), self.children_to_repr(seen))
-
-    def children_to_repr(self, seen):
-        def mini_urepr(x):
-            s = set(seen)
-            s.discard(x)
-            return urepr(x, s)
-
-        if self.get_number_of_children() > 0:
-            return u"(" + u", ".join(map(mini_urepr, self.get_children())) + u")"
-        else:
-            return u""
 
     def __eq__(self, other):
         if isinstance(other, W_Constructor):
@@ -255,53 +196,9 @@ class W_Lambda(W_Object):
         assert len(self._rules) > 0
         return self._rules[0].arity
 
-    def call(self, w_arguments):
-        assert len(w_arguments) == self.arity()
-        for rule in self._rules:
-            try:
-                binding = [None] * rule.maximal_number_of_variables
-                expression = rule.match_all(w_arguments, binding)
-            except NoMatch:
-                pass
-            else:
-                return expression.copy(binding).evaluate()
 
-        raise NoMatch()
-
-    @jit.unroll_safe
-    def interpret_lambda(self, op_stack, ex_stack):
-        jit.promote(self)
-        w_arguments = []
-        for i in range(self.arity()):
-            w_arguments.append(op_stack._data)
-            op_stack = op_stack._next
-        for rule in self._rules:
-            try:
-                binding = [None] * rule.maximal_number_of_variables
-                expression = rule.match_all(w_arguments, binding)
-            except NoMatch:
-                pass
-            else:
-                ex_stack = ExecutionStackElement(expression.copy(binding), ex_stack)
-                return (op_stack, ex_stack)
-
-        raise NoMatch()
-
-    #
-    # Testing and Debug
-    #
     def name(self):
         if len(self._name) > 0:
             return unicode(self._name)
         else:
             return who(self)
-
-    @uni
-    def to_repr(self, seen):
-        res = u"λ"
-        res += self.name()
-        res += u"("
-        res += u"; ".join(map(lambda x: urepr(x, seen), self._rules))
-        res += u")"
-        return res
-

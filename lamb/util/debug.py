@@ -9,6 +9,116 @@ from lamb.util.repr import urepr, who, uni
 _iteration = 0
 _stacks = {}
 
+from lamb.model import W_Tag, W_Integer, W_Constructor, W_Lambda
+
+#
+# Monkeypatch debug output
+#
+
+### Models ###
+
+class __extend__(W_Tag):
+    @uni
+    def to_repr(self, seen):
+        return u"%s/%d" % (self.name, self.arity)
+
+class __extend__(W_Integer):
+    @uni
+    def to_repr(self, seen):
+        return u"#%d" % self._value
+
+class __extend__(W_Constructor):
+    @uni
+    def to_repr(self, seen):
+        return u"Γ" + u"%s%s" % (urepr(self.get_tag(), seen), self.children_to_repr(seen))
+
+    def children_to_repr(self, seen):
+        def mini_urepr(x):
+            s = set(seen)
+            s.discard(x)
+            return urepr(x, s)
+
+        if self.get_number_of_children() > 0:
+            return u"(" + u", ".join(map(mini_urepr, self.get_children())) + u")"
+        else:
+            return u""
+
+class __extend__(W_Lambda):
+    @uni
+    def to_repr(self, seen):
+        res = u"λ"
+        res += self.name()
+        res += u"("
+        res += u"; ".join(map(lambda x: urepr(x, seen), self._rules))
+        res += u")"
+        return res
+
+### Expressions ###
+from lamb.expression import (W_ConstructorEvaluator,
+                             W_VariableExpression, W_Call,
+                             W_ConstructorCursor, W_LambdaCursor,
+                             Rule, Variable)
+class __extend__(W_ConstructorEvaluator):
+    @uni
+    def to_repr(self, seen):
+        return u"^" + urepr(self._tag, seen) \
+            + ( (u"(" + u", ".join(
+                map(lambda x: urepr(x, seen), self._children)) + u")") \
+                if len(self._children) > 0 else "")
+
+class __extend__(W_VariableExpression):
+    @uni
+    def to_repr(self, seen):
+        return u"!" + urepr(self.variable, seen)
+
+class __extend__(W_Call):
+    @uni
+    def to_repr(self, seen):
+        res = u"μ"
+        if isinstance(self.callee, W_Lambda):
+            res += unicode(self.callee._name)
+        else:
+            res += urepr(self.callee, seen)
+        res += self.children_to_repr(seen)
+        return res
+
+    def children_to_repr(self, seen):
+        if self.get_number_of_arguments() > 0:
+            return u"(" + u", ".join(map(lambda x: urepr(x, seen), self.get_arguments())) + u")"
+        else:
+            return u""
+
+
+class __extend__(W_ConstructorCursor):
+    @uni
+    def to_repr(self, seen):
+        return u"%" + urepr(self._tag, seen)
+
+class __extend__(W_LambdaCursor):
+    @uni
+    def to_repr(self, seen):
+        return u"%" + urepr(self._lamb, seen)
+
+class __extend__(Rule):
+    @uni
+    def to_repr(self, seen):
+        res = u""
+        pats_seen = set(seen)
+        res += u"{%s}" % (u", ".join(
+            map(lambda x: urepr(x, pats_seen), self._patterns)))
+        res += u" ↦ "
+        exp_seen = set(seen)
+        res += urepr(self._expression, exp_seen)
+        return res
+
+class __extend__(Variable):
+    @uni
+    def to_repr(self, seen):
+        i = ("@%s" % self.binding_index if self.binding_index != -1 else "")
+        return self.name + u"_" + who(self) + i
+
+###############################################################################
+
 def debug_stack(d):
     """
     print dictionary of stacks.
