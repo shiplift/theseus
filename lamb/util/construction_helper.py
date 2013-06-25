@@ -8,6 +8,7 @@
 from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from lamb.execution import *
+from lamb.pattern import *
 
 t_nil = tag("nil", 0)
 w_nil = w_constructor(t_nil, [])

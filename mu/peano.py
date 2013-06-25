@@ -48,7 +48,7 @@ def p(x):
 
 # Pattern
 def _p(x):
-    from lamb.execution import ConstructorPattern
+    from lamb.pattern import ConstructorPattern
     return ConstructorPattern(t_p, [pattern(x)])
 
 # Expression
