@@ -9,6 +9,8 @@ import py
 
 from lamb.execution import *
 from lamb.shape import *
+from lamb.model import *
+from lamb.expression import *
 from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            ziprules, lamb, mu,
                                            w_nil,

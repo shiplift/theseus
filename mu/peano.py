@@ -4,8 +4,9 @@
 
 from rpython.rlib import jit
 
-from lamb.execution import Variable, tag
+from lamb.model import tag
 from lamb.shape import CompoundShape
+from lamb.expression import Variable
 from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
                                            plist, conslist, expression,
                                            operand_stack, execution_stack,
@@ -43,7 +44,7 @@ def _setup_shapes():
 
 # Value
 def p(x):
-    from lamb.execution import w_constructor
+    from lamb.model import w_constructor
     return w_constructor(t_p, x)
 
 # Pattern
@@ -53,7 +54,7 @@ def _p(x):
 
 # Expression
 def p_(x):
-    from lamb.execution import w_constructor
+    from lamb.model import w_constructor
     return w_constructor(t_p, [expression(x)])
 
 zero = w_nil

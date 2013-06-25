@@ -23,7 +23,7 @@ class IntegerPattern(Pattern):
         self.value = value
 
     def match(self, obj, binding):
-        from lamb.execution import W_Integer
+        from lamb.model import W_Integer
         if isinstance(obj, W_Integer): # pragma: no branch
             if obj._value == self.value:
                 return

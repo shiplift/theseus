@@ -135,7 +135,7 @@ class CompoundShape(Shape):
         return offset
 
     def get_storage(self, w_c):
-        from execution import W_Constructor
+        from model import W_Constructor
         assert isinstance(w_c, W_Constructor)
         return w_c.get_storage()
 
@@ -147,7 +147,7 @@ class CompoundShape(Shape):
         return sum
 
     def build_child(self, new_children):
-        from execution import W_Constructor, select_constructor_class
+        from model import W_Constructor, select_constructor_class
         (shape, storage) = self.fusion(new_children)
         cls = select_constructor_class(storage)
         constructor = cls(shape)
@@ -172,7 +172,7 @@ class CompoundShape(Shape):
 
     @jit.unroll_safe
     def record_shapes(self, storage):
-        from execution import W_Constructor
+        from model import W_Constructor
 
         for i in range(len(storage)):
             child = storage[i]
@@ -219,7 +219,7 @@ class CompoundShape(Shape):
         u"""
         fusion ≔ Shape × [W_Object] → Shape' × [W_Object]'
         """
-        from lamb.execution import W_Constructor
+        from model import W_Constructor
 
         current_storage = storage
         index = 0

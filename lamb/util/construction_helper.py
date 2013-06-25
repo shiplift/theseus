@@ -7,8 +7,17 @@
 #
 from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
-from lamb.execution import *
-from lamb.pattern import *
+from lamb.expression import (Variable, Rule,
+                             W_VariableExpression,
+                             W_LambdaCursor,
+                             w_call)
+from lamb.pattern import (Pattern, 
+                          VariablePattern, ConstructorPattern, IntegerPattern)
+from lamb.model import (W_Object, W_Integer, W_Constructor, W_Lambda,
+                        tag, w_constructor)
+from lamb.stack import ExecutionStackElement, OperandStackElement
+from lamb.execution import interpret
+
 
 t_nil = tag("nil", 0)
 w_nil = w_constructor(t_nil, [])

@@ -4,7 +4,7 @@
 from rpython.rlib import jit
 
 from lamb.util.construction_helper import (integer, t_nil, conslist, run)
-from lamb.execution import W_Integer, W_Object
+from lamb.model import W_Integer, W_Object
 
 from mu.lists import *
 from mu.peano import *

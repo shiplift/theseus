@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from lamb.execution import Variable, tag
+from lamb.expression import Variable
+from lamb.model import tag
 from lamb.shape import CompoundShape, InStorageShape
 from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
                                            plist, conslist,

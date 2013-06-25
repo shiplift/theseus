@@ -6,6 +6,8 @@
 import py
 
 from lamb.execution import *
+from lamb.model import *
+from lamb.expression import *
 from lamb.pattern import *
 from mu.peano import *
 from lamb.util.construction_helper import (pattern, cons, integer,
