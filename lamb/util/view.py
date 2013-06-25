@@ -13,7 +13,7 @@ def _dot(self, seen):
     yield u'%s [label="%s", shape=box]' % (id(self), urepr(self)[:50])
 
     ignored = ['_tag', '_lamb']
-    
+
     for key, value in self.__dict__.iteritems():
         if key in ignored: # ignore certain properies
             continue

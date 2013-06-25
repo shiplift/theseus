@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from lamb.util.repr import urepr, uni
-from lamb.util.testing import HelperMixin
+from lamb.object import Object
 
-class StackElement(HelperMixin):
+from lamb.util.repr import urepr, uni
+
+class StackElement(Object):
     _mixin_ = True
 
     _attrs_ = ['_next']
@@ -12,7 +13,7 @@ class StackElement(HelperMixin):
     def __init__(self, data=None, next=None):
         self._data = data
         self._next = next
-    
+
     #
     # useful when inspecing the stack
     #
@@ -26,7 +27,7 @@ class StackElement(HelperMixin):
             except AttributeError:
                 element = None
         return ret
-    
+
     #
     # Testing and Debug
     #
@@ -45,4 +46,3 @@ class ExecutionStackElement(StackElement):
 
 class OperandStackElement(StackElement):
     pass
-

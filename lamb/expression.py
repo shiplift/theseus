@@ -8,10 +8,10 @@ from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 
 from lamb.util.repr import uni, who, urepr
-from lamb.util.testing import HelperMixin
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
 
+from lamb.object import Object
 from lamb.pattern import NoMatch
 from lamb.model import W_Object, W_Lambda, w_constructor
 
@@ -307,7 +307,7 @@ class W_LambdaCursor(W_Cursor):
         return self.__class__ == other.__class__ and  self._lamb is other._lamb
 
 
-class Rule(HelperMixin):
+class Rule(Object):
 
     _immutable_fields_ = ['_patterns[*]', 'arity', '_expression', 'maximal_number_of_variables']
 
@@ -340,7 +340,7 @@ class Rule(HelperMixin):
         return res
 
 
-class Variable(HelperMixin):
+class Variable(Object):
 
     _immutable_fields_ = ['name', 'binding_index']
 

@@ -8,14 +8,14 @@ from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 
 from lamb.util.repr import uni, who, urepr
-from lamb.util.testing import HelperMixin
 
+from lamb.object import Object
 
 from lamb.shape import CompoundShape, InStorageShape, default_shape
 from lamb.pattern import NoMatch
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
-class W_Object(HelperMixin):
+class W_Object(Object):
 
     _attrs_ = []
 

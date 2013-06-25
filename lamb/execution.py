@@ -7,11 +7,8 @@ from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 
-from lamb.util.repr import uni, who, urepr
 from lamb.util.debug import debug_stack
-from lamb.util.testing import HelperMixin
 from lamb.stack import ExecutionStackElement, OperandStackElement
-
 
 from lamb.pattern import NoMatch
 from lamb.model import W_Object, W_Constructor, W_Lambda

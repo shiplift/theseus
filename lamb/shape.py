@@ -6,8 +6,9 @@
 
 from rpython.rlib import jit
 
+from lamb.object import Object
+
 from lamb.util.repr import uni, who, urepr
-from lamb.util.testing import HelperMixin
 
 @jit.unroll_safe
 def _splice(array, array_len, index, insertion, insertion_len):
@@ -36,7 +37,7 @@ def _splice(array, array_len, index, insertion, insertion_len):
     return new_array
 
 
-class Shape(HelperMixin):
+class Shape(Object):
     def _init_children(self, w_c, children):
         pass
 

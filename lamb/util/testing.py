@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Testing helper
-#
-
-from lamb.util.view import DebugVizualizationMixin
-#
 # Helper for equality testing in tests
 #
-class HelperMixin(DebugVizualizationMixin):
+class TestHelperMixin(object):
 
     _mixin_ = True
     def __eq__(self, other):
@@ -20,7 +15,7 @@ class HelperMixin(DebugVizualizationMixin):
     def __repr__(self):
         r = self.to_repr(set())
         return r if isinstance(r, str) else r.encode("utf-8")
-        
+
     def shape(self):
         # for non-W_Objects to act as such during pattern generation
         from lamb.shape import InStorageShape

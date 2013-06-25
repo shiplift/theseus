@@ -5,11 +5,11 @@
 #
 from rpython.rlib import jit
 
-from lamb.util.testing import HelperMixin
+from lamb.object import Object
 from lamb.util.repr import uni, who, urepr
 
 
-class Pattern(HelperMixin):
+class Pattern(Object):
 
     def match(self, an_obj, binding):
         raise NotImplementedError("abstract method")
