@@ -44,14 +44,19 @@ class VariablePattern(Pattern):
         self.variable = variable
 
     def match(self, obj, binding):
-        assert self.variable.binding_index != -1 # bound
-        assert binding[self.variable.binding_index] is None
-        binding[self.variable.binding_index] = obj
+        assert self.variable.binding_index != -1 # recordec
+        if binding[self.variable.binding_index] is None:
+            # unbound -> bind
+            binding[self.variable.binding_index] = obj
+        else:
+            # bound -> assert equality
+            if binding[self.variable.binding_index] != obj:
+                raise NoMatch()
 
     def update_number_of_variables(self, rule):
-        assert self.variable.binding_index == -1 # unbound
-        self.variable.binding_index = rule.maximal_number_of_variables
-        rule.maximal_number_of_variables += 1
+        if self.variable.binding_index == -1: # un-recorded
+            self.variable.binding_index = rule.maximal_number_of_variables
+            rule.maximal_number_of_variables += 1
 
     #
     # Testing and Debug
