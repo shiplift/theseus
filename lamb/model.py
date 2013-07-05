@@ -3,6 +3,16 @@
 #
 # Hi.
 #
+"""
+
+  W_Object
+    W_Tag
+    W_Integer
+    W_Constructor
+      W_NAryConstructor
+    W_Lambda
+
+"""
 from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
