@@ -40,9 +40,13 @@ class StackElement(Object):
             r += urepr(self._data, seen)
         return r
 
-
 class ExecutionStackElement(StackElement):
     pass
 
 class OperandStackElement(StackElement):
     pass
+
+class Stack(Object):
+    def __init__(self, ex, op):
+        self.execution_stack = ex
+        self.operand_stack = op

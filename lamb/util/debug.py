@@ -119,12 +119,14 @@ class __extend__(Variable):
 
 ###############################################################################
 
-def debug_stack(d):
+def debug_stack(stack):
     """
     print dictionary of stacks.
     """
     print
     #print "%: Cursor, !: Expression, μ: Call, #: Value, λ: Lambda, &: Pattern, {}: Rule, _ Variable"
+
+    d = { 'ex_stack': stack.execution_stack, 'op_stack': stack.operand_stack }
 
     length = 60
 
@@ -141,7 +143,7 @@ def debug_stack(d):
     k = d.keys()
     v = map(list, map(list, map(i_, d.values())))
 
-    update_stack_mappings(d)
+    update_stack_mappings(stack)
 
     stacklists = map(list, map(reversed, zip(*list(izip_longest(*v, fillvalue="")))))
     stackreprs = map(lambda x: map(lambda y: t_(urepr(y)) if y else u"", x), stacklists)
@@ -152,7 +154,7 @@ def debug_stack(d):
     lines = map(lambda x: u" ".join(x), map(list, zip(*stat)))
     print "\n".join(map(lambda x: x.encode("utf-8"), lines))
 
-def update_stack_mappings(d):
+def update_stack_mappings(stack):
     """
     update the global stack mapping to be viewed with view_stacks()
     """
@@ -160,6 +162,7 @@ def update_stack_mappings(d):
     global _stacks
     global _iteration
 
+    d = { 'ex_stack': stack.execution_stack, 'op_stack': stack.operand_stack }
     k = d.keys()
     for i in range(len(k)):
         localkey = "_%03d%s" % (_iteration, k[i])

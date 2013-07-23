@@ -301,9 +301,9 @@ class TestInterpret(object):
         op_stack_max = 0
         ex_stack_max = 0
 
-        def maxdepth(d):
-            op_stack = d['op_stack']
-            ex_stack = d['ex_stack']
+        def maxdepth(stack):
+            op_stack = stack.operand_stack
+            ex_stack = stack.execution_stack
 
             global op_stack_max
             global ex_stack_max

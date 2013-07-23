@@ -5,9 +5,9 @@
 #
 from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
-from rpython.rlib.objectmodel import compute_identity_hash, r_dict
-
-from lamb.stack import ExecutionStackElement, OperandStackElement
+from rpython.rlib.objectmodel import (compute_identity_hash, r_dict,
+                                      we_are_translated)
+from lamb.stack import ExecutionStackElement, OperandStackElement, Stack
 
 from lamb.pattern import NoMatch
 from lamb.model import W_Object, W_Constructor, W_Lambda, w_constructor
@@ -15,7 +15,7 @@ from lamb.shape import (default_shape, find_shape_tuple,
                         CompoundShape, InStorageShape)
 from lamb.expression import (W_LambdaCursor, W_ConstructorCursor, W_Cursor,
                              W_ConstructorEvaluator, W_VariableExpression,
-                             W_Call, W_NAryCall)
+                             W_Call, W_NAryCall, VariableUnbound)
 
 #
 # Execution behavior.
@@ -195,7 +195,8 @@ def shapes_of_current_args(depth, op_stack):
     tup = find_shape_tuple(shapes)
     return tup
 
-def interpret(expression_stack, arguments_stack=None, debug=False, debug_callback=None):
+def interpret(expression_stack, arguments_stack=None,
+              debug=False, debug_callback=None):
 
     op_stack = arguments_stack
     ex_stack = expression_stack
@@ -205,18 +206,23 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
     current_cursor = None
     current_args_shapes = None
 
-    if debug_callback is None:
-        from lamb.util.debug import debug_stack
-        debug_callback = debug_stack
+    if we_are_translated():
+        if debug: assert debug_callback is not None
+    else:
+        if debug_callback is None:
+            from lamb.util.debug import debug_stack
+            debug_callback = debug_stack
 
     while True:
         ex_data = ex_data_or_none(ex_stack)
         if isinstance(ex_data, W_Cursor):
             current_cursor = jit.promote(ex_data)
             if isinstance(current_cursor, W_LambdaCursor):
-                current_args_shapes = shapes_of_current_args(current_cursor._lamb.arity(), op_stack)
+                current_args_shapes = shapes_of_current_args(
+                    current_cursor._lamb.arity(), op_stack)
             elif isinstance(current_cursor, W_ConstructorCursor):
-                current_args_shapes = shapes_of_current_args(current_cursor._tag.arity, op_stack)
+                current_args_shapes = shapes_of_current_args(
+                    current_cursor._tag.arity, op_stack)
 
             # print "cursor", current_cursor
             # print "args\t", current_args_shapes
@@ -233,10 +239,10 @@ def interpret(expression_stack, arguments_stack=None, debug=False, debug_callbac
             break
 
 
-        if debug: debug_callback({'ex_stack':ex_stack, 'op_stack':op_stack})
+        if debug: debug_callback(Stack(ex_stack, op_stack))
         expr = ex_stack._data
         ex_stack = ex_stack._next
         (op_stack, ex_stack) = expr.interpret(op_stack, ex_stack)
 
-    if debug: debug_callback({'ex_stack':ex_stack, 'op_stack':op_stack})
+    if debug: debug_callback(Stack(ex_stack, op_stack))
     return op_stack._data

@@ -193,9 +193,7 @@ def parse_options(argv, config):
 
 # __________  Entry points  __________
 
-
-
-def entry_point(argv):
+def entry_point(argv, debug=False, debug_callback=None):
 
     (fun, ops, ret, conf) = parse_options(argv, default_config)
     config  = conf
@@ -223,7 +221,7 @@ def entry_point(argv):
             stack_w = OperandStackElement(op, stack_w)
         stack_e = ExecutionStackElement(fun.lamb._cursor, None)
 
-        result = interpret(stack_e, stack_w)
+        result = interpret(stack_e, stack_w, debug, debug_callback)
     #
     #
     #
@@ -257,17 +255,30 @@ def entry_point_i(argv):
 
     return entry_point(argv)
 
+def entry_point_t(argv):
+    from lamb.util.transformation import \
+        record_predicates, print_transformations
+    ret = entry_point(argv, True, record_predicates)
+    print_transformations()
+    return ret
+
 
 # _____ Define and setup target ___
 
 
 def target(driver, args):
     if "--inhibit-recognition" in args:
+        args.remove("--inhibit-recognition")
         driver.exe_name = 'lambi-%(backend)s'
         return entry_point_i, None
     elif "--inhibit-all" in args:
+        args.remove("--inhibit-all")
         driver.exe_name = 'lambn-%(backend)s'
         return entry_point_n, None
+    elif "--record-transformations" in args:
+        args.remove("--record-transformations")
+        driver.exe_name = 'lambt-%(backend)s'
+        return entry_point_t, None
     else:
         driver.exe_name = 'lamb-%(backend)s'
         return entry_point, None
@@ -279,4 +290,6 @@ def jitpolicy(driver):
 
 
 if __name__ == '__main__':
-    sys.exit(entry_point(sys.argv))
+    from rpython.translator.driver import TranslationDriver
+    f, _ = target(TranslationDriver(), sys.argv)
+    sys.exit(f(sys.argv))

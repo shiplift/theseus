@@ -22,8 +22,7 @@ def _dot(self, seen):
             for line in value._dot(seen):
                 yield line
 
-def view(*objects, **names):
-    from dotviewer import graphclient
+def graph(objects, names):
     content = [u"digraph G{"] # ,u"rankdir=LR;"]
     seen = set()
     for obj in list(objects):
@@ -56,8 +55,12 @@ def view(*objects, **names):
         else:
             content.append(u"%s -> %s" % (key, id(obj)))
     content.append(u"}")
+    return content
+
+def view(*objects, **names):
+    from dotviewer import graphclient
     p = py.test.ensuretemp("lamb").join("temp.dot")
-    p.write(u"\n".join(content).encode('utf-8'), 'wb')
+    p.write(u"\n".join(graph(objects, names)).encode('utf-8'), 'wb')
     graphclient.display_dot_file(p, save_tmp_file='/tmp/foo/out.dot')
 
 
