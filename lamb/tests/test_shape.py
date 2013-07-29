@@ -11,15 +11,11 @@ from lamb.execution import *
 from lamb.shape import *
 from lamb.model import *
 from lamb.expression import *
-
-import lamb.util.debug
-
 from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            ziprules, lamb, mu,
                                            w_nil,
                                            conslist, plist,
                                            execution_stack, operand_stack)
-
 
 def clean_tag(name, arity):
     return W_Tag(name, arity)
@@ -755,54 +751,3 @@ class TestShapeRecognizer(object):
             for i in range(num):
                 l = _cons(w_1, l)
             check_width(l, 25)
-
-
-# vehicle to test equality is ensured
-yes = integer(1)
-no  = integer(2)
-def make_identity():
-    x1 = Variable("x")
-    x2 = Variable("x")
-    y  = Variable("y")
-
-    identity = lamb()
-    identity._name = "identity"
-    identity._rules = ziprules(
-        ([x1, x1], yes),
-        ([x2, y ], no ))
-    return identity
-identity = make_identity()
-
-class TestShapeInvariants(object):
-
-
-    def test_identity_remains_int(self):
-
-        w_a = integer(1)
-        w_b = integer(1)
-        ex_stack = execution_stack(W_LambdaCursor(identity))
-        op_stack = operand_stack(w_a, w_b)
-        res = interpret(ex_stack, op_stack)
-        assert res == yes
-
-        w_a = integer(1)
-        w_b = integer(2)
-        ex_stack = execution_stack(W_LambdaCursor(identity))
-        op_stack = operand_stack(w_a, w_b)
-        res = interpret(ex_stack, op_stack)
-        assert res == no
-
-    def test_identity_remains_constr(self):
-        w_a = cons("zork", integer(1), integer(2), integer(3))
-        w_b = cons("barf", integer(2), integer(3))
-        ex_stack = execution_stack(W_LambdaCursor(identity))
-        op_stack = operand_stack(w_a, w_b)
-        res = interpret(ex_stack, op_stack)
-        assert res == yes
-
-        w_a = integer(1)
-        w_b = integer(2)
-        ex_stack = execution_stack(W_LambdaCursor(identity))
-        op_stack = operand_stack(w_a, w_b)
-        res = interpret(ex_stack, op_stack)
-        assert res == no
