@@ -34,14 +34,14 @@ class TestShapeAccess(object):
         assert c.get_number_of_children() == 0
 
         barf_1 = clean_tag("barf", 1)
-        shape = CompoundShape(barf_1, [InStorageShape()])
+        shape = CompoundShape(barf_1, [in_storage_shape])
         c = W_NAryConstructor(shape)
         c._init_storage([w_1])
         assert c.get_number_of_children() == 1
         assert c.get_child(0) == w_1
 
         barf_2 = clean_tag("barf", 2)
-        shape = CompoundShape(barf_2, [InStorageShape()] * 2)
+        shape = CompoundShape(barf_2, [in_storage_shape] * 2)
         c = W_NAryConstructor(shape)
         c._init_storage([w_1, w_1])
         assert c.get_number_of_children() == 2
@@ -53,7 +53,7 @@ class TestShapeAccess(object):
         w_1 = integer(1)
 
         barf_1 = clean_tag("barf", 1)
-        shape_1 = CompoundShape(barf_1, [InStorageShape()])
+        shape_1 = CompoundShape(barf_1, [in_storage_shape])
         c_1 = W_NAryConstructor(shape_1)
         c_1._init_storage([w_1])
         assert c_1.get_number_of_children() == 1
@@ -96,7 +96,7 @@ class TestShapeAccess(object):
         w_1 = integer(1)
 
         barf_1 = clean_tag("barf", 1)
-        shape_1 = CompoundShape(barf_1, [InStorageShape()])
+        shape_1 = CompoundShape(barf_1, [in_storage_shape])
         c_1 = W_NAryConstructor(shape_1)
         c_1._init_storage([w_1])
         assert c_1.get_number_of_children() == 1
@@ -119,13 +119,13 @@ class TestShapeAccess(object):
         shape_3 = CompoundShape(foo_2, [
                         CompoundShape(zork_2, [
                             shape_1,
-                            InStorageShape()]),
-                        InStorageShape()])
+                            in_storage_shape]),
+                        in_storage_shape])
         c_1_3 = W_NAryConstructor(shape_1)
         c_1_3._init_storage([w_1])
         c_1_4 = W_NAryConstructor(shape_1)
         c_1_4._init_storage([w_1])
-        s_2_1 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
+        s_2_1 = CompoundShape(zork_2, [in_storage_shape, in_storage_shape])
         c_2_1 = W_NAryConstructor(s_2_1)
         c_2_1._init_storage([c_1_3, c_1_4])
 
@@ -195,7 +195,7 @@ class TestShapeMerger(object):
 
         w_1 = integer(1)
         barf_1 = clean_tag("barf", 1)
-        shape_1 = CompoundShape(barf_1, [InStorageShape()])
+        shape_1 = CompoundShape(barf_1, [in_storage_shape])
         storage = [w_1]
         (new_shape, new_storage) = shape_1.fusion(storage)
         assert new_shape == shape_1
@@ -205,12 +205,12 @@ class TestShapeMerger(object):
         w_1 = integer(1)
 
         barf_1 = clean_tag("barf", 1)
-        shape_1 = CompoundShape(barf_1, [InStorageShape()])
+        shape_1 = CompoundShape(barf_1, [in_storage_shape])
         c_1 = W_NAryConstructor(shape_1)
         c_1._init_storage([w_1])
 
         zork_2 = clean_tag("zork", 2)
-        shape_2 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
+        shape_2 = CompoundShape(zork_2, [in_storage_shape, in_storage_shape])
         c_1_1 = W_NAryConstructor(shape_1)
         c_1_1._init_storage([w_1])
         c_2 = W_NAryConstructor(shape_2)
@@ -238,17 +238,17 @@ class TestShapeMerger(object):
         w_1 = integer(1)
 
         barf_1 = clean_tag("barf", 1)
-        shape_1 = CompoundShape(barf_1, [InStorageShape()])
+        shape_1 = CompoundShape(barf_1, [in_storage_shape])
         c_1 = W_NAryConstructor(shape_1)
         c_1._init_storage([w_1])
         c_1_1 = W_NAryConstructor(shape_1)
         c_1_1._init_storage([w_1])
 
         zork_2 = clean_tag("zork", 2)
-        shape_2 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
+        shape_2 = CompoundShape(zork_2, [in_storage_shape, in_storage_shape])
 
-        shape_2_1 = CompoundShape(zork_2, [shape_1, InStorageShape()])
-        shape_2_2 = CompoundShape(zork_2, [InStorageShape(), shape_1])
+        shape_2_1 = CompoundShape(zork_2, [shape_1, in_storage_shape])
+        shape_2_2 = CompoundShape(zork_2, [in_storage_shape, shape_1])
         shape_2_3 = CompoundShape(zork_2, [shape_1, shape_1])
 
         shape_2.known_transformations[(0, shape_1)] = shape_2_1
@@ -272,17 +272,17 @@ class TestShapeMerger(object):
         w_1 = integer(1)
 
         barf_1 = clean_tag("barf", 1)
-        shape_1 = CompoundShape(barf_1, [InStorageShape()])
+        shape_1 = CompoundShape(barf_1, [in_storage_shape])
         c_1 = W_NAryConstructor(shape_1)
         c_1._init_storage([w_1])
         c_1_1 = W_NAryConstructor(shape_1)
         c_1_1._init_storage([w_1])
 
         zork_2 = clean_tag("zork", 2)
-        shape_2 = CompoundShape(zork_2, [InStorageShape(), InStorageShape()])
+        shape_2 = CompoundShape(zork_2, [in_storage_shape, in_storage_shape])
 
-        shape_2_1 = CompoundShape(zork_2, [shape_1, InStorageShape()])
-        shape_2_2 = CompoundShape(zork_2, [InStorageShape(), shape_1])
+        shape_2_1 = CompoundShape(zork_2, [shape_1, in_storage_shape])
+        shape_2_2 = CompoundShape(zork_2, [in_storage_shape, shape_1])
         shape_2_3 = CompoundShape(zork_2, [shape_1, shape_1])
 
         shape_2.known_transformations[(0, shape_1)] = shape_2_1
@@ -300,7 +300,7 @@ class TestShapeMerger(object):
         c_2._init_storage(new_storage)
 
         foo_2 = clean_tag("foo", 2)
-        shape_3 = CompoundShape(foo_2, [shape_2_3, InStorageShape()])
+        shape_3 = CompoundShape(foo_2, [shape_2_3, in_storage_shape])
 
         shape_3_1 = CompoundShape(foo_2, [shape_2_3, shape_2_3])
 
@@ -321,10 +321,10 @@ class TestShapeMerger(object):
         w_nil_ = W_NAryConstructor(nil_shape)
         w_nil_._init_storage([])
 
-        list_default_shape = CompoundShape(cons_, [InStorageShape(), InStorageShape()])
+        list_default_shape = CompoundShape(cons_, [in_storage_shape, in_storage_shape])
 
-        list_1_shape = CompoundShape(cons_, [InStorageShape(), nil_shape])
-        list_2_shape = CompoundShape(cons_, [InStorageShape(), list_1_shape])
+        list_1_shape = CompoundShape(cons_, [in_storage_shape, nil_shape])
+        list_2_shape = CompoundShape(cons_, [in_storage_shape, list_1_shape])
 
         list_default_shape.known_transformations[(1,nil_shape)] = list_1_shape
         list_default_shape.known_transformations[(1,list_1_shape)] = list_2_shape
@@ -352,7 +352,7 @@ class TestShapeMerger(object):
         barf = clean_tag("barf", 3)
         w_barf = w_constructor(barf, [w_1, w_1, w_1])
 
-        assert w_barf._shape == CompoundShape(barf, [InStorageShape(), InStorageShape(), InStorageShape()])
+        assert w_barf._shape == CompoundShape(barf, [in_storage_shape, in_storage_shape, in_storage_shape])
 
         w_barf_1 = w_constructor(barf, [w_1, w_1, w_1])
 
@@ -386,11 +386,11 @@ class TestShapeMerger(object):
 
         cons_shape = c.default_shape
         cons_shape._config.substitution_threshold = sys.maxint
-        cons_1_shape = CompoundShape(c, [InStorageShape(), cons_shape ])
-        cons_2_shape = CompoundShape(c, [InStorageShape(), cons_1_shape])
-        cons_3_shape = CompoundShape(c, [InStorageShape(), cons_2_shape])
-        cons_4_shape = CompoundShape(c, [InStorageShape(), cons_3_shape])
-        cons_5_shape = CompoundShape(c, [InStorageShape(), cons_4_shape])
+        cons_1_shape = CompoundShape(c, [in_storage_shape, cons_shape ])
+        cons_2_shape = CompoundShape(c, [in_storage_shape, cons_1_shape])
+        cons_3_shape = CompoundShape(c, [in_storage_shape, cons_2_shape])
+        cons_4_shape = CompoundShape(c, [in_storage_shape, cons_3_shape])
+        cons_5_shape = CompoundShape(c, [in_storage_shape, cons_4_shape])
         cons_1_shape._config.substitution_threshold = sys.maxint
         cons_2_shape._config.substitution_threshold = sys.maxint
         cons_3_shape._config.substitution_threshold = sys.maxint
@@ -620,15 +620,15 @@ class TestShapeRecognizer(object):
         ferb_2 = clean_tag("ferb_2", 2)
         shape = ferb_2.default_shape
 
-        c_shape = CompoundShape(ferb_2, [InStorageShape(), shape])
+        c_shape = CompoundShape(ferb_2, [in_storage_shape, shape])
 
         c_shape.recognize_transformation(2, shape)
 
         new_shape = c_shape.known_transformations[2, shape]
 
-        assert new_shape._structure[0] == InStorageShape()
+        assert new_shape._structure[0] == in_storage_shape
         subshape = new_shape._structure[1]
-        assert subshape._structure[0] == InStorageShape()
+        assert subshape._structure[0] == in_storage_shape
         assert subshape._structure[1] is shape
 
     def test_replace_subshapes(self):
@@ -637,19 +637,19 @@ class TestShapeRecognizer(object):
         ferb_2 = clean_tag("ferb_2", 2)
         shape = ferb_2.default_shape
 
-        c_shape = CompoundShape(ferb_2, [InStorageShape(), shape])
+        c_shape = CompoundShape(ferb_2, [in_storage_shape, shape])
 
-        assert InStorageShape().replace(0, shape) is shape
+        assert in_storage_shape.replace(0, shape) is shape
 
         new_structure = shape.replace(1, shape)._structure
-        assert new_structure[0] is InStorageShape()
+        assert new_structure[0] is in_storage_shape
         assert new_structure[1] is shape
 
 
         new_shape = c_shape.replace(2, shape)
-        assert new_shape._structure[0] == InStorageShape()
+        assert new_shape._structure[0] == in_storage_shape
         subshape = new_shape._structure[1]
-        assert subshape._structure[0] == InStorageShape()
+        assert subshape._structure[0] == in_storage_shape
         assert subshape._structure[1] is shape
 
     def test_recognize_deep_structures(self):

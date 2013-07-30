@@ -15,7 +15,7 @@ from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 
 from lamb.execution import (interpret, tag,
                             Variable, W_LambdaCursor, OperandStackElement)
-from lamb.shape import InStorageShape, CompoundShape
+from lamb.shape import in_storage_shape, CompoundShape
 
 from lamb.util.construction_helper import (lamb, ziprules, mu, cons, w_nil,
                                            conslist, integer, operand_stack,
@@ -78,12 +78,12 @@ class TestLLtype(LLJitMixin):
 
         c = tag("cons", 2)
         cons_shape = c.default_shape
-        # cons_1_shape = CompoundShape(c, [InStorageShape(), w_nil_shape ])
-        cons_1_shape = CompoundShape(c, [InStorageShape(), cons_shape])
-        cons_2_shape = CompoundShape(c, [InStorageShape(), cons_1_shape])
-        cons_3_shape = CompoundShape(c, [InStorageShape(), cons_2_shape])
-        cons_4_shape = CompoundShape(c, [InStorageShape(), cons_3_shape])
-        # cons_5_shape = CompoundShape(c, [InStorageShape(), cons_4_shape])
+        # cons_1_shape = CompoundShape(c, [in_storage_shape, w_nil_shape ])
+        cons_1_shape = CompoundShape(c, [in_storage_shape, cons_shape])
+        cons_2_shape = CompoundShape(c, [in_storage_shape, cons_1_shape])
+        cons_3_shape = CompoundShape(c, [in_storage_shape, cons_2_shape])
+        cons_4_shape = CompoundShape(c, [in_storage_shape, cons_3_shape])
+        # cons_5_shape = CompoundShape(c, [in_storage_shape, cons_4_shape])
 
         # cons_shape.known_transformations[(1, w_nil_shape )] = cons_1_shape
         cons_shape.known_transformations[(1, cons_shape )] = cons_1_shape

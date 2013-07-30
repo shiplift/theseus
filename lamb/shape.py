@@ -117,7 +117,7 @@ class CompoundShape(Shape):
     def extract_child(self, w_c, index):
         storage_index = self.structure_to_storage(index)
         subshape = self._structure[index]
-        if subshape is InStorageShape():
+        if subshape is in_storage_shape:
             return w_c.get_storage_at(storage_index)
         else:
             newlen = subshape.storage_width()
@@ -307,16 +307,6 @@ class CompoundShape(Shape):
                 self._structure == other._structure)
 
 
-
-def singleton(cls):
-    instances = {}
-    def getinstance():
-        if cls not in instances:
-            instances[cls] = cls()
-        return instances[cls]
-    return getinstance
-
-@singleton
 class InStorageShape(Shape):
 
     def extract_child(self, w_c, index):
@@ -348,9 +338,16 @@ class InStorageShape(Shape):
     def merge_point_string_seen(self, seen):
         return "|"
 
+in_storage_shape = InStorageShape()
+
+
+def in_storage_shape_instance():
+    return in_storage_shape
+
+
 @jit.unroll_safe
 def default_shape(tag, arity):
-    shape = CompoundShape(tag, [InStorageShape()] * arity)
+    shape = CompoundShape(tag, [in_storage_shape] * arity)
     return shape
 
 class ShapeTuple(object):

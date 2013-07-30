@@ -19,7 +19,7 @@ from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 
 from lamb.object import Object
 
-from lamb.shape import CompoundShape, InStorageShape, default_shape
+from lamb.shape import CompoundShape, in_storage_shape, default_shape
 from lamb.pattern import NoMatch
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
@@ -28,7 +28,7 @@ class W_Object(Object):
     _attrs_ = []
 
     def shape(self):
-        return InStorageShape()
+        return in_storage_shape
 
 
 class W_Tag(W_Object):
