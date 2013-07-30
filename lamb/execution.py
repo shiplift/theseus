@@ -151,7 +151,8 @@ class __extend__(W_LambdaCursor):
 #  Support for the JIT.
 #
 #
-def get_printable_location(current_cursor, current_args_shapes): #pragma: no cover
+def get_printable_location(dc, d,
+                           current_cursor, current_args_shapes): #pragma: no cover
     res = ""
     if current_cursor is None:
         res += "<None>"
@@ -166,7 +167,7 @@ def get_printable_location(current_cursor, current_args_shapes): #pragma: no cov
     return res
 
 jitdriver = jit.JitDriver(
-    greens=["current_cursor", "current_args_shapes"],
+    greens=["debug_callback", "debug", "current_cursor", "current_args_shapes"],
     reds=["op_stack", "ex_stack", "expr"],
     get_printable_location=get_printable_location,
 )
@@ -230,10 +231,13 @@ def interpret(expression_stack, arguments_stack=None,
                 expr=expr, op_stack=op_stack, ex_stack=ex_stack,
                 current_cursor=current_cursor,
                 current_args_shapes=current_args_shapes,
+                debug=debug, debug_callback=debug_callback
             )
         jitdriver.jit_merge_point(
             expr=expr, op_stack=op_stack, ex_stack=ex_stack,
-            current_cursor=current_cursor, current_args_shapes=current_args_shapes
+            current_cursor=current_cursor,
+            current_args_shapes=current_args_shapes,
+            debug=debug, debug_callback=debug_callback
         )
         if ex_stack is None:
             break
