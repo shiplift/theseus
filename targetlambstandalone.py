@@ -8,18 +8,17 @@ from rpython.rlib import jit
 from rpython.config.config import OptionDescription, BoolOption, StrOption
 from rpython.config.config import Config, to_optparse
 
-from lamb.util.construction_helper import interpret, w_nil
 from lamb.stack import ExecutionStackElement, OperandStackElement
 from lamb.execution import jitdriver
 from lamb.shape import CompoundShape
-
-from mu.functions import all_functions, format
 
 default_config = {
     "Nums": 1000,
     "Verbose": False,
     "Print": True,
     "Stats": False,
+    "ReadStatefile": True,
+    "WriteStatefile": True,
 }
 
 # ___________ Helper ________________
@@ -44,6 +43,15 @@ def stats(config):
         num_transf += len(shape.known_transformations)
     return num_shapes, num_transf
 
+def print_ops(ops):
+    from mu.fuctions import format
+
+    print "Args"
+    for op in ops:
+        print format(op)
+    print "---"
+
+
 def print_help(argv, config):
     print """Lamb
 Usage: %s [options] fun op ...
@@ -63,6 +71,9 @@ Options:
     -s num           set substitution threshold to num (is %d)
     -w num           set maximal storage with to consider for substitution to num (is %d)
 
+    -R               don't read .lambc statefile (is %s read)
+    -W               don't write .lambc statefile (is %s read)
+
 Operations:
     fun              function to run, one of %s
     op ...           operand(s) to fun
@@ -75,10 +86,13 @@ Operations:
     ('on' if CompoundShape._config.ignore_nils else 'off'),
     CompoundShape._config.substitution_threshold,
     CompoundShape._config.max_storage_width,
+    ('do' if config["ReadStatefile"] else 'do not'),
+    ('do' if config["WriteStatefile"] else 'do not'),
     fun_list_string(),
 )
 
 def fun_list_string():
+    from mu.functions import all_functions
     funs = all_functions.items()
     docs = ["%s/%d\t\t%s" % (key, val.arity(), val.doc) for key, val in funs]
     return "\n\t\t" + "\n\t\t".join(docs)
@@ -86,6 +100,7 @@ def fun_list_string():
 
 @jit.elidable
 def lookup_fun(fun):
+    from mu.functions import all_functions
     return all_functions.get(fun, None)
 
 
@@ -110,7 +125,7 @@ def lookup_fun(fun):
 
 
 def parse_options(argv, config):
-    fun = None
+    fun_name = None
     ops = []
     ret = -1
     i = 1
@@ -137,6 +152,10 @@ def parse_options(argv, config):
             config["Stats"] = True
         elif argv[i] == "-E":
             config["Print"] = False
+        elif argv[i] == "-R":
+            config["ReadStatefile"] = False
+        elif argv[i] == "-W":
+            config["WriteStatefile"] = False
         elif argv[i] == "-s":
             if len(argv) == i + 1:
                 print "missing argument after -s"
@@ -162,72 +181,80 @@ def parse_options(argv, config):
             n = int(argv[i])
             config["Nums"] = n if n > 0 else 1
         else:
-            fun = lookup_fun(argv[i])
-            if fun is None:
-                print "I don't know this func:", argv[i]
-                ret = 5
-                break
-            i += 1
-            k = i
-            try:
-                if (to - k) < fun.arity():
-                    print "too few arguments for fun"
-                    fun = None
-                    ret = 3
-                    break
-                while (i < to):
-                    arg = fun.parse_arg(i - k, argv[i])
-                    ops.append(arg)
-                    i += 1
-                ops.reverse()
-                break
-            except ValueError, e:
-                print "something's wrong with the fun: ",
-                print e
-                ret = 4
-                fun = None
-                break
+            fun_name = argv[i]
+            if len(argv) > i:
+                ops = argv[i+1:]
+            break
         i += 1
 
-    return (fun, ops, ret, config)
+    return (fun_name, ops, ret, config)
+
+def do_come_up(fun):
+    from lamb.util.serialize import come_up
+    come_up(fun)
+
+def do_settle(fun):
+    from lamb.util.serialize import settle
+    settle(fun)
+
+def retrieve_fun_args(fun_name, argv, come_up=True):
+    ret = 0
+    ops = []
+    fun = None
+
+    if come_up: do_come_up(fun_name)
+
+    try:
+        fun = lookup_fun(fun_name)
+        if fun is None:
+            print "I don't know this func:", fun_name
+            ret = 5
+            return (fun, ret, ops)
+
+        if len(argv) < fun.arity():
+            print "too few arguments for fun"
+            fun = None
+            ret = 3
+            return (fun, ret, ops)
+
+        for i, fun_arg in enumerate(argv):
+            arg = fun.parse_arg(i, fun_arg)
+            ops.append(arg)
+            ops.reverse()
+
+    except ValueError, e:
+        print "something's wrong with the fun: ",
+        print e
+        ret = 4
+        fun = None
+
+    return (fun, ret, ops)
+
 
 # __________  Entry points  __________
 
 def entry_point(argv, debug=False, debug_callback=None):
 
-    (fun, ops, ret, conf) = parse_options(argv, default_config)
+    (fun_name, fun_ops, ret, conf) = parse_options(argv, default_config)
     config  = conf
+
+    come_up = False
+    if config["ReadStatefile"]:
+        come_up = True
+
+    (fun, ret, ops) = retrieve_fun_args(fun_name, fun_ops, come_up)
 
     if fun is None:
         print_help(argv, config)
         return ret # quit early.
 
     if config["Verbose"] and config["Print"]:
-        print "Args"
-        for op in ops:
-            print format(op)
-        print "---"
+        print_ops(ops)
 
+    result = run(config, fun, ops, debug, debug_callback)
 
-    start_time = time.time()
-    start_cpu = time.clock()
-    #
-    # Main run stuff.
-    #
-    result = w_nil
-    for _ in range(config["Nums"]):
-        stack_w = None
-        for op in ops:
-            stack_w = OperandStackElement(op, stack_w)
-        stack_e = ExecutionStackElement(fun.lamb._cursor, None)
-
-        result = interpret(stack_e, stack_w, debug, debug_callback)
-    #
-    #
-    #
-    stop_cpu = time.clock()
-    stop_time = time.time()
-    timing = (stop_time - start_time, stop_cpu - start_cpu)
+    if config["WriteStatefile"]:
+        do_settle(fun_name)
 
     if config["Print"]:
         print fun.format_ret(result)
@@ -261,6 +288,34 @@ def entry_point_t(argv):
     ret = entry_point(argv, True, record_predicates)
     print_transformations()
     return ret
+
+
+def run(config, fun, ops, debug=False, debug_callback=None):
+
+    from lamb.util.construction_helper import interpret, w_nil
+
+    start_time = time.time()
+    start_cpu = time.clock()
+    #
+    # Main run stuff.
+    #
+    result = w_nil
+    for _ in range(config["Nums"]):
+        stack_w = None
+        for op in ops:
+            stack_w = OperandStackElement(op, stack_w)
+        stack_e = ExecutionStackElement(fun.lamb._cursor, None)
+
+        result = interpret(stack_e, stack_w, debug, debug_callback)
+    #
+    #
+    #
+    stop_cpu = time.clock()
+    stop_time = time.time()
+
+    timing = (stop_time - start_time, stop_cpu - start_cpu)
+
+    return result
 
 
 # _____ Define and setup target ___
