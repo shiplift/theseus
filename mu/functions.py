@@ -4,7 +4,7 @@
 from rpython.rlib import jit
 
 from lamb.util.construction_helper import (integer, t_nil, conslist, run)
-from lamb.model import W_Integer, W_Object
+from lamb.model import W_Integer, W_Object, W_Tag
 
 from mu.lists import *
 from mu.peano import *
@@ -145,6 +145,34 @@ class Function(CanApply):
 
     def apply_to(self, arg):
         return run(self.lamb, [arg])
+
+    def come_up(self):
+        import os.path
+        import pickle
+        # later
+        # from os import stat
+        # statres = stat(filename)
+
+        filename = self.lamb._name + '.lambc'
+        if not os.path.exists(filename):
+            return
+
+        f = file(filename, 'rU')
+        try:
+            res = pickle.load(f)
+        finally:
+            f.close()
+        W_Tag.tags = res
+
+    def settle(self):
+        import pickle
+        filename = self.lamb._name + '.lambc'
+        f = file(filename, 'w')
+        buf = []
+        try:
+            pickle.dump(W_Tag.tags, f)
+        finally:
+            f.close()
 
 class PrimitiveFunction(CanApply):
     def __init__(self, fun):

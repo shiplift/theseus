@@ -49,6 +49,15 @@ class W_Tag(W_Object):
     def __eq__(self, other): #pragma: no cover
         return self is other
 
+    #
+    # pickle
+    def __setstate__(self, state):
+        from lamb.expression import W_ConstructorCursor
+        self.name = state['name']
+        self.arity = state['arity']
+        self.default_shape = state['default_shape']
+        self._cursor = W_ConstructorCursor(self)
+
 
 def tag(name, arity):
     assert isinstance(name, str)

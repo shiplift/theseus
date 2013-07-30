@@ -328,6 +328,12 @@ class InStorageShape(Shape):
     def replace(self, storage_index, new_shape):
         assert storage_index == 0
         return new_shape
+
+    ##
+    #  for pickle
+    def __reduce__(self):
+        return ( in_storage_shape_instance, tuple() )
+
     #
     # Testing and Debug
     #
