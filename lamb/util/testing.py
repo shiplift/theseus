@@ -12,10 +12,6 @@ class TestHelperMixin(object):
     def __ne__(self, other):
         return not self == other
 
-    def __repr__(self):
-        r = self.to_repr(set())
-        return r if isinstance(r, str) else r.encode("utf-8")
-
     def shape(self):
         # for non-W_Objects to act as such during pattern generation
         from lamb.shape import in_storage_shape

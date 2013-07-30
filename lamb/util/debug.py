@@ -9,13 +9,25 @@ from lamb.util.repr import urepr, who, uni
 _iteration = 0
 _stacks = {}
 
-from lamb.model import W_Tag, W_Integer, W_Constructor, W_Lambda
+from lamb.model import W_Tag, W_Integer, W_Constructor, W_Lambda, Object
 
 #
 # Monkeypatch debug output
 #
 
+### General ###
+
+class __extend__(Object):
+    def __repr__(self):
+        r = self.to_repr(set())
+        return r if isinstance(r, str) else r.encode("utf-8")
+
+    @uni
+    def to_repr(self, seen):
+        return object.__repr__(self)
+
 ### Models ###
+
 
 class __extend__(W_Tag):
     @uni
