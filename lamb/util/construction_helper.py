@@ -6,6 +6,7 @@
 # Construction Helper
 #
 from rpython.rlib import jit
+from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib.unroll import unrolling_iterable
 from lamb.expression import (Variable, Rule,
                              W_VariableExpression,
@@ -80,7 +81,10 @@ def ziprules(*tuples):
 
 def lamb(*tuples):
     """ new lambda """
-    return W_Lambda(ziprules(*tuples))
+    if we_are_translated():
+        return W_Lambda([])
+    else:
+        return W_Lambda(ziprules(*tuples))
 
 def mu(l, *args):
     return w_call(expression(l), [expression(i) for i in args])
