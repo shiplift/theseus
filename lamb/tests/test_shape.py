@@ -436,7 +436,9 @@ class TestShapeMerger(object):
 
             if op_stack:
                 if isinstance(op_stack._data, W_Constructor):
-                    print "[W]", op_stack._data._shape, " storage: ", storagewalker(op_stack._data.get_storage())
+                    print "[W]", op_stack._data._shape,
+                    print " storage: ",
+                    print storagewalker(op_stack._data.get_storage())
                 else:
                     print "[W]", op_stack._data
             else:
@@ -449,7 +451,8 @@ class TestShapeMerger(object):
         assert clist1_w.get_tag() is c
 
         debug_callback = stackinspect if debug else None
-        res = interpret(execution_stack(W_LambdaCursor(reverse)), operand_stack(clist1_w), debug, debug_callback)
+        res = interpret(execution_stack(W_LambdaCursor(reverse)),
+                        operand_stack(clist1_w), debug, debug_callback)
         list1_w.reverse()
         assert plist(res) == list1_w
 

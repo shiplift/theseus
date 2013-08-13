@@ -16,6 +16,7 @@
 from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
+from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
 from lamb.object import Object
 

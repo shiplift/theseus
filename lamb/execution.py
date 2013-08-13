@@ -7,6 +7,8 @@ from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import (compute_identity_hash, r_dict,
                                       we_are_translated)
+from rpython.rlib.debug import debug_start, debug_stop, debug_print
+
 from lamb.stack import ExecutionStackElement, OperandStackElement, Stack
 
 from lamb.pattern import NoMatch
@@ -52,6 +54,7 @@ class __extend__(W_Lambda):
     def interpret_lambda(self, op_stack, ex_stack):
         jit.promote(self)
         w_arguments = []
+        debug_start('lamb-interpret-lambda')
         for i in range(self.arity()):
             w_arguments.append(op_stack._data)
             op_stack = op_stack._next
@@ -62,9 +65,11 @@ class __extend__(W_Lambda):
             except NoMatch:
                 pass
             else:
-                ex_stack = ExecutionStackElement(expression.copy(binding), ex_stack)
+                resolved = expression.copy(binding)
+                ex_stack = ExecutionStackElement(resolved, ex_stack)
+                debug_stop('lamb-interpret-lambda')
                 return (op_stack, ex_stack)
-
+        debug_stop('lamb-interpret-lambda')
         raise NoMatch()
 
 class __extend__(W_ConstructorEvaluator):

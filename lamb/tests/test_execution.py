@@ -202,7 +202,8 @@ class TestInterpret(object):
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
 
-        res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(conslist(list1_w), conslist(list2_w)))
+        res = interpret(execution_stack(W_LambdaCursor(l)),
+                        operand_stack(conslist(list1_w), conslist(list2_w)))
         assert plist(res) == list1_w + list2_w
 
     def test_map(self):
@@ -274,7 +275,8 @@ class TestInterpret(object):
 
             list1 = [integer(n) for n in range(i)]
             w_cons1 = cons("cons", *list1)
-            res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(w_cons1))
+            res = interpret(execution_stack(W_LambdaCursor(l)),
+                            operand_stack(w_cons1))
             assert res == cons("cons", *(list1[1:]))
 
 
@@ -315,7 +317,8 @@ class TestInterpret(object):
 
         nums = 10
         list1_w = [integer(x) for x in range(nums)]
-        res = interpret(execution_stack(W_LambdaCursor(reverse)), operand_stack(conslist(list1_w)), True, maxdepth)
+        res = interpret(execution_stack(W_LambdaCursor(reverse)),
+                        operand_stack(conslist(list1_w)), True, maxdepth)
         list1_w.reverse()
         assert plist(res) == list1_w
 
@@ -326,7 +329,8 @@ class TestInterpret(object):
 
         nums = 100
         list1_w = [integer(x) for x in range(nums)]
-        interpret(execution_stack(W_LambdaCursor(reverse)), operand_stack(conslist(list1_w)), True, maxdepth)
+        interpret(execution_stack(W_LambdaCursor(reverse)),
+                  operand_stack(conslist(list1_w)), True, maxdepth)
         ex_stack_max2 = ex_stack_max
 
         assert ex_stack_max2  == ex_stack_max1
@@ -336,7 +340,8 @@ class TestInterpret(object):
 
         nums = 1000
         list1_w = [integer(x) for x in range(nums)]
-        interpret(execution_stack(W_LambdaCursor(reverse)), operand_stack(conslist(list1_w)), True, maxdepth)
+        interpret(execution_stack(W_LambdaCursor(reverse)),
+                  operand_stack(conslist(list1_w)), True, maxdepth)
         ex_stack_max3 = ex_stack_max
 
         assert ex_stack_max3 == ex_stack_max2
@@ -373,3 +378,5 @@ class TestInterpret(object):
 
         res = interpret(ex_stack, op_stack)
         assert python_num(res) == 6
+
+# EOF

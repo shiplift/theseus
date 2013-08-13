@@ -11,7 +11,8 @@ from lamb.expression import (Variable, Rule,
                              W_VariableExpression,
                              W_LambdaCursor,
                              w_call)
-from lamb.pattern import (Pattern, 
+from lamb.object import Object
+from lamb.pattern import (Pattern,
                           VariablePattern, ConstructorPattern, IntegerPattern)
 from lamb.model import (W_Object, W_Integer, W_Constructor, W_Lambda,
                         tag, w_constructor)
@@ -28,6 +29,7 @@ def is_nil(constructor):
 
 
 def pattern(obj):
+    assert isinstance(obj, Object)
     if isinstance(obj, Pattern):
         return obj
     if isinstance(obj, Variable):

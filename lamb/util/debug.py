@@ -10,17 +10,23 @@ _iteration = 0
 _stacks = {}
 
 from lamb.model import W_Tag, W_Integer, W_Constructor, W_Lambda, Object
-
+from lamb.shape import Shape, CompoundShape, InStorageShape
+from lamb.pattern import VariablePattern, ConstructorPattern, IntegerPattern
 #
 # Monkeypatch debug output
 #
+
+hard_debug = False
 
 ### General ###
 
 class __extend__(Object):
     def __repr__(self):
         r = self.to_repr(set())
-        return r if isinstance(r, str) else r.encode("utf-8")
+        r = r if isinstance(r, str) else r.encode("utf-8")
+        if hard_debug:
+            r += "<" + who(self).encode("utf-8") + ">"
+        return r
 
     @uni
     def to_repr(self, seen):

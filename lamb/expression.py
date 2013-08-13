@@ -7,6 +7,8 @@ from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 
+from rpython.rlib.debug import debug_start, debug_stop, debug_print
+
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
 from lamb.object import Object
@@ -25,7 +27,8 @@ class __extend__(W_Constructor):
     @jit.unroll_safe
     def copy(self, binding):
         from lamb.expression import W_ConstructorEvaluator
-        children = [self.get_child(index).copy(binding) for index in range(self.get_number_of_children())]
+        children = [self.get_child(index).copy(binding) \
+                    for index in range(self.get_number_of_children())]
         return W_ConstructorEvaluator(self.get_tag(), children)
 
 ###############################################################################
@@ -46,7 +49,8 @@ class W_ConstructorEvaluator(W_PureExpression):
 
     @jit.unroll_safe
     def copy(self, binding):
-        return W_ConstructorEvaluator(self._tag, [child.copy(binding) for child in self._children])
+        return W_ConstructorEvaluator(self._tag, [child.copy(binding) \
+                                                  for child in self._children])
 
 class W_VariableExpression(W_PureExpression):
 
@@ -207,7 +211,8 @@ class W_LambdaCursor(W_Cursor):
 
 class Rule(Object):
 
-    _immutable_fields_ = ['_patterns[*]', 'arity', '_expression', 'maximal_number_of_variables']
+    _immutable_fields_ = ['_patterns[*]', 'arity',
+                          '_expression', 'maximal_number_of_variables']
 
     def __init__(self, patterns, expression):
         self._patterns = patterns
@@ -219,9 +224,11 @@ class Rule(Object):
 
     @jit.unroll_safe
     def match_all(self, w_arguments, binding):
+        debug_start("lamb-match-all %s " % self)
         if self.arity != 0:
             for i in range(self.arity):
                 self._patterns[i].match(w_arguments[i], binding)
+        debug_stop("lamb-match-all %s " % self)
         return self._expression
 
 class Variable(Object):
