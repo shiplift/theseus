@@ -7,6 +7,11 @@ import time
 from rpython.rlib import jit
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
+# from rpython.config.config import OptionDescription, BoolOption, StrOption
+# from rpython.config.config import Config, to_optparse
+
+import mu.functions
+from lamb.startup import boot
 from lamb.stack import ExecutionStackElement, OperandStackElement
 from lamb.execution import jitdriver
 from lamb.shape import CompoundShape
@@ -38,12 +43,13 @@ def stats(config):
     num_transf = 0
     num_shapes = 0
     for shape in CompoundShape._shapes:
+        assert isinstance(shape, CompoundShape)
         num_shapes += 1
-        num_transf += len(shape.known_transformations)
+        num_transf += len(shape.transformation_rules)
     return num_shapes, num_transf
 
 def print_ops(ops):
-    from mu.fuctions import format
+    from mu.functions import format
 
     print "Args"
     for op in ops:
@@ -196,12 +202,10 @@ def do_settle(fun):
     from lamb.util.serialize import settle
     settle(fun)
 
-def retrieve_fun_args(fun_name, argv, come_up=True):
+def retrieve_fun_args(fun_name, argv):
     ret = 0
     ops = []
     fun = None
-
-    if come_up: do_come_up(fun_name)
 
     try:
         fun = lookup_fun(fun_name)
@@ -235,13 +239,18 @@ def retrieve_fun_args(fun_name, argv, come_up=True):
 def entry_point(argv, debug=False, debug_callback=None):
 
     (fun_name, fun_ops, ret, conf) = parse_options(argv, default_config)
-    config  = conf
+    config = conf
 
-    come_up = False
     if config["ReadStatefile"]:
-        come_up = True
+        do_come_up(fun_name)
 
-    (fun, ret, ops) = retrieve_fun_args(fun_name, fun_ops, come_up)
+    boot()
+
+    if fun_name is None:
+        print_help(argv, config)
+        return ret # quit early.
+
+    (fun, ret, ops) = retrieve_fun_args(fun_name, fun_ops)
 
     if fun is None:
         print_help(argv, config)
@@ -250,7 +259,7 @@ def entry_point(argv, debug=False, debug_callback=None):
     if config["Verbose"] and config["Print"]:
         print_ops(ops)
 
-    result = run(config, fun, ops, debug, debug_callback)
+    (result, timing) = run(config, fun, ops, debug, debug_callback)
 
     if config["WriteStatefile"]:
         do_settle(fun_name)
@@ -291,14 +300,14 @@ def entry_point_t(argv):
 
 def run(config, fun, ops, debug=False, debug_callback=None):
 
-    from lamb.util.construction_helper import interpret, w_nil
+    from lamb.util.construction_helper import interpret, nil
 
     start_time = time.time()
     start_cpu = time.clock()
     #
     # Main run stuff.
     #
-    result = w_nil
+    result = nil()
     for _ in range(config["Nums"]):
         stack_w = None
         for op in ops:
@@ -314,7 +323,7 @@ def run(config, fun, ops, debug=False, debug_callback=None):
 
     timing = (stop_time - start_time, stop_cpu - start_cpu)
 
-    return result
+    return (result, timing)
 
 
 # _____ Define and setup target ___

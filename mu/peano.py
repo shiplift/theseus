@@ -4,19 +4,19 @@
 
 from rpython.rlib import jit
 
+from lamb.startup import startup
+
 from lamb.model import tag
 from lamb.shape import CompoundShape
 from lamb.expression import Variable
-from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
-                                           plist, conslist, expression,
+from lamb.util.construction_helper import (pattern as pp, expression as e,
+                                           lamb, mu, cons,
+                                           plist, conslist, rules,
                                            operand_stack, execution_stack,
-                                           w_nil, is_nil)
-
-# the Tag used in peano arithmetic lists
-t_p = tag("p", 1)
+                                           nil, is_nil)
 
 def _setup_shapes():
-    p_1 = t_p
+    p_1 = tag("p", 1)
 
     p_0_shape = p_1.default_shape
     p_1_shape = CompoundShape(p_1, [p_0_shape])
@@ -24,19 +24,19 @@ def _setup_shapes():
     p_3_shape = CompoundShape(p_1, [p_2_shape])
     p_4_shape = CompoundShape(p_1, [p_3_shape])
 
-    p_0_shape.known_transformations[(0, p_0_shape)] = p_1_shape
+    p_0_shape.transformation_rules[(0, p_0_shape)] = p_1_shape
 
-    p_0_shape.known_transformations[(0, p_1_shape)] = p_2_shape
-    p_1_shape.known_transformations[(0, p_1_shape)] = p_2_shape
+    p_0_shape.transformation_rules[(0, p_1_shape)] = p_2_shape
+    p_1_shape.transformation_rules[(0, p_1_shape)] = p_2_shape
 
-    p_0_shape.known_transformations[(0, p_2_shape)] = p_3_shape
-    p_1_shape.known_transformations[(0, p_2_shape)] = p_3_shape
-    p_2_shape.known_transformations[(0, p_2_shape)] = p_3_shape
+    p_0_shape.transformation_rules[(0, p_2_shape)] = p_3_shape
+    p_1_shape.transformation_rules[(0, p_2_shape)] = p_3_shape
+    p_2_shape.transformation_rules[(0, p_2_shape)] = p_3_shape
 
-    p_0_shape.known_transformations[(0, p_3_shape)] = p_4_shape
-    p_1_shape.known_transformations[(0, p_3_shape)] = p_4_shape
-    p_2_shape.known_transformations[(0, p_3_shape)] = p_4_shape
-    p_3_shape.known_transformations[(0, p_3_shape)] = p_4_shape
+    p_0_shape.transformation_rules[(0, p_3_shape)] = p_4_shape
+    p_1_shape.transformation_rules[(0, p_3_shape)] = p_4_shape
+    p_2_shape.transformation_rules[(0, p_3_shape)] = p_4_shape
+    p_3_shape.transformation_rules[(0, p_3_shape)] = p_4_shape
 
 # _setup_shapes()
 
@@ -45,37 +45,34 @@ def _setup_shapes():
 # Value
 def p(x):
     from lamb.model import w_constructor
-    return w_constructor(t_p, x)
+    return w_constructor(tag("p", 1), x)
 
 # Pattern
 def _p(x):
     from lamb.pattern import ConstructorPattern
-    return ConstructorPattern(t_p, [pattern(x)])
+    return ConstructorPattern(tag("p", 1), [pp(x)])
 
 # Expression
 def p_(x):
     from lamb.model import w_constructor
-    return w_constructor(t_p, [expression(x)])
+    return w_constructor(tag("p", 1), [e(x)])
 
-zero = w_nil
 
 def make_succ():
     x = Variable("x")
-    l = lamb( ([x], p_(x)) )
+    l = lamb()
+    l._rules= rules( [([pp(x)], e(p_(x)) )] )
     l._name = "succ"
     return l
 
-succ = make_succ()
-
 def make_pred():
     x = Variable("x")
-    l = lamb(
-        ([_p(zero)], zero),
-        ([_p(x)   ], x))
+    l = lamb()
+    l._rules = rules([
+        ([_p(_zero())], e(_zero())),
+        ([pp(x)      ], e(x))])
     l._name = "pred"
     return l
-
-pred = make_pred()
 
 def make_plus():
     x1 = Variable("x")
@@ -84,16 +81,13 @@ def make_plus():
     y = Variable("y")
 
     l = lamb()
-    l._rules = ziprules(
-        ([zero, zero ], zero),
-        ([x1  , zero ], x1),
-        ([zero, x2   ], x2),
-        ([x3  , _p(y)], p_(mu(l, x3, y))))
+    l._rules = rules([
+        ([pp(_zero()), pp(_zero())], e(_zero())),
+        ([pp(x1)     , pp(_zero())], e(x1)),
+        ([pp(_zero()), pp(x2)     ], e(x2)),
+        ([pp(x3)     , _p(y)      ], e(p_(mu(l, x3, y))))])
     l._name = "plus"
     return l
-
-plus = make_plus()
-
 def make_plus_acc():
     x1 = Variable("x")
     x2 = Variable("x")
@@ -104,21 +98,20 @@ def make_plus_acc():
     a2 = Variable("accumulator")
     o1 = Variable("op")
     l_acc = lamb()
-    l_acc._rules = ziprules(
-        ([a1,   zero], a1),
-        ([a2, _p(o1)], mu(l_acc, p_(a2), o1)))
+    l_acc._rules = rules([
+        ([pp(a1), pp(_zero())], e(a1)),
+        ([pp(a2), _p(o1)     ], e(mu(l_acc, p_(a2), o1)))])
     l_acc.name = "plus/a"
 
     l = lamb()
-    l._rules = ziprules(
-        ([zero, zero ], zero),
-        ([x1  , zero ], x1),
-        ([zero, x2   ], x2),
-        ([x3  , y    ], mu(l_acc, x3, y)))
+    l._rules = rules([
+        ([pp(_zero()), pp(_zero()) ], e(_zero())),
+        ([pp(x1)     , pp(_zero()) ], e(x1)),
+        ([pp(_zero()), pp(x2)      ], e(x2)),
+        ([pp(x3)     , pp(y)       ], e(mu(l_acc, x3, y)))])
     l._name = "plus"
     return l
 
-plus_acc = make_plus_acc()
 
 
 def make_mult():
@@ -128,15 +121,15 @@ def make_mult():
     y = Variable("y")
 
     l = lamb()
-    l._rules = ziprules(
-        ([_1  , zero ], zero),
-        ([zero, _2   ], zero),
-        ([x   , _p(y)], mu(plus, mu(l, x, y), x)))
-        #([x   , _p(y)], mu(plus, x, mu(l, x, y))))
+    l._rules = rules([
+        ([pp(_1)     , pp(_zero()) ], e(_zero())),
+        ([pp(_zero()), pp(_2)      ], e(_zero())),
+        # ([pp(x)      , _p(y)       ], e(mu(_plus(), mu(l, x, y), x)))
+        ([pp(x)      , _p(y)       ], e(mu(_plus(), x, mu(l, x, y))))
+    ])
     l._name = "mult"
     return l
 
-mult = make_mult()
 
 def make_mult_acc():
 
@@ -150,11 +143,13 @@ def make_mult_acc():
     f1 = Variable("factor1")
     f2 = Variable("factor2")
     l_acc = lamb()
-    l_acc._rules = ziprules(
-        ([zero, zero, a1], a1),
-        ([_f1,  zero, a2], a2),
-        ([zero,  _f2, a3], a3),
-        ([f1, _p(f2), a4], mu(l_acc, f1, f2, mu(plus_acc, a4, f1))))
+    l_acc._rules = rules([
+        ([pp(_zero()), pp(_zero()), pp(a1)], e(a1)),
+        ([pp(_f1)    , pp(_zero()), pp(a2)], e(a2)),
+        ([pp(_zero()), pp(_f2)    , pp(a3)], e(a3)),
+        ([pp(f1)     , _p(f2)     , pp(a4)],
+         e(mu(l_acc, f1, f2, mu(_plus_acc(), a4, f1))))
+    ])
     l_acc.name = "mult/a"
 
     _1 = Variable("_")
@@ -163,16 +158,15 @@ def make_mult_acc():
     y = Variable("y")
 
     l = lamb()
-    l._rules = ziprules(
-        ([_1  , zero ], zero),
-        ([zero, _2   ], zero),
-        ([x   , y    ], mu(l_acc, x, y, zero)))
-        # ([x   , _p(y)], mu(plus, mu(l, x, y), x)))
-        #([x   , _p(y)], mu(plus, x, mu(l, x, y))))
+    l._rules = rules([
+        ([pp(_1)     , pp(_zero())], e(_zero())),
+        ([pp(_zero()), pp(_2)     ], e(_zero())),
+        ([pp(x)      , pp(y)      ], e(mu(l_acc, x, y, _zero()))),
+        # ([pp(x)      , _p(y)      ], e(mu(_plus(), mu(l, x, y), x)))
+        # ([pp(x)      , _p(y)      ], e(mu(_plus(), x, mu(l, x, y))))
+    ])
     l._name = "mult"
     return l
-
-mult_acc = make_mult_acc()
 
 
 def ppeano(num, shape):
@@ -187,7 +181,7 @@ peano_jit = jit.JitDriver(
 
 def peano_num(pynum):
     i = 0
-    res = w_nil
+    res = nil()
     shape = None
     peano_jit.can_enter_jit(num=pynum, shape=shape, i=i, res=res)
     while i  < pynum:
@@ -206,12 +200,22 @@ def python_num(peano):
     return res
 
 
+functions = {}
+@startup
+def startup_peano():
+    # the Tag used in peano arithmetic lists
+    functions['zero'] = nil()
+    functions['succ'] = make_succ()
+    functions['pred'] = make_pred()
+    functions['plus'] = make_plus()
+    functions['plus_acc'] = make_plus_acc()
+    functions['mult'] = make_mult()
+    functions['mult_acc'] = make_mult_acc()
 
-
-__all__ = [
-    'zero',
-    'succ', 'pred',
-    'plus', 'mult',
-    'plus_acc', 'mult_acc',
-    'peano_num', 'python_num',
-]
+def _zero():     return functions['zero']
+def _succ():     return functions['succ']
+def _pred():     return functions['pred']
+def _plus():     return functions['plus']
+def _plus_acc(): return functions['plus_acc']
+def _mult():     return functions['mult']
+def _mult_acc(): return functions['mult_acc']

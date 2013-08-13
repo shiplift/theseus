@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from lamb.startup import startup
+
 from lamb.expression import Variable
 from lamb.model import tag
 from lamb.shape import CompoundShape, in_storage_shape
-from lamb.util.construction_helper import (pattern, lamb, ziprules, mu, cons,
-                                           plist, conslist,
-                                           operand_stack, execution_stack, w_nil)
+from lamb.util.construction_helper import (pattern as p, expression as e,
+                                           lamb, mu, cons,
+                                           plist, conslist, rules,
+                                           operand_stack, execution_stack, nil)
 
-t_cons = tag("cons", 2)
 
-def _setup_shapes():
+def _setup_shapes(t_cons):
     cons_2 = t_cons
 
     cons_0_shape = cons_2.default_shape
@@ -20,25 +22,25 @@ def _setup_shapes():
     cons_4_shape = CompoundShape(cons_2, [in_storage_shape, cons_3_shape])
     cons_5_shape = CompoundShape(cons_2, [in_storage_shape, cons_4_shape])
 
-    cons_0_shape.known_transformations[(1, cons_0_shape)] = cons_1_shape
-    cons_0_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
-    cons_0_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-    cons_0_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-    cons_0_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+    cons_0_shape.transformation_rules[(1, cons_0_shape)] = cons_1_shape
+    cons_0_shape.transformation_rules[(1, cons_1_shape)] = cons_2_shape
+    cons_0_shape.transformation_rules[(1, cons_2_shape)] = cons_3_shape
+    cons_0_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+    cons_0_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-    cons_1_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
-    cons_1_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-    cons_1_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-    cons_1_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+    cons_1_shape.transformation_rules[(1, cons_1_shape)] = cons_2_shape
+    cons_1_shape.transformation_rules[(1, cons_2_shape)] = cons_3_shape
+    cons_1_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+    cons_1_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-    cons_2_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-    cons_2_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-    cons_2_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+    cons_2_shape.transformation_rules[(1, cons_2_shape)] = cons_3_shape
+    cons_2_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+    cons_2_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-    cons_3_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-    cons_3_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+    cons_3_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+    cons_3_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-    cons_4_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+    cons_4_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
 
 
@@ -50,11 +52,12 @@ def make_append():
 
     l = lamb()
     l._name = "append"
-    l._rules = ziprules(
-        ([w_nil, x1], x1),
-        ([cons("cons", h, t), x2], cons("cons", h, mu(l, t, x2))))
+    l._rules = rules([
+        ([p(nil()), p(x1)],
+         e(x1)),
+        ([p(cons("cons", h, t)), p(x2)],
+         e(cons("cons", h, mu(l, t, x2))))])
     return l
-append = make_append()
 
 def make_reverse():
     a1 = Variable("acc")
@@ -64,15 +67,16 @@ def make_reverse():
     reverse_acc = lamb()
     reverse_acc._name = "r_acc"
 
-    reverse_acc._rules = ziprules(
-        ([w_nil,              a1], a1),
-        ([cons("cons", h, t), a2], mu(reverse_acc, t, cons("cons", h, a2))))
+    reverse_acc._rules = rules([
+        ([p(nil()),              p(a1)],
+         e(a1)),
+        ([p(cons("cons", h, t)), p(a2)],
+         e(mu(reverse_acc, t, cons("cons", h, a2))))])
 
     l = Variable("list")
-    reverse = lamb(([l], mu(reverse_acc, l, w_nil)))
+    reverse = lamb(([l], mu(reverse_acc, l, nil())))
     reverse._name = "reverse"
     return reverse
-reverse = make_reverse()
 
 
 def make_map():
@@ -99,14 +103,21 @@ def make_map():
 
     m = lamb()
     m._name = "map"
-    m._rules = ziprules(
-        ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(m, f, y))),
-        ([_, w_nil], w_nil))
+    m._rules = rules([
+        ([p(f), p(cons("cons", x, y))],
+         e(cons("cons", mu(f, x), mu(m, f, y)))),
+        ([p(_), p(nil())             ],
+         e(nil()))])
     return m
-map = make_map()
 
-__all__ = [
-    'reverse',
-    'append',
-    'map',
-]
+functions = {}
+
+@startup
+def startup_list():
+    functions['append'] = make_append()
+    functions['reverse'] = make_reverse()
+    functions['map'] = make_map()
+
+def _append(): return functions['append']
+def _reverse(): return functions['reverse']
+def _map(): return functions['map']

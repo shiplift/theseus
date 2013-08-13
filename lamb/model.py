@@ -63,10 +63,11 @@ class W_Tag(W_Object):
 def tag(name, arity):
     assert isinstance(name, str)
     assert isinstance(arity, int)
-    w_tag = W_Tag.tags.get( (name, arity) , None)
+    tag_ = (name, arity)
+    w_tag = W_Tag.tags.get( tag_ , None)
     if w_tag is None:
         w_tag = W_Tag(name, arity)
-        W_Tag.tags[ (name, arity) ] = w_tag
+        W_Tag.tags[tag_] = w_tag
 
     assert isinstance(w_tag, W_Tag)
     return w_tag

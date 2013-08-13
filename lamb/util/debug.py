@@ -32,6 +32,54 @@ class __extend__(Object):
     def to_repr(self, seen):
         return object.__repr__(self)
 
+### Shapes ###
+
+class __extend__(Shape):
+    @uni
+    def to_repr(self, seen):
+        res = u"σ"
+        res += u"%d" % self.get_number_of_direct_children()
+        return res
+
+class __extend__(CompoundShape):
+    @uni
+    def to_repr(self, seen):
+        def mini_urepr(x):
+            s = set(seen)
+            s.discard(x)
+            return urepr(x, s)
+
+        res = u"σ"
+        res += urepr(self._tag, seen)
+        res += u"["
+        res += ", ".join(map(mini_urepr, self._structure))
+        res += u"]"
+        return res
+
+class __extend__(InStorageShape):
+    @uni
+    def to_repr(self, seen):
+        return u"◊"
+
+### Pattern ###
+
+class __extend__(IntegerPattern):
+    @uni
+    def to_repr(self, seen):
+        return u"&" + unicode(repr(self.value))
+
+class __extend__(VariablePattern):
+    @uni
+    def to_repr(self, seen):
+        return u"&" + urepr(self.variable, seen)
+
+class __extend__(ConstructorPattern):
+    @uni
+    def to_repr(self, seen):
+        return u"&" + urepr(self._tag, seen) + u"(" \
+            + u", ".join(map(lambda x: urepr(x, seen), self._children)) \
+            + u")"
+
 ### Models ###
 
 

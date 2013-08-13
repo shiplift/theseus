@@ -31,13 +31,6 @@ class IntegerPattern(Pattern):
                 return
         raise NoMatch()
 
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return u"&" + unicode(repr(self.value))
-
 class VariablePattern(Pattern):
 
     _immutable_fields_ = ['variable']
@@ -54,14 +47,6 @@ class VariablePattern(Pattern):
         assert self.variable.binding_index == -1 # unbound
         self.variable.binding_index = rule.maximal_number_of_variables
         rule.maximal_number_of_variables += 1
-
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return u"&" + urepr(self.variable, seen)
-
 
 class ConstructorPattern(Pattern):
 
@@ -91,12 +76,6 @@ class ConstructorPattern(Pattern):
         for child in self._children:
             child.update_number_of_variables(rule)
 
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        return u"&" + urepr(self._tag, seen) + u"(" + u", ".join(map(lambda x: urepr(x, seen), self._children)) + u")"
 
 class NoMatch(Exception):
     pass

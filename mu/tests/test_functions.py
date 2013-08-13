@@ -6,11 +6,19 @@
 import sys
 import py
 
+import mu.lists
+import mu.peano
+import mu.functions
+from mu.peano import python_num, peano_num
 from mu.functions import *
-from mu.peano import *
-from lamb.util.construction_helper import (cons, integer, w_nil,
+from lamb.util.construction_helper import (cons, integer,
                                            conslist, plist,
                                            execution_stack, operand_stack)
+
+def setup_module(module):
+    from lamb.startup import boot
+    boot()
+
 
 class TestParsing(object):
     def test_parse_int(self):
@@ -120,7 +128,7 @@ class TestFunctions(object):
         ops = [fun.parse_arg(i, a) for i, a in enumerate(args)]
         assert ops[0] == all_functions["succ"].lamb
         assert ops[1] == conslist([peano_num(i + 1) for i in range(l)])
-        
+
         ret = run(fun.lamb, ops)
         assert plist(ret) == [peano_num(i + 2) for i in range(l)]
 
@@ -134,7 +142,8 @@ class TestFunctions(object):
         ops = [fun.parse_arg(i, a) for i, a in enumerate(args)]
         assert ops[0] == all_functions["succ"].lamb
         assert ops[1] == conslist([peano_num(i + 1) for i in range(l)])
-        
+
         ret = run(fun.lamb, ops)
         assert plist(ret) == [peano_num(i + 2) for i in range(l)]
 
+# EOF

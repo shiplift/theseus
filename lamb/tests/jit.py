@@ -17,7 +17,7 @@ from lamb.execution import (interpret, tag,
                             Variable, W_LambdaCursor, OperandStackElement)
 from lamb.shape import in_storage_shape, CompoundShape
 
-from lamb.util.construction_helper import (lamb, ziprules, mu, cons, w_nil,
+from lamb.util.construction_helper import (lamb, ziprules, mu, cons, nil,
                                            conslist, integer, operand_stack,
                                            execution_stack)
 from mu.peano import *
@@ -42,11 +42,11 @@ class TestLLtype(LLJitMixin):
         reverse_acc = lamb()
         reverse_acc._name ="reverse_acc"
         reverse_acc._rules = ziprules(
-            ([w_nil,              a1], a1),
+            ([nil(),              a1], a1),
             ([cons("cons", h, t), a2], mu(reverse_acc, t, cons("cons", h, a2))))
 
         l = Variable("l")
-        reverse = lamb(([l], mu(reverse_acc, l, w_nil)))
+        reverse = lamb(([l], mu(reverse_acc, l, nil())))
         reverse._name = "reverse"
 
 
@@ -74,7 +74,7 @@ class TestLLtype(LLJitMixin):
         h = Variable("head")
         t = Variable("tail")
 
-        # w_nil_shape = w_nil.shape()
+        # nil()_shape = nil().shape()
 
         c = tag("cons", 2)
         cons_shape = c.default_shape
@@ -85,35 +85,35 @@ class TestLLtype(LLJitMixin):
         cons_4_shape = CompoundShape(c, [in_storage_shape, cons_3_shape])
         # cons_5_shape = CompoundShape(c, [in_storage_shape, cons_4_shape])
 
-        # cons_shape.known_transformations[(1, w_nil_shape )] = cons_1_shape
-        cons_shape.known_transformations[(1, cons_shape )] = cons_1_shape
-        cons_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
-        cons_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-        cons_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-        # cons_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+        # cons_shape.transformation_rules[(1, w_nil_shape )] = cons_1_shape
+        cons_shape.transformation_rules[(1, cons_shape )] = cons_1_shape
+        cons_shape.transformation_rules[(1, cons_1_shape)] = cons_2_shape
+        cons_shape.transformation_rules[(1, cons_2_shape)] = cons_3_shape
+        cons_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+        # cons_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-        cons_1_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
-        cons_1_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-        cons_1_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-        # cons_1_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+        cons_1_shape.transformation_rules[(1, cons_1_shape)] = cons_2_shape
+        cons_1_shape.transformation_rules[(1, cons_2_shape)] = cons_3_shape
+        cons_1_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+        # cons_1_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-        cons_2_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-        cons_2_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-        # cons_2_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+        cons_2_shape.transformation_rules[(1, cons_2_shape)] = cons_3_shape
+        cons_2_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+        # cons_2_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-        cons_3_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-        # cons_3_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+        cons_3_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+        # cons_3_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-        # cons_4_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+        # cons_4_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
         reverse_acc = lamb()
         reverse_acc._name ="reverse_acc"
         reverse_acc._rules = ziprules(
-            ([w_nil,              a1], a1),
+            ([nil(),              a1], a1),
             ([cons("cons", h, t), a2], mu(reverse_acc, t, cons("cons", h, a2))))
 
         l = Variable("l")
-        reverse = lamb(([l], mu(reverse_acc, l, w_nil)))
+        reverse = lamb(([l], mu(reverse_acc, l, nil())))
         reverse._name = "reverse"
 
 
@@ -137,7 +137,7 @@ class TestLLtype(LLJitMixin):
         map = lamb()
         map._rules = ziprules(
             ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(map, f, y))),
-            ([_, w_nil], w_nil))
+            ([_, nil()], nil()))
         map._name = "map"
 
         x1 = Variable("x")

@@ -10,6 +10,7 @@ from rpython.rlib.unroll import unrolling_iterable
 from lamb.expression import (Variable, Rule,
                              W_VariableExpression,
                              W_LambdaCursor,
+
                              w_call)
 from lamb.object import Object
 from lamb.pattern import (Pattern,
@@ -19,13 +20,13 @@ from lamb.model import (W_Object, W_Integer, W_Constructor, W_Lambda,
 from lamb.stack import ExecutionStackElement, OperandStackElement
 from lamb.execution import interpret
 
+def nil():
+    return w_constructor(tag("nil", 0), [])
 
-t_nil = tag("nil", 0)
-w_nil = w_constructor(t_nil, [])
 
 @jit.elidable
 def is_nil(constructor):
-    return constructor.get_tag() is t_nil
+    return constructor.get_tag() is tag("nil", 0)
 
 
 def pattern(obj):
@@ -69,9 +70,13 @@ def expression(obj):
     else:
         return obj
 
+def rules(tuples):
+    return [Rule(item[0], item[1]) for item in tuples]
+
 def ziprules(*tuples):
-    return [Rule([pattern(p) for p in item[0]],
-                 expression(item[1])) for item in tuples]
+    "NOT_RPYTHON"
+    return [Rule([pattern(p) for p in item[0]], expression(item[1])) \
+            for item in tuples]
 
 def lamb(*tuples):
     """ new lambda """
@@ -81,7 +86,7 @@ def mu(l, *args):
     return w_call(expression(l), [expression(i) for i in args])
 
 def conslist(p_list):
-    result = w_nil
+    result = nil()
     for element in reversed(p_list):
         result = cons("cons", element, result)
     return result
@@ -89,7 +94,7 @@ def conslist(p_list):
 def plist(c_list):
     result = []
     conses = c_list
-    while conses != w_nil:
+    while not is_nil(conses):
         result.append(conses.get_child(0))
         conses = conses.get_child(1)
     return result

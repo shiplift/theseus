@@ -38,6 +38,9 @@ def _splice(array, array_len, index, insertion, insertion_len):
 
 
 class Shape(Object):
+
+    _attrs_ = []
+
     def _init_children(self, w_c, children):
         pass
 
@@ -62,12 +65,6 @@ class Shape(Object):
     #
     # Testing and Debug
     #
-    @uni
-    def to_repr(self, seen):
-        res = u"σ"
-        res += u"%d" % self.get_number_of_direct_children()
-        return res
-
     def merge_point_string(self):
         return self.merge_point_string_seen([])
 
@@ -99,7 +96,12 @@ class CompoundShape(Shape):
         self._structure = structure
         self._tag = tag
         self._hist = {}
-        self.known_transformations = {}
+        self.transformation_rules = {}
+
+        # self._hist_keys = []
+        # self._transformation_rules_list = []
+
+        # dbg
         self._shapes.append(self)
 
     def get_child(self, w_c, index):
@@ -179,11 +181,12 @@ class CompoundShape(Shape):
             child = storage[i]
             if isinstance(child, W_Constructor) and self.may_subsitute(child):
                 key = (i, child._shape)
-                count = self._hist.get(key, 0)
+                count = self._hist[key] if key in self._hist else 0
                 width = child.get_storage_width()
-                if (key not in self.known_transformations and
+                if (key not in self.transformation_rules and
                     width <= self._config.max_storage_width and
                     count <= self._config.substitution_threshold):
+                    # self._hist_keys.append(key)
                     self._hist[key] = count + 1
                     if self._hist[key] >= self._config.substitution_threshold:
                         self.recognize_transformation(i, child._shape)
@@ -191,7 +194,8 @@ class CompoundShape(Shape):
 
     def recognize_transformation(self, i, shape):
         new_shape = self.replace(i, shape)
-        self.known_transformations[i, shape] = new_shape
+        # self._transformation_rules_list.append((i, shape, new_shape))
+        self.transformation_rules[i, shape] = new_shape
         if self._config.log_transformations:
             print "%s/%d\t(%d,%s)\n\t->%s" % (
                 self._tag.name, self._tag.arity,
@@ -258,26 +262,14 @@ class CompoundShape(Shape):
 
     @jit.elidable
     def get_transformation(self, index, subshape):
-        return self.known_transformations.get((index, subshape), self)
+        key = (index, subshape)
+        if key not in self.transformation_rules:
+            return self
+        return self.transformation_rules[key]
 
     #
     # Testing and Debug
     #
-    @uni
-    def to_repr(self, seen):
-        def mini_urepr(x):
-            s = set(seen)
-            s.discard(x)
-            return urepr(x, s)
-
-        res = u"σ"
-        res += urepr(self._tag, seen)
-        res += u"["
-        res += ", ".join(map(mini_urepr, self._structure))
-        res += u"]"
-        return res
-
-
     def merge_point_string_seen(self, seen):
         seen.append(self)
         res  = "%s%d{" % (self._tag.name, self._tag.arity)
@@ -292,7 +284,7 @@ class CompoundShape(Shape):
         return res
 
     def print_transforms(self):
-        for (index, src), dest in self.known_transformations.items():
+        for (index, src), dest in self.transformation_rules.items():
             print "\t(%d,%s) -> %s" % (
                 index, src.merge_point_string(), dest.merge_point_string())
 
@@ -337,9 +329,6 @@ class InStorageShape(Shape):
     #
     # Testing and Debug
     #
-    @uni
-    def to_repr(self, seen):
-        return u"◊"
 
     def merge_point_string_seen(self, seen):
         return "|"

@@ -13,7 +13,7 @@ from lamb.model import *
 from lamb.expression import *
 from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            ziprules, lamb, mu,
-                                           w_nil,
+                                           nil, is_nil,
                                            conslist, plist,
                                            execution_stack, operand_stack)
 
@@ -251,12 +251,12 @@ class TestShapeMerger(object):
         shape_2_2 = CompoundShape(zork_2, [in_storage_shape, shape_1])
         shape_2_3 = CompoundShape(zork_2, [shape_1, shape_1])
 
-        shape_2.known_transformations[(0, shape_1)] = shape_2_1
-        shape_2.known_transformations[(1, shape_1)] = shape_2_2
+        shape_2.transformation_rules[(0, shape_1)] = shape_2_1
+        shape_2.transformation_rules[(1, shape_1)] = shape_2_2
 
-        shape_2_1.known_transformations[(1, shape_1)] = shape_2_3
+        shape_2_1.transformation_rules[(1, shape_1)] = shape_2_3
 
-        shape_2_2.known_transformations[(0, shape_1)] = shape_2_3
+        shape_2_2.transformation_rules[(0, shape_1)] = shape_2_3
 
         storage = [c_1, c_1_1]
 
@@ -285,12 +285,12 @@ class TestShapeMerger(object):
         shape_2_2 = CompoundShape(zork_2, [in_storage_shape, shape_1])
         shape_2_3 = CompoundShape(zork_2, [shape_1, shape_1])
 
-        shape_2.known_transformations[(0, shape_1)] = shape_2_1
-        shape_2.known_transformations[(1, shape_1)] = shape_2_2
+        shape_2.transformation_rules[(0, shape_1)] = shape_2_1
+        shape_2.transformation_rules[(1, shape_1)] = shape_2_2
 
-        shape_2_1.known_transformations[(1, shape_1)] = shape_2_3
+        shape_2_1.transformation_rules[(1, shape_1)] = shape_2_3
 
-        shape_2_2.known_transformations[(0, shape_1)] = shape_2_3
+        shape_2_2.transformation_rules[(0, shape_1)] = shape_2_3
 
         storage = [c_1, c_1_1]
 
@@ -304,7 +304,7 @@ class TestShapeMerger(object):
 
         shape_3_1 = CompoundShape(foo_2, [shape_2_3, shape_2_3])
 
-        shape_3.known_transformations[(2, new_shape)] = shape_3_1
+        shape_3.transformation_rules[(2, new_shape)] = shape_3_1
         storage = new_storage + [c_2]
         (new_shape, new_storage) = shape_3.fusion(storage)
         assert new_storage == [w_1, w_1, w_1, w_1]
@@ -326,8 +326,8 @@ class TestShapeMerger(object):
         list_1_shape = CompoundShape(cons_, [in_storage_shape, nil_shape])
         list_2_shape = CompoundShape(cons_, [in_storage_shape, list_1_shape])
 
-        list_default_shape.known_transformations[(1,nil_shape)] = list_1_shape
-        list_default_shape.known_transformations[(1,list_1_shape)] = list_2_shape
+        list_default_shape.transformation_rules[(1,nil_shape)] = list_1_shape
+        list_default_shape.transformation_rules[(1,list_1_shape)] = list_2_shape
 
         w_list_0 = w_nil_
 
@@ -336,7 +336,7 @@ class TestShapeMerger(object):
         w_list_1 = W_NAryConstructor(shape)
         w_list_1._init_storage(storage)
 
-        list_1_shape.known_transformations[(1, list_1_shape)] = list_2_shape
+        list_1_shape.transformation_rules[(1, list_1_shape)] = list_2_shape
 
         (shape, storage) = list_default_shape.fusion([w_1, w_list_1])
 
@@ -370,7 +370,7 @@ class TestShapeMerger(object):
         h = Variable("head")
         t = Variable("tail")
 
-        w_nil_shape = w_nil.shape()
+        w_nil_shape = nil().shape()
 
         c = clean_tag("cons", 2)
         def _cons(*children):
@@ -379,7 +379,7 @@ class TestShapeMerger(object):
             constr._init_storage(ch)
             return constr
         def _conslist(p_list):
-            result = w_nil
+            result = nil()
             for element in reversed(p_list):
                 result = _cons(element, result)
             return result
@@ -396,35 +396,35 @@ class TestShapeMerger(object):
         cons_3_shape._config.substitution_threshold = sys.maxint
         cons_4_shape._config.substitution_threshold = sys.maxint
         cons_5_shape._config.substitution_threshold = sys.maxint
-        cons_shape.known_transformations[(1, cons_shape )] = cons_1_shape
-        cons_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
-        cons_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-        # cons_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-        # cons_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+        cons_shape.transformation_rules[(1, cons_shape )] = cons_1_shape
+        cons_shape.transformation_rules[(1, cons_1_shape)] = cons_2_shape
+        cons_shape.transformation_rules[(1, cons_2_shape)] = cons_3_shape
+        # cons_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+        # cons_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-        cons_1_shape.known_transformations[(1, cons_1_shape)] = cons_2_shape
-        cons_1_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-        # cons_1_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-        # cons_1_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+        cons_1_shape.transformation_rules[(1, cons_1_shape)] = cons_2_shape
+        cons_1_shape.transformation_rules[(1, cons_2_shape)] = cons_3_shape
+        # cons_1_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+        # cons_1_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-        cons_2_shape.known_transformations[(1, cons_2_shape)] = cons_3_shape
-        # cons_2_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-        # cons_2_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+        cons_2_shape.transformation_rules[(1, cons_2_shape)] = cons_3_shape
+        # cons_2_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+        # cons_2_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-        # cons_3_shape.known_transformations[(1, cons_3_shape)] = cons_4_shape
-        # cons_3_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+        # cons_3_shape.transformation_rules[(1, cons_3_shape)] = cons_4_shape
+        # cons_3_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
-        # cons_4_shape.known_transformations[(1, cons_4_shape)] = cons_5_shape
+        # cons_4_shape.transformation_rules[(1, cons_4_shape)] = cons_5_shape
 
         reverse_acc = lamb()
         reverse_acc._name ="reverse_acc"
         reverse_acc._rules = ziprules(
-            ([w_nil,       a1], a1),
+            ([nil(),       a1], a1),
             ([_cons(h, t), a2], mu(reverse_acc, t, _cons(h, a2))),
         )
 
         l = Variable("l")
-        reverse = lamb(([l], mu(reverse_acc, l, w_nil)))
+        reverse = lamb(([l], mu(reverse_acc, l, nil())))
         reverse._name = "reverse"
 
         def stackinspect(d):
@@ -457,8 +457,8 @@ class TestShapeMerger(object):
         assert plist(res) == list1_w
 
     def test_plus(self):
-        import mu.peano
-        from mu.peano import peano_num, python_num, plus
+        from mu.peano import peano_num, python_num, startup_peano, _plus
+        startup_peano()
 
         n = 10
         # n = 100
@@ -468,7 +468,7 @@ class TestShapeMerger(object):
         arg2 = peano_num(n)
         assert python_num(arg2) == n
 
-        stack_e = execution_stack(W_LambdaCursor(plus))
+        stack_e = execution_stack(W_LambdaCursor(_plus()))
         stack_w = operand_stack(arg1, arg2)
         assert python_num(arg2) == n
         assert python_num(arg1) == n
@@ -480,8 +480,8 @@ class TestShapeMerger(object):
 
 
     def test_mult(self):
-        import mu.peano
-        from mu.peano import peano_num, python_num, mult
+        from mu.peano import peano_num, python_num, startup_peano, _mult
+        startup_peano()
 
         n = 4
         # n = 100
@@ -491,7 +491,7 @@ class TestShapeMerger(object):
         arg2 = peano_num(n)
         assert python_num(arg2) == n
 
-        stack_e = execution_stack(W_LambdaCursor(mult))
+        stack_e = execution_stack(W_LambdaCursor(_mult()))
         stack_w = operand_stack(arg1, arg2)
         assert python_num(arg2) == n
         assert python_num(arg1) == n
@@ -518,12 +518,12 @@ class TestShapeRecorder(object):
 
         assert s._hist == {}
 
-        children = [w_nil]
+        children = [nil()]
         new_shape, new_storage = s.merge(children)
         s.record_shapes(new_storage)
 
         assert s._hist == {
-            (0, w_nil._shape): 1,
+            (0, nil()._shape): 1,
         }
 
     def test_simple_autosubstitution(self):
@@ -532,12 +532,12 @@ class TestShapeRecorder(object):
         ferb_1 = clean_tag("ferb_1", 1)
         shape = ferb_1.default_shape
 
-        children = [w_nil]
+        children = [nil()]
         new_shape, new_storage = shape.merge(children)
         shape.record_shapes(new_storage)
 
         assert shape._hist == {
-            (0, w_nil._shape):  1,
+            (0, nil()._shape):  1,
         }
         assert new_shape is shape
 
@@ -549,7 +549,7 @@ class TestShapeRecorder(object):
         shape.record_shapes(new_storage_1)
 
         assert shape._hist == {
-            (0, w_nil._shape):  1,
+            (0, nil()._shape):  1,
             (0, shape): 1,
         }
         assert new_shape_1 is shape
@@ -568,7 +568,7 @@ class TestShapeRecorder(object):
         shape = zork_2.default_shape
 
         c = W_NAryConstructor(shape)
-        c._init_storage([w_nil, w_nil])
+        c._init_storage([nil(), nil()])
         shape.record_shapes([c, c])
         assert shape._hist == {
             (0, shape): 1,
@@ -583,18 +583,18 @@ class TestShapeRecognizer(object):
         ferb_1 = clean_tag("ferb_1", 1)
         shape = ferb_1.default_shape
 
-        children = [w_nil]
+        children = [nil()]
         new_shape, new_storage = shape.merge(children)
 
         assert new_shape is shape
         assert new_storage == children
-        shape.recognize_transformation(0, w_nil._shape)
+        shape.recognize_transformation(0, nil()._shape)
 
 
         new_shape, new_storage = shape.merge(children)
 
-        assert shape.known_transformations == {
-            (0, w_nil._shape): new_shape,
+        assert shape.transformation_rules == {
+            (0, nil()._shape): new_shape,
         }
 
         assert new_shape is not shape
@@ -609,8 +609,8 @@ class TestShapeRecognizer(object):
         children_1 = [c]
         new_shape_1, new_storage_1 = shape.merge(children_1)
 
-        assert shape.known_transformations == {
-            (0, w_nil._shape): new_shape,
+        assert shape.transformation_rules == {
+            (0, nil()._shape): new_shape,
             (0, shape): new_shape_1,
         }
 
@@ -627,7 +627,7 @@ class TestShapeRecognizer(object):
 
         c_shape.recognize_transformation(2, shape)
 
-        new_shape = c_shape.known_transformations[2, shape]
+        new_shape = c_shape.transformation_rules[2, shape]
 
         assert new_shape._structure[0] == in_storage_shape
         subshape = new_shape._structure[1]
@@ -667,7 +667,7 @@ class TestShapeRecognizer(object):
             constr._init_storage(storage)
             return constr
         def _conslist(p_list):
-            result = w_nil
+            result = nil()
             for element in reversed(p_list):
                 result = _cons(element, result)
             return result
@@ -675,18 +675,18 @@ class TestShapeRecognizer(object):
         c.default_shape._config.substitution_threshold = 2
 
         print ""
-        cons_0 = _cons(w_1, w_nil)
+        cons_0 = _cons(w_1, nil())
         assert cons_0.shape() == c.default_shape
         print cons_0.shape()
         print c.default_shape._hist
-        assert c.default_shape.known_transformations == {}
+        assert c.default_shape.transformation_rules == {}
 
         cons_1 = _cons(w_1, cons_0)
         assert cons_1.shape() == c.default_shape
         assert cons_1.shape() == cons_0.shape()
         print cons_1.shape()
         print c.default_shape._hist
-        assert c.default_shape.known_transformations == {}
+        assert c.default_shape.transformation_rules == {}
 
         cons_2 = _cons(w_1, cons_1)
         assert cons_2.shape() != c.default_shape
@@ -694,28 +694,28 @@ class TestShapeRecognizer(object):
         assert cons_2.shape() != cons_1.shape()
         print cons_2.shape()
         print c.default_shape._hist
-        assert c.default_shape.known_transformations == {
+        assert c.default_shape.transformation_rules == {
             (1, c.default_shape): cons_2.shape(),
         }
 
         cons_3 = _cons(w_1, cons_2)
         print cons_3.shape()
         print c.default_shape._hist
-        assert c.default_shape.known_transformations == {
+        assert c.default_shape.transformation_rules == {
             (1, c.default_shape): cons_2.shape(),
         }
 
         cons_4 = _cons(w_1, cons_3)
         print cons_4.shape()
         print c.default_shape._hist
-        assert c.default_shape.known_transformations == {
+        assert c.default_shape.transformation_rules == {
             (1, c.default_shape): cons_2.shape(),
         }
 
         cons_5 = _cons(w_1, cons_4)
         print cons_5.shape()
         print c.default_shape._hist
-        assert c.default_shape.known_transformations == {
+        assert c.default_shape.transformation_rules == {
             (1, c.default_shape): cons_2.shape(),
             (1, cons_2.shape()): cons_5.shape(),
         }
@@ -733,7 +733,7 @@ class TestShapeRecognizer(object):
             constr._init_storage(storage)
             return constr
         def _conslist(p_list):
-            result = w_nil
+            result = nil()
             for element in reversed(p_list):
                 result = _cons(element, result)
             return result
@@ -741,7 +741,7 @@ class TestShapeRecognizer(object):
         c.default_shape._config.substitution_threshold = 17
 
         def check_width(c, width):
-            if c is not w_nil and isinstance(c, W_Constructor):
+            if isinstance(c, W_Constructor) and not is_nil(c):
                 assert c.get_storage_width() < width
                 # We deliberately use a n-ary Constructor, hence,
                 # know that _structure is there
@@ -750,7 +750,7 @@ class TestShapeRecognizer(object):
 
         sys.setrecursionlimit(100000)
         for num in [50, 100, 1000, 10000, 50000]:
-            l = _cons(w_1, w_nil)
+            l = _cons(w_1, nil())
             for i in range(num):
                 l = _cons(w_1, l)
             check_width(l, 25)

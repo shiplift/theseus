@@ -9,11 +9,11 @@ from lamb.execution import *
 from lamb.model import *
 from lamb.expression import *
 from lamb.pattern import *
-from mu.peano import *
+from mu.peano import peano_num, python_num
 from lamb.util.construction_helper import (pattern, cons, integer,
                                            expression, ziprules,
                                            lamb,mu,
-                                           w_nil,
+                                           nil,
                                            conslist, plist,
                                            execution_stack, operand_stack)
 #
@@ -62,7 +62,7 @@ class TestLambda(object):
 
         l = lamb()
         l._rules = ziprules(
-            ([w_nil, x1], x1),
+            ([nil(), x1], x1),
             ([cons("cons", h, t), x2], cons("cons", h, mu(l, t, x2))))
 
         list1_w = [integer(1),integer(2),integer(3)]
@@ -119,6 +119,8 @@ class TestLambda(object):
             F, (cons X, Y) ↦ (cons μ(F, X), μ(map, F, Y))
             _, nil         ↦ nil
         """
+        from mu.peano import startup_peano, _succ
+        startup_peano()
 
         f = Variable("F")
         x = Variable("X")
@@ -129,7 +131,7 @@ class TestLambda(object):
         map = lamb()
         map._rules = ziprules(
             ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(map, f, y))),
-            ([_, w_nil], w_nil))
+            ([_, nil()], nil()))
 
         x1 = Variable("x")
 
@@ -137,7 +139,7 @@ class TestLambda(object):
 
         # succ = lamb( ([x1], cons("p", x1)) )
 
-        res = map.call([succ, conslist(list_w)])
+        res = map.call([_succ(), conslist(list_w)])
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
 
 
@@ -179,10 +181,12 @@ class TestInterpret(object):
         res = interpret(execution_stack(mu(l, w_false)))
         assert res == w_true
 
-        res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(w_true))
+        res = interpret(execution_stack(W_LambdaCursor(l)),
+                        operand_stack(w_true))
         assert res == w_false
 
-        res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(w_false))
+        res = interpret(execution_stack(W_LambdaCursor(l)),
+                        operand_stack(w_false))
         assert res == w_true
 
     def test_append(self):
@@ -195,7 +199,7 @@ class TestInterpret(object):
         l = lamb()
         l._name = "append"
         l._rules = ziprules(
-            ([w_nil, x1], x1),
+            ([nil(), x1], x1),
             ([cons("cons", h, t), x2], cons("cons", h, mu(l, t, x2))))
 
 
@@ -221,6 +225,8 @@ class TestInterpret(object):
             F, (cons X, Y) ↦ (cons μ(F, X), μ(map, F, Y))
             _, nil         ↦ nil
         """
+        from mu.peano import startup_peano, _succ
+        startup_peano()
 
         f = Variable("F")
         x = Variable("X")
@@ -232,7 +238,7 @@ class TestInterpret(object):
         m._name = "map"
         m._rules = ziprules(
             ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(m, f, y))),
-            ([_, w_nil], w_nil))
+            ([_, nil()], nil()))
 
         x1 = Variable("x")
 
@@ -240,7 +246,7 @@ class TestInterpret(object):
         #list_w = [peano_num(1)]
 
         res = interpret(execution_stack(W_LambdaCursor(m)),
-                        operand_stack(succ, conslist(list_w)))
+                        operand_stack(_succ(), conslist(list_w)))
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
         #assert plist(res) == [peano_num(2)]
 
@@ -249,12 +255,14 @@ class TestInterpret(object):
         for i in range(20):
             vars = [Variable("x%s" % n) for n in range(i)]
 
-            l = lamb(([cons("cons", *vars)], cons("cons", *(vars[1:] + vars[:1]))))
+            l = lamb(([cons("cons", *vars)],
+                      cons("cons", *(vars[1:] + vars[:1]))))
             l._name = "shuffle%s" % i
 
             list1 = [integer(n) for n in range(i)]
             w_cons1 = cons("cons", *list1)
-            res = interpret(execution_stack(W_LambdaCursor(l)), operand_stack(w_cons1))
+            res = interpret(execution_stack(W_LambdaCursor(l)),
+                            operand_stack(w_cons1))
             assert res == cons("cons", *(list1[1:] + list1[:1]))
 
     def test_muffle(self):
@@ -290,11 +298,12 @@ class TestInterpret(object):
         reverse_acc._name = "r_acc"
 
         reverse_acc._rules = ziprules(
-            ([w_nil,              a1], a1),
-            ([cons("cons", h, t), a2], mu(reverse_acc, t, cons("cons", h, a2))))
+            ([nil(),              a1], a1),
+            ([cons("cons", h, t), a2],
+                  mu(reverse_acc, t, cons("cons", h, a2))))
 
         l = Variable("list")
-        reverse = lamb(([l], mu(reverse_acc, l, w_nil)))
+        reverse = lamb(([l], mu(reverse_acc, l, nil())))
         reverse._name = "reverse"
 
         global op_stack_max
@@ -309,8 +318,8 @@ class TestInterpret(object):
 
             global op_stack_max
             global ex_stack_max
-            op_stack_list = op_stack.linearize() if op_stack is not None else []
-            ex_stack_list = ex_stack.linearize() if ex_stack is not None else []
+            op_stack_list = [] if op_stack is None else op_stack.linearize()
+            ex_stack_list = [] if ex_stack is None else ex_stack.linearize()
 
             op_stack_max = max(op_stack_max, len(op_stack_list))
             ex_stack_max = max(ex_stack_max, len(ex_stack_list))
@@ -347,33 +356,39 @@ class TestInterpret(object):
         assert ex_stack_max3 == ex_stack_max2
 
     def test_plus(self):
+        from mu.peano import startup_peano, _plus
+        startup_peano()
 
         a_w = peano_num(4)
         b_w = peano_num(5)
 
-        ex_stack = execution_stack(W_LambdaCursor(plus))
+        ex_stack = execution_stack(W_LambdaCursor(_plus()))
         op_stack = operand_stack(a_w, b_w)
 
         res = interpret(ex_stack, op_stack)
         assert python_num(res) == 9
 
     def test_plus_acc(self):
+        from mu.peano import startup_peano, _plus_acc
+        startup_peano()
 
         a_w = peano_num(4)
         b_w = peano_num(5)
 
-        ex_stack = execution_stack(W_LambdaCursor(plus_acc))
+        ex_stack = execution_stack(W_LambdaCursor(_plus_acc()))
         op_stack = operand_stack(a_w, b_w)
 
         res = interpret(ex_stack, op_stack)
         assert python_num(res) == 9
 
     def test_mult(self):
+        from mu.peano import startup_peano, _mult
+        startup_peano()
 
         a_w = peano_num(2)
         b_w = peano_num(3)
 
-        ex_stack = execution_stack(W_LambdaCursor(mult))
+        ex_stack = execution_stack(W_LambdaCursor(_mult()))
         op_stack = operand_stack(a_w, b_w)
 
         res = interpret(ex_stack, op_stack)

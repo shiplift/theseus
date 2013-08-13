@@ -3,11 +3,15 @@
 
 from rpython.rlib import jit
 
-from lamb.util.construction_helper import (integer, t_nil, conslist, run)
+from lamb.util.construction_helper import (integer, is_nil, conslist, run)
 from lamb.model import W_Integer, W_Object, W_Tag
 
-from mu.lists import *
-from mu.peano import *
+from lamb.startup import startup
+
+import mu.peano
+import mu.lists
+
+from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
 class UnknownFunction(ValueError):
     pass
@@ -16,18 +20,8 @@ class ArgfmtError(ValueError):
 class CannotFormat(ValueError):
     pass
 
-# def get_printable_location():
-#     pass
-
-# startupjit = jit.JitDriver(
-#     greens=[],
-#     reds=[],
-#     get_printable_location=get_printable_location
-# )
-
-
-
 def parse(fmt, arg):
+    from mu.peano import peano_num
     """
     fmt mapping
         i    W_Integer
@@ -82,6 +76,7 @@ def parse_list(arg):
                 l[index] = fun.apply_to(l[index - 1])
             else:
                 l[index] = parse(fmt, e)
+    assert None not in l
     return conslist(l)
 
 def list_fun(arg):
@@ -91,6 +86,7 @@ def list_fun(arg):
     return fun
 
 def format(ret):
+    from mu.peano import python_num
     from lamb.execution import W_Constructor, W_Lambda
     if isinstance(ret, W_Integer):
         return "%d" % ret._value
@@ -110,7 +106,7 @@ def format(ret):
 def format_list(c_list):
     result = []
     conses = c_list
-    while conses.get_tag() is not t_nil:
+    while not is_nil(conses):
         res = conses.get_child(0)
         result.append(format(res))
         conses = conses.get_child(1)
@@ -146,34 +142,6 @@ class Function(CanApply):
     def apply_to(self, arg):
         return run(self.lamb, [arg])
 
-    def come_up(self):
-        import os.path
-        import pickle
-        # later
-        # from os import stat
-        # statres = stat(filename)
-
-        filename = self.lamb._name + '.lambc'
-        if not os.path.exists(filename):
-            return
-
-        f = file(filename, 'rU')
-        try:
-            res = pickle.load(f)
-        finally:
-            f.close()
-        W_Tag.tags = res
-
-    def settle(self):
-        import pickle
-        filename = self.lamb._name + '.lambc'
-        f = file(filename, 'w')
-        buf = []
-        try:
-            pickle.dump(W_Tag.tags, f)
-        finally:
-            f.close()
-
 class PrimitiveFunction(CanApply):
     def __init__(self, fun):
         self.fun = fun
@@ -204,25 +172,31 @@ primitive_functions = {
 }
 
 
-all_functions = {
-    # Peano arithmetics
-    "succ": Function(succ, "p",
-                     "Successor of a peano number"),
-    "pred": Function(pred, "p",
-                     "Predecessor of a peano number"),
-    "plus": Function(plus, "pp",
-                     "Add two peano numbers"),
-    "mult": Function(mult, "pp",
-                     "Multiply two peano numbers"),
-    "plusa": Function(plus_acc, "pp",
-                      "Add two peano nums, using accumulator"),
-    "multa": Function(mult_acc, "pp",
-                      "Multiply two peano nums, using accumulator"),
-    # List processing
-    "append": Function(append, "ll",
-                       "Append a list to another"),
-    "reverse": Function(reverse, "l",
-                        "Reverse a list"),
-    "map": Function(map, "fl",
-                    "Apply a function to all elements of a list"),
-}
+all_functions = {}
+@startup
+def boot_all_functions():
+    from mu.peano import startup_peano, functions as peano_f
+    from mu.lists import startup_list, functions as list_f
+
+    all_functions.update({
+        # Peano arithmetics
+        "succ": Function(peano_f.get('succ', None), "p",
+                         "Successor of a peano number"),
+        "pred": Function(peano_f.get('pred', None), "p",
+                         "Predecessor of a peano number"),
+        "plus": Function(peano_f.get('plus', None), "pp",
+                         "Add two peano numbers"),
+        "mult": Function(peano_f.get('mult', None), "pp",
+                         "Multiply two peano numbers"),
+        "plusa": Function(peano_f.get('plus_acc', None), "pp",
+                          "Add two peano nums, using accumulator"),
+        "multa": Function(peano_f.get('mult_acc', None), "pp",
+                          "Multiply two peano nums, using accumulator"),
+        # List processing
+        "append": Function(list_f.get('append', None), "ll",
+                           "Append a list to another"),
+        "reverse": Function(list_f.get('reverse', None), "l",
+                            "Reverse a list"),
+        "map": Function(list_f.get('map', None), "fl",
+                        "Apply a function to all elements of a list"),
+    })
