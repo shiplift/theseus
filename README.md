@@ -3,6 +3,7 @@ Das λ macht μ
 Components
 ==========
 
+    :::text
     λ                   ≔ rule*
     rule                ≔ pattern* expression
                           (λ arity)
@@ -30,6 +31,7 @@ match(pattern, object, binding) ≔ { update binding | throw NoMatch }
 Architecture
 ============
 
+    :::text
                 API
                   |
     Interper------+---->Object-Model
@@ -41,12 +43,11 @@ Architecture
 Some functions
 ==============
 
+    :::text
     nil    ≔ (nil)
     append ≔ λ x, y:
              1. nil              , X ↦ X
              2. (cons Head, Tail), X ↦ (cons Head, μ(append, Tail, X))
-
-
 
     a ≔ (cons 1, (cons 2, (cons 3, nil)))
     b ≔ (cons 4, (cons 5, (cons 6, nil)))
@@ -63,6 +64,7 @@ Shapes
 
 Shapes tell about the shape of a constructor
     
+    :::text
     σ₁(◊)                          | 0. σ̭₂(◊,◊) ↻
     σ₂(◊,◊)                        | 1. σ₂(◊̭,◊) ↝ σ₂′(σ₁(◊),◊)
     σ₂ ⎡0, ◊ ↦ σ₂′(σ₁(◊),◊    )⎤   | 2. σ₂′(σ̭₁(◊),◊) ↻
