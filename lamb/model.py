@@ -40,25 +40,18 @@ class W_Tag(W_Object):
     def __init__(self, name, arity):
         from lamb.expression import W_ConstructorCursor
         self.name = name
-        self.arity = arity
+        self._arity = arity
         self._cursor = W_ConstructorCursor(self)
         self.default_shape = default_shape(self, arity)
+
+    def arity(self):
+        return self._arity
 
     #
     # Tags compare by identity
     #
     def __eq__(self, other): #pragma: no cover
         return self is other
-
-    #
-    # pickle
-    def __setstate__(self, state):
-        from lamb.expression import W_ConstructorCursor
-        self.name = state['name']
-        self.arity = state['arity']
-        self.default_shape = state['default_shape']
-        self._cursor = W_ConstructorCursor(self)
-
 
 def tag(name, arity):
     assert isinstance(name, str)
@@ -215,7 +208,7 @@ class W_Lambda(W_Object):
     @jit.elidable
     def arity(self):
         assert len(self._rules) > 0
-        return self._rules[0].arity
+        return self._rules[0].arity()
 
 
     def name(self):

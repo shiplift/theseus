@@ -219,15 +219,18 @@ class Rule(Object):
         for p in patterns:
             assert isinstance(p, Pattern)
         self._patterns = patterns
-        self.arity = len(patterns)
+        self._arity = len(patterns)
         self._expression = expression
         self.maximal_number_of_variables = 0
         for pattern in self._patterns:
             pattern.update_number_of_variables(self)
 
+    def arity(self):
+        return self._arity
+
     def match_all(self, w_arguments, binding):
-        if self.arity != 0:
-            self.match_all_n(w_arguments, binding, self.arity)
+        if self._arity != 0:
+            self.match_all_n(w_arguments, binding, self._arity)
         return self._expression
 
     @jit.unroll_safe

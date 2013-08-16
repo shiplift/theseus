@@ -154,7 +154,7 @@ class TestRule(object):
         w_int = integer(1)
 
         rule = Rule([], expression(w_int))
-        assert rule.arity == 0
+        assert rule.arity() == 0
 
         expr = rule.match_all([integer(2)], [])
         assert expr.evaluate_with_binding([]) is w_int
@@ -163,7 +163,7 @@ class TestRule(object):
         w_int = integer(1)
         expr = expression(w_int)
         rule = Rule([pattern(w_int)], expr)
-        assert rule.arity == 1
+        assert rule.arity() == 1
 
         res = rule.match_all([w_int], [])
         assert res.evaluate_with_binding([]) is w_int
@@ -178,7 +178,7 @@ class TestRule(object):
 
         expr = expression(w_int0)
         rule = Rule([pattern(w_int1), pattern(w_int2)], expr)
-        assert rule.arity == 2
+        assert rule.arity() == 2
 
         res = rule.match_all([w_int1, w_int2], [])
         assert res.evaluate_with_binding([]) is w_int0

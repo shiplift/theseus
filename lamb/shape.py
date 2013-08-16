@@ -114,7 +114,7 @@ class CompoundShape(Shape):
 
 
     def get_number_of_direct_children(self):
-        return self._tag.arity
+        return self._tag.arity()
 
     def extract_child(self, w_c, index):
         storage_index = self.structure_to_storage(index)
@@ -198,7 +198,7 @@ class CompoundShape(Shape):
         self.transformation_rules[i, shape] = new_shape
         if self._config.log_transformations:
             print "%s/%d\t(%d,%s)\n\t->%s" % (
-                self._tag.name, self._tag.arity,
+                self._tag.name, self._tag.arity(),
                 i, shape.merge_point_string(),
                 new_shape.merge_point_string())
 
@@ -272,7 +272,7 @@ class CompoundShape(Shape):
     #
     def merge_point_string_seen(self, seen):
         seen.append(self)
-        res  = "%s%d{" % (self._tag.name, self._tag.arity)
+        res  = "%s%d{" % (self._tag.name, self._tag.arity())
         first = True
         for subshape in self._structure:
             if first:

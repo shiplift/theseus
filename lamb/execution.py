@@ -130,7 +130,7 @@ class __extend__(W_ConstructorCursor):
     def interpret(self, op_stack, ex_stack):
         jit.promote(self)
         children = []
-        for i in range(self._tag.arity):
+        for i in range(self._tag.arity()):
             children.append(op_stack._data)
             op_stack = op_stack._next
         new_top = w_constructor(self._tag, children)
@@ -191,7 +191,7 @@ def get_printable_location_d(dc, d, current_cursor, current_args_shapes):
         if isinstance(current_cursor, W_LambdaCursor):
             res += "Lamb[%s/%s] " % (current_cursor._lamb._name, current_cursor._lamb.arity())
         elif isinstance(current_cursor, W_ConstructorCursor):
-            res +=  "Cons[%s/%s] " % (current_cursor._tag.name, current_cursor._tag.arity)
+            res +=  "Cons[%s/%s] " % (current_cursor._tag.name, current_cursor._tag.arity())
         else:
             return "<Unknown>"
         res += current_args_shapes.merge_point_string()
@@ -241,7 +241,7 @@ def interpret(expression_stack, arguments_stack=None,
                     current_cursor._lamb.arity(), op_stack)
             elif isinstance(current_cursor, W_ConstructorCursor):
                 current_args_shapes = current_shapes(
-                    current_cursor._tag.arity, op_stack)
+                    current_cursor._tag.arity(), op_stack)
 
             if we_are_translated():
                 jitdriver.can_enter_jit( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)

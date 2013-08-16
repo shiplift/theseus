@@ -25,7 +25,7 @@ def record_predicates(stack):
         tup = ("L", cursor._lamb._name, shapes_string)
         glob['predicates'].append( tup )
     elif isinstance(cursor, W_ConstructorCursor):
-        shapes = shapes_of_current_args(cursor._tag.arity, op_stack)
+        shapes = shapes_of_current_args(cursor._tag.arity(), op_stack)
         shapes_string = shapes.merge_point_string()
         tup = ("C", cursor._tag.name, shapes_string)
         glob['predicates'].append( tup )

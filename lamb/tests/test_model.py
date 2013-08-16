@@ -25,7 +25,7 @@ class TestTag(object):
         w_res = W_Tag("name", 0)
         assert isinstance(w_res, W_Tag)
         assert w_res.name == "name"
-        assert w_res.arity == 0
+        assert w_res.arity() == 0
 
     def test_interning(self):
         w_res1 = tag("name", 0)

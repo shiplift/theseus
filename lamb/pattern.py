@@ -55,7 +55,7 @@ class ConstructorPattern(Pattern):
     def __init__(self, tag, children=None):
         self._tag = tag
         self._children = children or []
-        assert self._tag.arity == len(self._children)
+        assert self._tag.arity() == len(self._children)
 
     @jit.unroll_safe
     def match(self, obj, binding):
@@ -65,7 +65,7 @@ class ConstructorPattern(Pattern):
 
         tag = jit.promote(obj.get_tag())
         if tag is self._tag:
-            for i in range(tag.arity):
+            for i in range(tag.arity()):
                 self._children[i].match(obj.get_child(i), binding)
             return
         raise NoMatch()

@@ -86,7 +86,7 @@ class __extend__(ConstructorPattern):
 class __extend__(W_Tag):
     @uni
     def to_repr(self, seen):
-        return u"%s/%d" % (self.name, self.arity)
+        return u"%s/%d" % (self.name, self.arity())
 
 class __extend__(W_Integer):
     @uni

@@ -108,7 +108,7 @@ def punch_shape(s, registry):
 
     punchee = (
         registry.index(s),
-        (s._tag.name, s._tag.arity),
+        (s._tag.name, s._tag.arity()),
         [registry.index(subshape) for subshape in s._structure],
         hist,
         trans
