@@ -3,6 +3,7 @@
 
 
 from rpython.rlib import jit
+from rpython.rlib.nonconst import NonConstant
 
 from lamb.startup import startup
 
@@ -85,7 +86,7 @@ def make_plus():
         ([pp(_zero()), pp(_zero())], e(_zero())),
         ([pp(x1)     , pp(_zero())], e(x1)),
         ([pp(_zero()), pp(x2)     ], e(x2)),
-        ([pp(x3)     , _p(y)      ], e(p_(mu(l, x3, y))))])
+        ([pp(x3)     , _p(y)      ], e(p_(mu(l, [x3, y]))))])
     l._name = "plus"
     return l
 def make_plus_acc():
@@ -100,15 +101,15 @@ def make_plus_acc():
     l_acc = lamb()
     l_acc._rules = rules([
         ([pp(a1), pp(_zero())], e(a1)),
-        ([pp(a2), _p(o1)     ], e(mu(l_acc, p_(a2), o1)))])
-    l_acc.name = "plus/a"
+        ([pp(a2), _p(o1)     ], e(mu(l_acc, [p_(a2), o1])))])
+    l_acc._name = "plus/a"
 
     l = lamb()
     l._rules = rules([
         ([pp(_zero()), pp(_zero()) ], e(_zero())),
         ([pp(x1)     , pp(_zero()) ], e(x1)),
         ([pp(_zero()), pp(x2)      ], e(x2)),
-        ([pp(x3)     , pp(y)       ], e(mu(l_acc, x3, y)))])
+        ([pp(x3)     , pp(y)       ], e(mu(l_acc, [x3, y])))])
     l._name = "plus"
     return l
 
@@ -124,8 +125,8 @@ def make_mult():
     l._rules = rules([
         ([pp(_1)     , pp(_zero()) ], e(_zero())),
         ([pp(_zero()), pp(_2)      ], e(_zero())),
-        # ([pp(x)      , _p(y)       ], e(mu(_plus(), mu(l, x, y), x)))
-        ([pp(x)      , _p(y)       ], e(mu(_plus(), x, mu(l, x, y))))
+        # ([pp(x)      , _p(y)       ], e(mu(_plus(),[]), mu(l, [x, y])), x)))
+        ([pp(x)      , _p(y)       ], e(mu(_plus(),[x, mu(l, [x, y])])))
     ])
     l._name = "mult"
     return l
@@ -148,9 +149,9 @@ def make_mult_acc():
         ([pp(_f1)    , pp(_zero()), pp(a2)], e(a2)),
         ([pp(_zero()), pp(_f2)    , pp(a3)], e(a3)),
         ([pp(f1)     , _p(f2)     , pp(a4)],
-         e(mu(l_acc, f1, f2, mu(_plus_acc(), a4, f1))))
+         e(mu(l_acc, [f1, f2, mu(_plus_acc(), [a4, f1])])))
     ])
-    l_acc.name = "mult/a"
+    l_acc._name = "mult/a"
 
     _1 = Variable("_")
     _2 = Variable("_")
@@ -161,9 +162,9 @@ def make_mult_acc():
     l._rules = rules([
         ([pp(_1)     , pp(_zero())], e(_zero())),
         ([pp(_zero()), pp(_2)     ], e(_zero())),
-        ([pp(x)      , pp(y)      ], e(mu(l_acc, x, y, _zero()))),
-        # ([pp(x)      , _p(y)      ], e(mu(_plus(), mu(l, x, y), x)))
-        # ([pp(x)      , _p(y)      ], e(mu(_plus(), x, mu(l, x, y))))
+        ([pp(x)      , pp(y)      ], e(mu(l_acc, [x, y, _zero()]))),
+        # ([pp(x)      , _p(y)      ], e(mu(_plus(),[]), mu(l, [x, y])), x)))
+        # ([pp(x)      , _p(y)      ], e(mu(_plus(),[]), x, mu(l, [x, y])))))
     ])
     l._name = "mult"
     return l
@@ -192,15 +193,18 @@ def peano_num(pynum):
     return res
 
 def python_num(peano):
+    from lamb.model import W_Constructor
     p = peano
     res = 0
     while not is_nil(p):
+        assert isinstance(p, W_Constructor)
         res += 1
         p = p.get_child(0)
     return res
 
 
-functions = {}
+g = {'functions':{}}
+functions = g['functions']
 @startup
 def startup_peano():
     # the Tag used in peano arithmetic lists
@@ -212,10 +216,10 @@ def startup_peano():
     functions['mult'] = make_mult()
     functions['mult_acc'] = make_mult_acc()
 
-def _zero():     return functions['zero']
-def _succ():     return functions['succ']
-def _pred():     return functions['pred']
-def _plus():     return functions['plus']
-def _plus_acc(): return functions['plus_acc']
-def _mult():     return functions['mult']
-def _mult_acc(): return functions['mult_acc']
+def _zero():     return functions.get('zero', None)
+def _succ():     return functions.get('succ', None)
+def _pred():     return functions.get('pred', None)
+def _plus():     return functions.get('plus', None)
+def _plus_acc(): return functions.get('plus_acc', None)
+def _mult():     return functions.get('mult', None)
+def _mult_acc(): return functions.get('mult_acc', None)

@@ -63,7 +63,7 @@ class TestLambda(object):
         l = lamb()
         l._rules = ziprules(
             ([nil(), x1], x1),
-            ([cons("cons", h, t), x2], cons("cons", h, mu(l, t, x2))))
+            ([cons("cons", h, t), x2], cons("cons", h, mu(l, [t, x2]))))
 
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
@@ -95,7 +95,7 @@ class TestLambda(object):
             l = lamb()
             l._name = "muffle%s" % i
             l._rules = ziprules(
-                ([cons("cons", *vars)], mu(m, *vars[1:])))
+                ([cons("cons", *vars)], mu(m, vars[1:])))
 
 
             list1 = [integer(n) for n in range(i)]
@@ -130,7 +130,7 @@ class TestLambda(object):
 
         map = lamb()
         map._rules = ziprules(
-            ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(map, f, y))),
+            ([f, cons("cons", x, y)], cons("cons", mu(f, [x]), mu(map, [f, y]))),
             ([_, nil()], nil()))
 
         x1 = Variable("x")
@@ -148,7 +148,7 @@ class TestInterpret(object):
     def test_simple_lambda(self):
         w_int = integer(1)
         l = lamb( ([], w_int) )
-        res = interpret(execution_stack(mu(l)))
+        res = interpret(execution_stack(mu(l, [])))
         assert res is w_int
 
     def test_fail_lambda(self):
@@ -157,13 +157,13 @@ class TestInterpret(object):
         l = lamb( ([w_int1], w_int2) )
 
         with py.test.raises(NoMatch) as e:
-            res = interpret(execution_stack(mu(l, w_int2)))
+            res = interpret(execution_stack(mu(l, [w_int2])))
 
     def test_lambda_id(self):
         x = Variable("x")
         l = lamb( ([x], x) )
         w_int = integer(1)
-        res = interpret(execution_stack(mu(l, w_int)))
+        res = interpret(execution_stack(mu(l, [w_int])))
         assert res is w_int
 
     def test_lambda_not(self):
@@ -175,10 +175,10 @@ class TestInterpret(object):
             ([w_true], w_false),
             ([w_false], w_true))
 
-        res = interpret(execution_stack(mu(l, w_true)))
+        res = interpret(execution_stack(mu(l, [w_true])))
         assert res == w_false
 
-        res = interpret(execution_stack(mu(l, w_false)))
+        res = interpret(execution_stack(mu(l, [w_false])))
         assert res == w_true
 
         res = interpret(execution_stack(W_LambdaCursor(l)),
@@ -200,7 +200,7 @@ class TestInterpret(object):
         l._name = "append"
         l._rules = ziprules(
             ([nil(), x1], x1),
-            ([cons("cons", h, t), x2], cons("cons", h, mu(l, t, x2))))
+            ([cons("cons", h, t), x2], cons("cons", h, mu(l, [t, x2]))))
 
 
         list1_w = [integer(1),integer(2),integer(3)]
@@ -237,7 +237,7 @@ class TestInterpret(object):
         m = lamb()
         m._name = "map"
         m._rules = ziprules(
-            ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(m, f, y))),
+            ([f, cons("cons", x, y)], cons("cons", mu(f, [x]), mu(m, [f, y]))),
             ([_, nil()], nil()))
 
         x1 = Variable("x")
@@ -278,7 +278,7 @@ class TestInterpret(object):
             l = lamb()
             l._name = "muffle%s" % i
             l._rules = ziprules(
-                ([cons("cons", *vars)], mu(m, *vars[1:])))
+                ([cons("cons", *vars)], mu(m, vars[1:])))
 
 
             list1 = [integer(n) for n in range(i)]
@@ -300,10 +300,10 @@ class TestInterpret(object):
         reverse_acc._rules = ziprules(
             ([nil(),              a1], a1),
             ([cons("cons", h, t), a2],
-                  mu(reverse_acc, t, cons("cons", h, a2))))
+                  mu(reverse_acc, [t, cons("cons", h, a2)])))
 
         l = Variable("list")
-        reverse = lamb(([l], mu(reverse_acc, l, nil())))
+        reverse = lamb(([l], mu(reverse_acc, [l, nil()])))
         reverse._name = "reverse"
 
         global op_stack_max

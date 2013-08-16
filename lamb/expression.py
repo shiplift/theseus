@@ -5,15 +5,14 @@
 #
 from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
-from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
 from lamb.stack import ExecutionStackElement, OperandStackElement
 
 from lamb.object import Object
-from lamb.pattern import NoMatch
-from lamb.model import W_Object, W_Lambda, W_Constructor, w_constructor
+from lamb.pattern import NoMatch, Pattern
+from lamb.model import W_Object, W_Tag, W_Lambda, W_Constructor, w_constructor
 
 
 #
@@ -192,6 +191,7 @@ class W_ConstructorCursor(W_Cursor):
     _immutable_fields_ = ['_tag']
 
     def __init__(self, tag):
+        assert isinstance(tag, W_Tag)
         self._tag = tag
 
 class W_LambdaCursor(W_Cursor):
@@ -199,6 +199,7 @@ class W_LambdaCursor(W_Cursor):
     _immutable_fields_ = ['_lamb']
 
     def __init__(self, lamb):
+        assert isinstance(lamb, W_Lambda)
         self._lamb = lamb
 
     #
@@ -215,6 +216,8 @@ class Rule(Object):
                           '_expression', 'maximal_number_of_variables']
 
     def __init__(self, patterns, expression):
+        for p in patterns:
+            assert isinstance(p, Pattern)
         self._patterns = patterns
         self.arity = len(patterns)
         self._expression = expression
@@ -222,14 +225,16 @@ class Rule(Object):
         for pattern in self._patterns:
             pattern.update_number_of_variables(self)
 
-    @jit.unroll_safe
     def match_all(self, w_arguments, binding):
-        debug_start("lamb-match-all %s " % self)
         if self.arity != 0:
-            for i in range(self.arity):
-                self._patterns[i].match(w_arguments[i], binding)
-        debug_stop("lamb-match-all %s " % self)
+            self.match_all_n(w_arguments, binding, self.arity)
         return self._expression
+
+    @jit.unroll_safe
+    def match_all_n(self, w_arguments, binding, arity):
+        for i in range(arity):
+            self._patterns[i].match(w_arguments[i], binding)
+
 
 class Variable(Object):
 

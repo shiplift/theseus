@@ -8,24 +8,33 @@ import sys
 from rpython import conftest
 class o:
     view = False
-    viewloops = True
+#    viewloops = True
+    viewloops = False
 conftest.option = o
 from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 
-
-from lamb.execution import (interpret, tag,
-                            Variable, W_LambdaCursor, OperandStackElement)
+from lamb.model import tag
+from lamb.execution import interpret, W_LambdaCursor
+from lamb.expression import Variable
+from lamb.stack import OperandStackElement
 from lamb.shape import in_storage_shape, CompoundShape
 
 from lamb.util.construction_helper import (lamb, ziprules, mu, cons, nil,
                                            conslist, integer, operand_stack,
                                            execution_stack)
-from mu.peano import *
+from mu.peano import (peano_num, python_num,
+                      _plus, _plus_acc, _mult, _mult_acc,
+)
 #
 # Tests
 #
 
+def setup_module(module):
+    from lamb.startup import boot
+    boot()
+
 class TestLLtype(LLJitMixin):
+
 
     def test_simplyverse(self):
         """ simpleverse without anything """
@@ -43,10 +52,10 @@ class TestLLtype(LLJitMixin):
         reverse_acc._name ="reverse_acc"
         reverse_acc._rules = ziprules(
             ([nil(),              a1], a1),
-            ([cons("cons", h, t), a2], mu(reverse_acc, t, cons("cons", h, a2))))
+            ([cons("cons", h, t), a2], mu(reverse_acc, [t, cons("cons", h, a2)])))
 
         l = Variable("l")
-        reverse = lamb(([l], mu(reverse_acc, l, nil())))
+        reverse = lamb(([l], mu(reverse_acc, [l, nil()])))
         reverse._name = "reverse"
 
 
@@ -110,10 +119,10 @@ class TestLLtype(LLJitMixin):
         reverse_acc._name ="reverse_acc"
         reverse_acc._rules = ziprules(
             ([nil(),              a1], a1),
-            ([cons("cons", h, t), a2], mu(reverse_acc, t, cons("cons", h, a2))))
+            ([cons("cons", h, t), a2], mu(reverse_acc, [t, cons("cons", h, a2)])))
 
         l = Variable("l")
-        reverse = lamb(([l], mu(reverse_acc, l, nil())))
+        reverse = lamb(([l], mu(reverse_acc, [l, nil()])))
         reverse._name = "reverse"
 
 
@@ -136,7 +145,7 @@ class TestLLtype(LLJitMixin):
 
         map = lamb()
         map._rules = ziprules(
-            ([f, cons("cons", x, y)], cons("cons", mu(f, x), mu(map, f, y))),
+            ([f, cons("cons", x, y)], cons("cons", mu(f, [x]), mu(map, [f, y]))),
             ([_, nil()], nil()))
         map._name = "map"
 
@@ -157,7 +166,7 @@ class TestLLtype(LLJitMixin):
     def test_mult(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(W_LambdaCursor(mult))
+        stack_e = execution_stack(W_LambdaCursor(_mult()))
         stack_w = operand_stack(arg1, arg2)
         def interp_w():
             return interpret(stack_e, stack_w)
@@ -167,7 +176,7 @@ class TestLLtype(LLJitMixin):
     def test_mulacc(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(W_LambdaCursor(mult_acc))
+        stack_e = execution_stack(W_LambdaCursor(_mult_acc()))
         stack_w = operand_stack(arg1, arg2)
         def interp_w():
             return interpret(stack_e, stack_w)
@@ -177,7 +186,7 @@ class TestLLtype(LLJitMixin):
     def test_plus(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(W_LambdaCursor(plus))
+        stack_e = execution_stack(W_LambdaCursor(_plus()))
         stack_w = operand_stack(arg1, arg2)
         def interp_w():
             return interpret(stack_e, stack_w)
@@ -187,7 +196,7 @@ class TestLLtype(LLJitMixin):
     def test_pluacc(self):
         arg1 = peano_num(100)
         arg2 = peano_num(100)
-        stack_e = execution_stack(W_LambdaCursor(plus_acc))
+        stack_e = execution_stack(W_LambdaCursor(_plus_acc()))
         stack_w = operand_stack(arg1, arg2)
         def interp_w():
             return interpret(stack_e, stack_w)

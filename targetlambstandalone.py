@@ -241,7 +241,7 @@ def entry_point(argv, debug=False, debug_callback=None):
     (fun_name, fun_ops, ret, conf) = parse_options(argv, default_config)
     config = conf
 
-    if config["ReadStatefile"]:
+    if config["ReadStatefile"] and fun_name is not None:
         do_come_up(fun_name)
 
     boot()
@@ -275,6 +275,8 @@ def entry_point(argv, debug=False, debug_callback=None):
         print_statistics(config, timing, fun.lamb._name)
     return 0
 
+def entry_point_normal(argv):
+    return entry_point(argv, False, None)
 
 def entry_point_n(argv):
     CompoundShape._config._inhibit_all= True
@@ -344,7 +346,7 @@ def target(driver, args):
         return entry_point_t, None
     else:
         driver.exe_name = 'lamb-%(backend)s'
-        return entry_point, None
+        return entry_point_normal, None
 
 
 def jitpolicy(driver):

@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from rpython.rlib import jit
+from rpython.rlib.nonconst import NonConstant
 
 from lamb.util.construction_helper import (integer, is_nil, conslist, run)
-from lamb.model import W_Integer, W_Object, W_Tag
+from lamb.model import W_Integer, W_Object, W_Tag, W_Constructor
 
 from lamb.startup import startup
 
@@ -107,6 +108,7 @@ def format_list(c_list):
     result = []
     conses = c_list
     while not is_nil(conses):
+        assert isinstance(conses, W_Constructor)
         res = conses.get_child(0)
         result.append(format(res))
         conses = conses.get_child(1)
@@ -123,8 +125,10 @@ class Function(CanApply):
     fmt is a string consisting of one char per argument.
     """
     def __init__(self, lamb, argfmt, doc):
+        from lamb.model import W_Lambda
+        assert isinstance(lamb, W_Lambda)
         self.lamb = lamb
-        assert len(argfmt) == lamb.arity()
+        # assert len(argfmt) == lamb.arity()
         self.argfmt = argfmt
         self.doc = doc
 
@@ -172,31 +176,34 @@ primitive_functions = {
 }
 
 
-all_functions = {}
+g = { 'all_functions': {} }
+all_functions = g['all_functions']
 @startup
 def boot_all_functions():
-    from mu.peano import startup_peano, functions as peano_f
-    from mu.lists import startup_list, functions as list_f
+    from mu.peano import (startup_peano,
+                          _succ, _pred, _plus, _mult, _plus_acc, _mult_acc)
+    from mu.lists import (startup_list,
+                          _append, _reverse, _map)
+    startup_peano()
+    startup_list()
 
-    all_functions.update({
-        # Peano arithmetics
-        "succ": Function(peano_f.get('succ', None), "p",
-                         "Successor of a peano number"),
-        "pred": Function(peano_f.get('pred', None), "p",
-                         "Predecessor of a peano number"),
-        "plus": Function(peano_f.get('plus', None), "pp",
-                         "Add two peano numbers"),
-        "mult": Function(peano_f.get('mult', None), "pp",
-                         "Multiply two peano numbers"),
-        "plusa": Function(peano_f.get('plus_acc', None), "pp",
-                          "Add two peano nums, using accumulator"),
-        "multa": Function(peano_f.get('mult_acc', None), "pp",
-                          "Multiply two peano nums, using accumulator"),
+    # Peano arithmetics
+    all_functions["succ"] = Function(_succ(), "p",
+                         "Successor of a peano number")
+    all_functions["pred"] = Function(_pred(), "p",
+                         "Predecessor of a peano number")
+    all_functions["plus"] = Function(_plus(), "pp",
+                         "Add two peano numbers")
+    all_functions["mult"] = Function(_mult(), "pp",
+                         "Multiply two peano numbers")
+    all_functions["plusa"] = Function(_plus_acc(), "pp",
+                          "Add two peano nums, using accumulator")
+    all_functions["multa"] = Function(_mult_acc(), "pp",
+                          "Multiply two peano nums, using accumulator")
         # List processing
-        "append": Function(list_f.get('append', None), "ll",
-                           "Append a list to another"),
-        "reverse": Function(list_f.get('reverse', None), "l",
-                            "Reverse a list"),
-        "map": Function(list_f.get('map', None), "fl",
-                        "Apply a function to all elements of a list"),
-    })
+    all_functions["append"] = Function(_append(), "ll",
+                           "Append a list to another")
+    all_functions["reverse"] = Function(_reverse(), "l",
+                            "Reverse a list")
+    all_functions["map"] = Function(_map(), "fl",
+                        "Apply a function to all elements of a list")

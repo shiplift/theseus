@@ -420,11 +420,11 @@ class TestShapeMerger(object):
         reverse_acc._name ="reverse_acc"
         reverse_acc._rules = ziprules(
             ([nil(),       a1], a1),
-            ([_cons(h, t), a2], mu(reverse_acc, t, _cons(h, a2))),
+            ([_cons(h, t), a2], mu(reverse_acc, [t, _cons(h, a2)])),
         )
 
         l = Variable("l")
-        reverse = lamb(([l], mu(reverse_acc, l, nil())))
+        reverse = lamb(([l], mu(reverse_acc, [l, nil()])))
         reverse._name = "reverse"
 
         def stackinspect(d):

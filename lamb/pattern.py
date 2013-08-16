@@ -65,10 +65,8 @@ class ConstructorPattern(Pattern):
 
         tag = jit.promote(obj.get_tag())
         if tag is self._tag:
-            debug_start("lamb-match-constructor-children")
             for i in range(tag.arity):
                 self._children[i].match(obj.get_child(i), binding)
-            debug_stop("lamb-match-constructor-children")
             return
         raise NoMatch()
 

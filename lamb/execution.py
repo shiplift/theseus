@@ -5,8 +5,7 @@
 #
 from rpython.rlib import jit
 from rpython.rlib.unroll import unrolling_iterable
-from rpython.rlib.objectmodel import (compute_identity_hash, r_dict,
-                                      we_are_translated)
+from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
 from lamb.stack import ExecutionStackElement, OperandStackElement, Stack
@@ -53,10 +52,10 @@ class __extend__(W_Lambda):
     @jit.unroll_safe
     def interpret_lambda(self, op_stack, ex_stack):
         jit.promote(self)
-        w_arguments = []
-        debug_start('lamb-interpret-lambda')
-        for i in range(self.arity()):
-            w_arguments.append(op_stack._data)
+        num_args = self.arity()
+        w_arguments = [None] * num_args
+        for i in range(num_args):
+            w_arguments[i] = op_stack._data
             op_stack = op_stack._next
         for rule in self._rules:
             try:
@@ -67,14 +66,13 @@ class __extend__(W_Lambda):
             else:
                 resolved = expression.copy(binding)
                 ex_stack = ExecutionStackElement(resolved, ex_stack)
-                debug_stop('lamb-interpret-lambda')
                 return (op_stack, ex_stack)
-        debug_stop('lamb-interpret-lambda')
         raise NoMatch()
 
 class __extend__(W_ConstructorEvaluator):
     def evaluate(self):
-        return w_constructor(self._tag, [child.evaluate() for child in self._children])
+        return w_constructor(self._tag,
+                             [child.evaluate() for child in self._children])
 
     @jit.unroll_safe
     def interpret(self, op_stack, ex_stack):
@@ -146,37 +144,6 @@ class __extend__(W_LambdaCursor):
 
 
 
-
-
-
-###############################################################################
-#
-#
-#
-#  Support for the JIT.
-#
-#
-def get_printable_location(dc, d,
-                           current_cursor, current_args_shapes): #pragma: no cover
-    res = ""
-    if current_cursor is None:
-        res += "<None>"
-    else:
-        if isinstance(current_cursor, W_LambdaCursor):
-            res += "Lamb[%s/%s] " % (current_cursor._lamb._name, current_cursor._lamb.arity())
-        elif isinstance(current_cursor, W_ConstructorCursor):
-            res +=  "Cons[%s/%s] " % (current_cursor._tag.name, current_cursor._tag.arity)
-        else:
-            return "<Unknown>"
-        res += current_args_shapes.merge_point_string()
-    return res
-
-jitdriver = jit.JitDriver(
-    greens=["debug_callback", "debug", "current_cursor", "current_args_shapes"],
-    reds=["op_stack", "ex_stack", "expr"],
-    get_printable_location=get_printable_location,
-)
-
 # shortcuts to access stack content.
 def ex_data_or_none(stack): return stack._data if stack is not None else None
 def op_data_or_none(stack): return stack._data if stack is not None else None
@@ -196,10 +163,54 @@ def _stack_to_list(op_stack, depth):
         op_s = op_s._next if op_s is not None else None
     return shapes
 
-def shapes_of_current_args(depth, op_stack):
+def current_shapes(depth, op_stack):
     shapes = _stack_to_list(op_stack, depth)
     tup = find_shape_tuple(shapes)
     return tup
+
+
+
+
+###############################################################################
+#
+#
+#
+#  Support for the JIT.
+#
+#
+
+def get_printable_location_t(current_cursor, current_args_shapes):
+    return get_printable_location_d(None, False,
+                                    current_cursor, current_args_shapes)
+
+def get_printable_location_d(dc, d, current_cursor, current_args_shapes):
+    res = ""
+    if current_cursor is None:
+        res += "<None>"
+    else:
+        if isinstance(current_cursor, W_LambdaCursor):
+            res += "Lamb[%s/%s] " % (current_cursor._lamb._name, current_cursor._lamb.arity())
+        elif isinstance(current_cursor, W_ConstructorCursor):
+            res +=  "Cons[%s/%s] " % (current_cursor._tag.name, current_cursor._tag.arity)
+        else:
+            return "<Unknown>"
+        res += current_args_shapes.merge_point_string()
+    return res
+
+jitdriver_d = jit.JitDriver(
+    greens=["debug_callback", "debug",
+            "current_cursor", "current_args_shapes"],
+    reds=["op_stack", "ex_stack", "expr"],
+    get_printable_location=get_printable_location_d,
+)
+
+jitdriver_t = jit.JitDriver(
+    greens=["current_cursor", "current_args_shapes"],
+    reds=["op_stack", "ex_stack", "expr"],
+    get_printable_location=get_printable_location_t,
+)
+
+jitdriver = jitdriver_d
 
 def interpret(expression_stack, arguments_stack=None,
               debug=False, debug_callback=None):
@@ -213,8 +224,10 @@ def interpret(expression_stack, arguments_stack=None,
     current_args_shapes = None
 
     if we_are_translated():
-        if debug: assert debug_callback is not None
+        jitdriver = jitdriver_t
+        if debug: assert debug_callback is None
     else:
+        jitdriver = jitdriver_d
         if debug_callback is None:
             from lamb.util.debug import debug_stack
             debug_callback = debug_stack
@@ -224,26 +237,23 @@ def interpret(expression_stack, arguments_stack=None,
         if isinstance(ex_data, W_Cursor):
             current_cursor = jit.promote(ex_data)
             if isinstance(current_cursor, W_LambdaCursor):
-                current_args_shapes = shapes_of_current_args(
+                current_args_shapes = current_shapes(
                     current_cursor._lamb.arity(), op_stack)
             elif isinstance(current_cursor, W_ConstructorCursor):
-                current_args_shapes = shapes_of_current_args(
+                current_args_shapes = current_shapes(
                     current_cursor._tag.arity, op_stack)
 
-            # print "cursor", current_cursor
-            # print "args\t", current_args_shapes
-            jitdriver.can_enter_jit(
-                expr=expr, op_stack=op_stack, ex_stack=ex_stack,
-                current_cursor=current_cursor,
-                current_args_shapes=current_args_shapes,
-                debug=debug, debug_callback=debug_callback
-            )
-        jitdriver.jit_merge_point(
-            expr=expr, op_stack=op_stack, ex_stack=ex_stack,
-            current_cursor=current_cursor,
-            current_args_shapes=current_args_shapes,
-            debug=debug, debug_callback=debug_callback
-        )
+            if we_are_translated():
+                jitdriver.can_enter_jit( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)
+            else:
+                jitdriver.can_enter_jit( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes, debug=debug, debug_callback=debug_callback)
+
+        #here is the merge point
+        if we_are_translated():
+            jitdriver.jit_merge_point( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)
+        else:
+            jitdriver.jit_merge_point( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes, debug=debug, debug_callback=debug_callback)
+
         if ex_stack is None:
             break
 

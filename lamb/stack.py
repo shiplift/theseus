@@ -6,9 +6,8 @@ from lamb.object import Object
 from lamb.util.repr import urepr, uni
 
 class StackElement(Object):
-    _mixin_ = True
 
-    _attrs_ = ['_next']
+    _attrs_ = ['_data', '_next']
 
     def __init__(self, data=None, next=None):
         self._data = data

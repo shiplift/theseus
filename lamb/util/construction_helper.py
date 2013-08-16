@@ -86,7 +86,7 @@ def lamb(*tuples):
     else:
         return W_Lambda(ziprules(*tuples))
 
-def mu(l, *args):
+def mu(l, args):
     return w_call(expression(l), [expression(i) for i in args])
 
 def conslist(p_list):

@@ -47,6 +47,9 @@ class Shape(Object):
     def _update_child(self, new_children, children, index):
         pass
 
+    def get_child(self, w_c, index):
+        return self.extract_child(w_c, index)
+
     def get_children(self, w_c):
         raise NotImplementedError("abstract method")
 
@@ -103,9 +106,6 @@ class CompoundShape(Shape):
 
         # dbg
         self._shapes.append(self)
-
-    def get_child(self, w_c, index):
-        return self.extract_child(w_c, index)
 
     @jit.unroll_safe
     def get_children(self, w_c):
@@ -320,11 +320,6 @@ class InStorageShape(Shape):
     def replace(self, storage_index, new_shape):
         assert storage_index == 0
         return new_shape
-
-    ##
-    #  for pickle
-    def __reduce__(self):
-        return ( in_storage_shape_instance, tuple() )
 
     #
     # Testing and Debug
