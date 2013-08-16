@@ -75,7 +75,10 @@ def make_reverse():
          e(mu(reverse_acc, [t, cons("cons", h, a2)])))])
 
     l = Variable("list")
-    reverse = lamb(([l], mu(reverse_acc, [l, nil()])))
+    reverse = lamb()
+    reverse._rules = rules([
+        ([p(l)], mu(reverse_acc, [l, nil()]))
+    ])
     reverse._name = "reverse"
     return reverse
 
@@ -116,6 +119,9 @@ functions = g['functions']
 
 @startup
 def startup_list():
+    if len(functions) != 0:
+        return
+
     functions['append'] = make_append()
     functions['reverse'] = make_reverse()
     functions['map'] = make_map()

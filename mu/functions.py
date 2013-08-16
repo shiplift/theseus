@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from rpython.rlib import jit
-from rpython.rlib.nonconst import NonConstant
 
+from lamb.object import Object
 from lamb.util.construction_helper import (integer, is_nil, conslist, run)
 from lamb.model import W_Integer, W_Object, W_Tag, W_Constructor
 
@@ -11,8 +11,6 @@ from lamb.startup import startup
 
 import mu.peano
 import mu.lists
-
-from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
 class UnknownFunction(ValueError):
     pass
@@ -114,7 +112,7 @@ def format_list(c_list):
         conses = conses.get_child(1)
     return result
 
-class CanApply(object):
+class CanApply(Object):
     def apply_to(self, arg):
         raise NotImplementedError("abstract")
 
@@ -128,7 +126,7 @@ class Function(CanApply):
         from lamb.model import W_Lambda
         assert isinstance(lamb, W_Lambda)
         self.lamb = lamb
-        # assert len(argfmt) == lamb.arity()
+        assert len(argfmt) == lamb.arity()
         self.argfmt = argfmt
         self.doc = doc
 

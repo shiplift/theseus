@@ -7,6 +7,7 @@ import py
 # Graphviz
 #
 def _dot(self, seen):
+    "NOT_RPYTHON"
     if self in seen:
         return
     seen.add(self)

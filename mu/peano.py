@@ -207,7 +207,9 @@ g = {'functions':{}}
 functions = g['functions']
 @startup
 def startup_peano():
-    # the Tag used in peano arithmetic lists
+    if len(functions) != 0:
+        return
+
     functions['zero'] = nil()
     functions['succ'] = make_succ()
     functions['pred'] = make_pred()
