@@ -32,7 +32,7 @@ from mu.peano import (peano_num, python_num,
 
 def setup_module(module):
     import lamb.execution
-    lamb.execution.use_jitdriver_for_online_jitting = True
+    lamb.execution.use_jitdriver_with_tracing = True
     from lamb.startup import boot
     boot()
 
