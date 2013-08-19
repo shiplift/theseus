@@ -203,8 +203,9 @@ def python_num(peano):
     return res
 
 
-g = {'functions':{}}
-functions = g['functions']
+# g = {'functions':{}}
+# functions = g['functions']
+functions = {}
 @startup
 def startup_peano():
     if len(functions) != 0:

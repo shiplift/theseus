@@ -174,8 +174,9 @@ primitive_functions = {
 }
 
 
-g = { 'all_functions': {} }
-all_functions = g['all_functions']
+# g = { 'all_functions': {} }
+# all_functions = g['all_functions']
+all_functions = {}
 @startup
 def boot_all_functions():
     from mu.peano import (startup_peano,

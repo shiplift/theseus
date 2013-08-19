@@ -25,11 +25,14 @@ from lamb.util.construction_helper import (lamb, ziprules, mu, cons, nil,
 from mu.peano import (peano_num, python_num,
                       _plus, _plus_acc, _mult, _mult_acc,
 )
+
 #
 # Tests
 #
 
 def setup_module(module):
+    import lamb.execution
+    lamb.execution.use_jitdriver_for_online_jitting = True
     from lamb.startup import boot
     boot()
 

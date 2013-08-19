@@ -3,7 +3,7 @@
 
 from rpython.rlib import jit
 
-from lamb.execution import (shapes_of_current_args,
+from lamb.execution import (current_shapes,
                             ex_data_or_none, op_data_or_none,
                             W_LambdaCursor, W_ConstructorCursor,
                             )
@@ -12,7 +12,6 @@ from lamb.util.repr import urepr, who, uni
 
 glob = { 'predicates': [] }
 
-@jit.dont_look_inside
 def record_predicates(stack):
 
     ex_data = ex_data_or_none(stack.execution_stack)
@@ -20,12 +19,12 @@ def record_predicates(stack):
     cursor = ex_data
     tup = None
     if isinstance(cursor, W_LambdaCursor):
-        shapes = shapes_of_current_args(cursor._lamb.arity(), op_stack)
+        shapes = current_shapes(cursor._lamb.arity(), op_stack)
         shapes_string = shapes.merge_point_string()
         tup = ("L", cursor._lamb._name, shapes_string)
         glob['predicates'].append( tup )
     elif isinstance(cursor, W_ConstructorCursor):
-        shapes = shapes_of_current_args(cursor._tag.arity(), op_stack)
+        shapes = current_shapes(cursor._tag.arity(), op_stack)
         shapes_string = shapes.merge_point_string()
         tup = ("C", cursor._tag.name, shapes_string)
         glob['predicates'].append( tup )

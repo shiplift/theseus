@@ -143,7 +143,7 @@ def parse_options(argv, config):
                 break
             i += 1
             jitarg = argv[i]
-            jit.set_user_param(jitdriver, jitarg)
+            jit.set_user_param(jitdriver(), jitarg)
         elif argv[i] in ["-h", "--help"]:
             # printing done by caller
             ret = 0

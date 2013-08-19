@@ -18,6 +18,8 @@ from lamb.expression import (W_LambdaCursor, W_ConstructorCursor, W_Cursor,
                              W_ConstructorEvaluator, W_VariableExpression,
                              W_Call, W_NAryCall, VariableUnbound)
 
+use_jitdriver_for_online_jitting = False
+
 #
 # Execution behavior.
 #
@@ -210,7 +212,11 @@ jitdriver_t = jit.JitDriver(
     get_printable_location=get_printable_location_t,
 )
 
-jitdriver = jitdriver_d
+def jitdriver():
+    if use_jitdriver_for_online_jitting:
+        return jitdriver_t
+    else:
+        return jitdriver_d
 
 def interpret(expression_stack, arguments_stack=None,
               debug=False, debug_callback=None):
@@ -223,11 +229,7 @@ def interpret(expression_stack, arguments_stack=None,
     current_cursor = None
     current_args_shapes = None
 
-    if we_are_translated():
-        jitdriver = jitdriver_t
-        if debug: assert debug_callback is None
-    else:
-        jitdriver = jitdriver_d
+    if not we_are_translated():
         if debug_callback is None:
             from lamb.util.debug import debug_stack
             debug_callback = debug_stack
@@ -243,16 +245,16 @@ def interpret(expression_stack, arguments_stack=None,
                 current_args_shapes = current_shapes(
                     current_cursor._tag.arity(), op_stack)
 
-            if we_are_translated():
-                jitdriver.can_enter_jit( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)
+            if use_jitdriver_for_online_jitting:
+                jitdriver_t.can_enter_jit( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)
             else:
-                jitdriver.can_enter_jit( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes, debug=debug, debug_callback=debug_callback)
+                jitdriver_d.can_enter_jit( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes, debug=debug, debug_callback=debug_callback)
 
         #here is the merge point
-        if we_are_translated():
-            jitdriver.jit_merge_point( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)
+        if use_jitdriver_for_online_jitting:
+            jitdriver_t.jit_merge_point( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)
         else:
-            jitdriver.jit_merge_point( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes, debug=debug, debug_callback=debug_callback)
+            jitdriver_d.jit_merge_point( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes, debug=debug, debug_callback=debug_callback)
 
         if ex_stack is None:
             break

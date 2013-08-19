@@ -114,9 +114,9 @@ def make_map():
          e(nil()))])
     return m
 
-g = {'functions':{}}
-functions = g['functions']
-
+# g = {'functions':{}}
+# functions = g['functions']
+functions = {}
 @startup
 def startup_list():
     if len(functions) != 0:
