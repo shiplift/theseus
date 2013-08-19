@@ -216,7 +216,7 @@ def jitdriver():
     if use_jitdriver_with_tracing:
         return jitdriver_t
     else:
-        return jitdriver_d
+        return jitdriver_n
 
 def interpret(expression_stack, arguments_stack=None,
               debug=False, debug_callback=None):
