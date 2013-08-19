@@ -293,8 +293,8 @@ def entry_point_i(argv):
     return entry_point(argv)
 
 def entry_point_t(argv):
-    import lamb.execution
-    lamb.execution.use_jitdriver_with_tracing = True
+    from lamb.execution import jitdriver_with_tracing
+    jitdriver_with_tracing(True)
     from lamb.util.transformation import \
         record_predicates, print_transformations
     ret = entry_point(argv, True, record_predicates)

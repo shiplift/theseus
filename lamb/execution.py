@@ -20,6 +20,9 @@ from lamb.expression import (W_LambdaCursor, W_ConstructorCursor, W_Cursor,
 
 use_jitdriver_with_tracing = False
 
+def jitdriver_with_tracing(do):
+    use_jitdriver_with_tracing = do
+
 #
 # Execution behavior.
 #
