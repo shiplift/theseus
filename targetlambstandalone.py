@@ -293,8 +293,6 @@ def entry_point_i(argv):
     return entry_point(argv)
 
 def entry_point_t(argv):
-    import lamb.execution
-    lamb.execution.use_jitdriver_with_tracing = True
     from lamb.util.transformation import \
         record_predicates, print_transformations
     ret = entry_point(argv, True, record_predicates)
@@ -344,6 +342,8 @@ def target(driver, args):
         return entry_point_n, None
     elif "--record-transformations" in args:
         args.remove("--record-transformations")
+        from lamb import execution
+        execution.use_jitdriver_with_tracing = True
         driver.exe_name = 'lambt-%(backend)s'
         return entry_point_t, None
     else:
