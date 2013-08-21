@@ -204,6 +204,13 @@ def do_settle(fun):
     from lamb.util.serialize import settle
     settle(fun)
 
+def pre_populate_shapes():
+    from mu.lists import _setup_shapes as lists_setup
+    from mu.peano import _setup_shapes as peano_setup
+    lists_setup()
+    peano_setup()
+
+
 def retrieve_fun_args(fun_name, argv):
     ret = 0
     ops = []
@@ -286,12 +293,9 @@ def entry_point_n(argv):
 
 
 def entry_point_i(argv):
-    from mu.lists import _setup_shapes as lists_setup
-    from mu.peano import _setup_shapes as peano_setup
+    from lamb.startup import startup
     CompoundShape._config._inhibit_recognition = True
-    lists_setup()
-    peano_setup()
-
+    startup(pre_populate_shapes)
     return entry_point(argv)
 
 def entry_point_t(argv):

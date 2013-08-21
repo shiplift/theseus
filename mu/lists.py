@@ -13,8 +13,8 @@ from lamb.util.construction_helper import (pattern as p, expression as e,
                                            operand_stack, execution_stack, nil)
 
 
-def _setup_shapes(t_cons):
-    cons_2 = t_cons
+def _setup_shapes():
+    cons_2 = tag("cons", 2)
 
     cons_0_shape = cons_2.default_shape
     cons_1_shape = CompoundShape(cons_2, [in_storage_shape, cons_0_shape])
