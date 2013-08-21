@@ -10,6 +10,8 @@ from rpython.rlib.debug import debug_start, debug_stop, debug_print
 # from rpython.config.config import OptionDescription, BoolOption, StrOption
 # from rpython.config.config import Config, to_optparse
 
+take_options = True
+
 import mu.functions
 from lamb.startup import boot
 from lamb.stack import ExecutionStackElement, OperandStackElement
