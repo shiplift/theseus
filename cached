@@ -1,0 +1,14 @@
+#! /bin/bash
+
+
+PROG=$1
+shift
+
+REST_ARGS="$@"
+
+rm -f *.lambc 2>&1 >/dev/null
+
+$PROG -R $REST_ARGS 2>&1 >/dev/null
+exec $PROG -W $REST_ARGS
+
+
