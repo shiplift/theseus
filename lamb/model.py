@@ -8,9 +8,12 @@
   W_Object
     W_Tag
     W_Integer
+    W_String
     W_Constructor
       W_NAryConstructor
+      W_Constructor....
     W_Lambda
+      W_Primitive
 
 """
 from rpython.rlib import jit
@@ -69,6 +72,14 @@ class W_Integer(W_Object):
 
     def __init__(self, value):
         self._value = value
+    def value(self):
+        return self._value
+
+class W_String(W_Object):
+    def __init__(self, value):
+        self._value = value
+    def value(self):
+        return self._value
 
 class W_Constructor(W_Object):
 
@@ -216,3 +227,17 @@ class W_Lambda(W_Object):
             return unicode(self._name)
         else:
             return who(self)
+
+class W_Primitive(W_Lambda):
+    """
+    like a λ, but calls a rpython function instead.
+    """
+    _immutable_fields_ = ['_fun', '_arity']
+    def __init__(self, fun, arity, name=""):
+        W_Lambda.__init__(self, [], name)
+        self._arity = arity
+        self._fun = fun
+
+    @jit.elidable
+    def arity(self):
+        return self._arity

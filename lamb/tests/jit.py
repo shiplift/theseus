@@ -8,8 +8,8 @@ import sys
 from rpython import conftest
 class o:
     view = False
-#    viewloops = True
-    viewloops = False
+    viewloops = True
+#    viewloops = False
 conftest.option = o
 from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 
@@ -19,12 +19,14 @@ from lamb.expression import Variable
 from lamb.stack import OperandStackElement
 from lamb.shape import in_storage_shape, CompoundShape
 
-from lamb.util.construction_helper import (lamb, ziprules, mu, cons, nil,
+from lamb.util.construction_helper import (pattern as p, expression as e,
+                                           lamb, ziprules, mu, cons, nil,
                                            conslist, integer, operand_stack,
-                                           execution_stack)
+                                           execution_stack, rules)
 from mu.peano import (peano_num, python_num,
                       _plus, _plus_acc, _mult, _mult_acc,
-)
+                  )
+from mu.gcbench import (_gc_bench)
 
 #
 # Tests
@@ -32,7 +34,7 @@ from mu.peano import (peano_num, python_num,
 
 def setup_module(module):
     import lamb.execution
-    lamb.execution.use_jitdriver_with_tracing = True
+    lamb.execution.use_jitdriver_with_tracing = False
     from lamb.startup import boot
     boot()
 
@@ -46,21 +48,8 @@ class TestLLtype(LLJitMixin):
 
     def test_simpleverse(self):
         # name chosen to not conflict with pytest.py -kreverse
-        a1 = Variable("accumulator")
-        a2 = Variable("accumulator")
-        h = Variable("head")
-        t = Variable("tail")
-
-        reverse_acc = lamb()
-        reverse_acc._name ="reverse_acc"
-        reverse_acc._rules = ziprules(
-            ([nil(),              a1], a1),
-            ([cons("cons", h, t), a2], mu(reverse_acc, [t, cons("cons", h, a2)])))
-
-        l = Variable("l")
-        reverse = lamb(([l], mu(reverse_acc, [l, nil()])))
-        reverse._name = "reverse"
-
+        from mu.lists import make_reverse
+        reverse = make_reverse()
 
         nums = 149
         # XXX >= 150 does not work oO
@@ -201,6 +190,16 @@ class TestLLtype(LLJitMixin):
         arg2 = peano_num(100)
         stack_e = execution_stack(W_LambdaCursor(_plus_acc()))
         stack_w = operand_stack(arg1, arg2)
+        def interp_w():
+            return interpret(stack_e, stack_w)
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
+    def test_gc_bench(self):
+        arg1 = peano_num(100)
+        arg2 = peano_num(100)
+        stack_e = execution_stack(W_LambdaCursor(_gc_bench()))
+        stack_w = operand_stack()
         def interp_w():
             return interpret(stack_e, stack_w)
 

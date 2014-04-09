@@ -11,6 +11,7 @@ from lamb.startup import startup
 
 import mu.peano
 import mu.lists
+import mu.gcbench
 
 class UnknownFunction(ValueError):
     pass
@@ -95,6 +96,8 @@ def format(ret):
             return "%d" % python_num(ret)
         elif t == "cons":
             return "(" + ",".join(format_list(ret)) + ")"
+        elif t == "nil":
+            return "nil"
         else:
             raise CannotFormat("unknown constr")
     elif isinstance(ret, W_Lambda):
@@ -183,8 +186,11 @@ def boot_all_functions():
                           _succ, _pred, _plus, _mult, _plus_acc, _mult_acc)
     from mu.lists import (startup_list,
                           _append, _reverse, _map)
+    from mu.gcbench import (startup_gc_bench,
+                            _gc_bench)
     startup_peano()
     startup_list()
+    startup_gc_bench()
 
     # Peano arithmetics
     all_functions["succ"] = Function(_succ(), "p",
@@ -206,3 +212,6 @@ def boot_all_functions():
                             "Reverse a list")
     all_functions["map"] = Function(_map(), "fl",
                         "Apply a function to all elements of a list")
+
+    all_functions["gc_bench"] = Function(_gc_bench(), "",
+                        "Run parts of Boehm's GCBench")

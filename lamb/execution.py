@@ -11,7 +11,8 @@ from rpython.rlib.debug import debug_start, debug_stop, debug_print
 from lamb.stack import ExecutionStackElement, OperandStackElement, Stack
 
 from lamb.pattern import NoMatch
-from lamb.model import W_Object, W_Constructor, W_Lambda, w_constructor
+from lamb.model import (W_Object, W_Constructor, W_Lambda, W_Primitive,
+                        w_constructor)
 from lamb.shape import (default_shape, find_shape_tuple,
                         CompoundShape, InStorageShape)
 from lamb.expression import (W_LambdaCursor, W_ConstructorCursor, W_Cursor,
@@ -70,6 +71,22 @@ class __extend__(W_Lambda):
                 ex_stack = ExecutionStackElement(resolved, ex_stack)
                 return (op_stack, ex_stack)
         raise NoMatch()
+
+class __extend__(W_Primitive):
+    def call(self, w_arguments):
+        assert len(w_arguments) == self.arity()
+        return self._fun(w_arguments)
+
+    @jit.unroll_safe
+    def interpret_lambda(self, op_stack, ex_stack):
+        jit.promote(self)
+        num_args = self.arity()
+        w_arguments = [None] * num_args
+        for i in range(num_args):
+            w_arguments[i] = op_stack._data
+            op_stack = op_stack._next
+        ex_stack = ExecutionStackElement(self._fun(w_arguments), ex_stack)
+        return (op_stack, ex_stack)
 
 class __extend__(W_ConstructorEvaluator):
     def evaluate(self):

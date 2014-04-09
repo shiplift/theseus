@@ -294,9 +294,10 @@ class CompoundShape(Shape):
                 count, index, src.merge_point_string())
 
     def __eq__(self, other):
-        return (self.__class__  == other.__class__ and
-                self._tag       == other._tag and
-                self._structure == other._structure)
+        return self is other or (
+            self.__class__  == other.__class__ and
+            self._tag       == other._tag and
+            self._structure == other._structure)
 
 
 class InStorageShape(Shape):

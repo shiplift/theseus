@@ -10,6 +10,10 @@ from rpython.rlib.debug import debug_start, debug_stop, debug_print
 # from rpython.config.config import OptionDescription, BoolOption, StrOption
 # from rpython.config.config import Config, to_optparse
 
+
+from rpython.rlib.objectmodel import we_are_translated
+
+
 take_options = True
 
 import mu.functions
@@ -363,6 +367,16 @@ def jitpolicy(driver):
 
 
 if __name__ == '__main__':
+    assert not we_are_translated()
+    import lamb.util.debug
     from rpython.translator.driver import TranslationDriver
     f, _ = target(TranslationDriver(), sys.argv)
-    sys.exit(f(sys.argv))
+    try:
+        sys.exit(f(sys.argv))
+    except SystemExit:
+        pass
+    except:
+        import pdb, traceback
+        _type, value, tb = sys.exc_info()
+        traceback.print_exception(_type, value, tb)
+        pdb.post_mortem(tb)
