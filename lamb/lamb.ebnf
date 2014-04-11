@@ -1,0 +1,100 @@
+# Tokens
+
+NEWLINE: "[\n\r]";
+LAMBDA: "λ";
+MU: "μ";
+MAPSTO: "↦";
+DEFINEDAS: "≔";
+LEFT_PARENTHESIS: "\(";
+RIGHT_PARENTHESIS: "\)";
+LEFT_DOUBLE_ANGLE: "⟪";
+RIGHT_DOUBLE_ANGLE: "⟫";
+INTEGER: "[0-9]+";
+QSTRING: "‘[^’]*’";
+QQSTRING: "“[^”]”";
+NAME: "[^0-9,.\(\)⟪⟫ \n\r\t\f][^,.\(\)⟪⟫ \n\r\t\f]*";
+IGNORE: "[ \f\t]*|#[^\n]*";
+
+
+# Productions
+
+lamb_source : [NEWLINE]* >toplevel_expressions<? [EOF]
+            ;
+
+toplevel_expressions : toplevel_expression ([NEWLINE]+ >toplevel_expressions< )* [NEWLINE]*
+                     ;
+
+toplevel_expression : <definition>
+                    | <application>
+                    ;
+
+expression : <constructor>
+           | <application>
+           | <lambda>
+           | <variable>
+           | <primitive>
+           | <primary>
+           ;
+
+primary : <INTEGER>
+#        | <FLOAT>
+        | <QSTRING> | <QQSTRING>
+        ;
+
+variable : NAME
+         ;
+
+definition : NAME [DEFINEDAS] lambda
+           | NAME [DEFINEDAS] expression
+           ;
+
+constructor : NAME constructor_args
+            ;
+constructor_args : [LEFT_PARENTHESIS] >arglist< [RIGHT_PARENTHESIS]
+                 | [LEFT_PARENTHESIS] [RIGHT_PARENTHESIS]
+                 ;
+
+arglist : expression ([","] [NEWLINE]? expression)*
+        ;
+
+application : [MU] [LEFT_PARENTHESIS] expression application_args [RIGHT_PARENTHESIS]
+            | [MU] [LEFT_PARENTHESIS] expression [RIGHT_PARENTHESIS]
+            ;
+
+application_args : ([","] [NEWLINE]? expression )+
+                 ;
+lambda : [LAMBDA] ["."] [NEWLINE]? >rules<
+       ;
+
+rules : (rule [NEWLINE])+
+      ;
+
+rule : [INTEGER] ["."] patterns? [MAPSTO] expression
+     ;
+
+patterns : pattern ([","] [NEWLINE]? pattern)*
+         ;
+
+pattern : <constructor_pattern>
+        | <variable_pattern>
+        | <primary_pattern>
+        ;
+
+variable_pattern : >variable<
+                 ;
+
+primary_pattern : primary
+                ;
+
+constructor_pattern : NAME constructor_pattern_args
+                    ;
+constructor_pattern_args : [LEFT_PARENTHESIS] >pattern_arglist< [RIGHT_PARENTHESIS]
+                         | [LEFT_PARENTHESIS] [RIGHT_PARENTHESIS]
+                         ;
+
+pattern_arglist : pattern ([","] [NEWLINE]? pattern)*
+                ;
+
+primitive : [LEFT_DOUBLE_ANGLE] NAME [RIGHT_DOUBLE_ANGLE]
+          ;
+# EOF

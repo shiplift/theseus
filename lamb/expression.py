@@ -26,8 +26,10 @@ class __extend__(W_Constructor):
     @jit.unroll_safe
     def copy(self, binding):
         from lamb.expression import W_ConstructorEvaluator
-        children = [self.get_child(index).copy(binding) \
-                    for index in range(self.get_number_of_children())]
+        num_children = self.get_number_of_children()
+        children = [None] * num_children
+        for index in range(num_children):
+            children[index] = self.get_child(index).copy(binding)
         return W_ConstructorEvaluator(self.get_tag(), children)
 
 ###############################################################################
@@ -59,12 +61,15 @@ class W_VariableExpression(W_PureExpression):
         self.variable = variable
 
     def resolve(self, binding):
+        from lamb.execution import toplevel_bindings
         # var = jit.promote(self.variable)
         var = self.variable
         w_result = binding[var.binding_index]
 
         if w_result is None:
-            raise VariableUnbound()
+            w_result = toplevel_bindings.get(var.name)
+            if w_result is None:
+                raise VariableUnbound()
         return w_result
 
     def copy(self, binding):
@@ -92,7 +97,11 @@ class W_Call(W_PureExpression):
 
     @jit.unroll_safe
     def copy(self, binding):
-        args = [argument.copy(binding) for argument in self.get_arguments()]
+        argnum = self.get_number_of_arguments()
+        args = [None] * argnum
+        for i in range(argnum):
+            argument = self.get_argument(i)
+            args[i] = argument.copy(binding)
         return w_call(self.callee.copy(binding), args)
 
 

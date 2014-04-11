@@ -11,6 +11,7 @@ from rpython.rlib.debug import debug_start, debug_stop, debug_print
 from lamb.stack import ExecutionStackElement, OperandStackElement, Stack
 
 from lamb.pattern import NoMatch
+from lamb.object import Object
 from lamb.model import (W_Object, W_Constructor, W_Lambda, W_Primitive,
                         w_constructor)
 from lamb.shape import (default_shape, find_shape_tuple,
@@ -161,6 +162,20 @@ class __extend__(W_LambdaCursor):
         jit.promote(self)
         return self._lamb.interpret_lambda(op_stack, ex_stack)
 
+#
+#
+#
+#
+#
+class Toplevel(Object):
+    def __init__(self):
+        self.bindings = {}
+    def set_bindings(self, bindings):
+        self.bindings = bindings
+    @jit.elidable
+    def get(self, name):
+        return self.bindings.get(name, None)
+toplevel_bindings = Toplevel()
 
 
 # shortcuts to access stack content.
@@ -186,7 +201,6 @@ def current_shapes(depth, op_stack):
     shapes = _stack_to_list(op_stack, depth)
     tup = find_shape_tuple(shapes)
     return tup
-
 
 
 

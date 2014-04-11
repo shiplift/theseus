@@ -75,11 +75,20 @@ class W_Integer(W_Object):
     def value(self):
         return self._value
 
+
+def w_integer(value):
+    assert isinstance(value, int)
+    return W_Integer(value)
+
 class W_String(W_Object):
     def __init__(self, value):
         self._value = value
     def value(self):
         return self._value
+
+def w_string(value):
+    assert isinstance(value, str)
+    return W_String(value)
 
 class W_Constructor(W_Object):
 
@@ -210,7 +219,7 @@ class W_Lambda(W_Object):
 
     _immutable_fields_ = ['_rules[*]', '_cursor']
 
-    def __init__(self, rules, name=""):
+    def __init__(self, rules=[], name=""):
         from lamb.expression import W_LambdaCursor
         self._rules = rules
         self._name = name

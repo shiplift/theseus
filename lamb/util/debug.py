@@ -9,7 +9,7 @@ from lamb.util.repr import urepr, who, uni
 _iteration = 0
 _stacks = {}
 
-from lamb.model import W_Tag, W_Integer, W_Constructor, W_Lambda, Object
+from lamb.model import W_Tag, W_Integer, W_Constructor, W_Lambda, Object, W_Primitive
 from lamb.shape import Shape, CompoundShape, InStorageShape
 from lamb.pattern import VariablePattern, ConstructorPattern, IntegerPattern
 #
@@ -117,6 +117,16 @@ class __extend__(W_Lambda):
         res += u"("
         res += u"; ".join(map(lambda x: urepr(x, seen), self._rules))
         res += u")"
+        return res
+
+class __extend__(W_Primitive):
+    @uni
+    def to_repr(self, seen):
+        res = u"⟪"
+        res += self.name()
+        res += u"⟫"
+        res += u"/"
+        res += u"%d" % self.arity()
         return res
 
 ### Expressions ###

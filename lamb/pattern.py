@@ -31,6 +31,18 @@ class IntegerPattern(Pattern):
                 return
         raise NoMatch()
 
+class StringPattern(Pattern):
+
+    def __init__(self, value):
+        self.value = value
+
+    def match(self, obj, binding):
+        from lamb.model import W_String
+        if isinstance(obj, W_String): # pragma: no branch
+            if obj._value == self.value:
+                return
+        raise NoMatch()
+
 class VariablePattern(Pattern):
 
     _immutable_fields_ = ['variable']
