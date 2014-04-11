@@ -6,7 +6,8 @@
 """
 from __future__ import absolute_import
 
-from rpython.rlib.parsing.lexer import Lexer
+from rpython.rlib.parsing.deterministic import DFA
+from rpython.rlib.parsing.lexer import Lexer, DummyLexer
 from rpython.rlib.parsing.parsing import (Rule, PackratParser,
                                           ParseError as PyParseError)
 from rpython.rlib.parsing.tree import RPythonVisitor, Symbol, Nonterminal, Node
@@ -375,6 +376,3392 @@ def parse_file(filename):
 ############################################################################
 
 # generated code between this line and its other occurence
+class LambToAST(object):
+    def visit_lamb_source(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            expr = self.visit___lamb_source_rest_0_0(node.children[0])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__star_symbol0(node.children[0])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        expr = self.visit___lamb_source_rest_0_0(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit__maybe_symbol1(self, node):
+        #auto-generated code, don't edit
+        children = []
+        expr = self.visit_toplevel_expressions(node.children[0])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit__star_symbol0(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__star_symbol0(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit__plus_symbol0(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__plus_symbol0(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit__star_symbol2(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 2:
+            children = []
+            expr = self.visit__plus_symbol0(node.children[0])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
+            expr = self.visit_toplevel_expressions(node.children[1])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__plus_symbol0(node.children[0])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        expr = self.visit_toplevel_expressions(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        expr = self.visit__star_symbol2(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit__star_symbol3(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__star_symbol3(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_toplevel_expressions(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 2:
+            children = []
+            children.extend(self.visit_toplevel_expression(node.children[0]))
+            expr = self.visit___toplevel_expressions_rest_0_0(node.children[1])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_toplevel_expression(node.children[0]))
+        expr = self.visit__star_symbol2(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        expr = self.visit___toplevel_expressions_rest_0_0(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_toplevel_expression(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if node.children[0].symbol == 'application':
+            return self.visit_application(node.children[0])
+        return self.visit_definition(node.children[0])
+    def visit_expression(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if node.children[0].symbol == 'application':
+            return self.visit_application(node.children[0])
+        if node.children[0].symbol == 'constructor':
+            return self.visit_constructor(node.children[0])
+        if node.children[0].symbol == 'lambda':
+            return self.visit_lambda(node.children[0])
+        if node.children[0].symbol == 'primary':
+            return self.visit_primary(node.children[0])
+        if node.children[0].symbol == 'primitive':
+            return self.visit_primitive(node.children[0])
+        return self.visit_variable(node.children[0])
+    def visit_primary(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if node.children[0].symbol == 'INTEGER':
+            return [node.children[0]]
+        if node.children[0].symbol == 'QQSTRING':
+            return [node.children[0]]
+        return [node.children[0]]
+    def visit_variable(self, node):
+        #auto-generated code, don't edit
+        children = []
+        children.extend([node.children[0]])
+        return [Nonterminal(node.symbol, children)]
+    def visit_definition(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if node.children[2].symbol == 'expression':
+            children = []
+            children.extend([node.children[0]])
+            children.extend(self.visit_expression(node.children[2]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend([node.children[0]])
+        children.extend(self.visit_lambda(node.children[2]))
+        return [Nonterminal(node.symbol, children)]
+    def visit_constructor(self, node):
+        #auto-generated code, don't edit
+        children = []
+        children.extend([node.children[0]])
+        children.extend(self.visit_constructor_args(node.children[1]))
+        return [Nonterminal(node.symbol, children)]
+    def visit_constructor_args(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 2:
+            children = []
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit_arglist(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit__maybe_symbol4(self, node):
+        #auto-generated code, don't edit
+        children = []
+        return [Nonterminal(node.symbol, children)]
+    def visit__star_symbol5(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 2:
+            children = []
+            expr = self.visit____star_symbol5_rest_0_0(node.children[1])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__maybe_symbol4(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        expr = self.visit____star_symbol5_rest_0_0(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_arglist(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            children.extend(self.visit_expression(node.children[0]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_expression(node.children[0]))
+        expr = self.visit__star_symbol5(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_application(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 4:
+            children = []
+            children.extend(self.visit_expression(node.children[2]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_expression(node.children[2]))
+        children.extend(self.visit_application_args(node.children[3]))
+        return [Nonterminal(node.symbol, children)]
+    def visit__maybe_symbol6(self, node):
+        #auto-generated code, don't edit
+        children = []
+        return [Nonterminal(node.symbol, children)]
+    def visit__plus_symbol1(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 2:
+            children = []
+            children.extend(self.visit_expression(node.children[1]))
+            return [Nonterminal(node.symbol, children)]
+        if length == 3:
+            if node.children[1].symbol == '_maybe_symbol6':
+                children = []
+                expr = self.visit__maybe_symbol6(node.children[1])
+                assert len(expr) == 1
+                children.extend(expr[0].children)
+                children.extend(self.visit_expression(node.children[2]))
+                return [Nonterminal(node.symbol, children)]
+            children = []
+            children.extend(self.visit_expression(node.children[1]))
+            expr = self.visit__plus_symbol1(node.children[2])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__maybe_symbol6(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        children.extend(self.visit_expression(node.children[2]))
+        expr = self.visit__plus_symbol1(node.children[3])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_application_args(self, node):
+        #auto-generated code, don't edit
+        children = []
+        expr = self.visit__plus_symbol1(node.children[0])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit__maybe_symbol7(self, node):
+        #auto-generated code, don't edit
+        children = []
+        return [Nonterminal(node.symbol, children)]
+    def visit_lambda(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 3:
+            children = []
+            expr = self.visit_rules(node.children[2])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__maybe_symbol7(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        expr = self.visit_rules(node.children[3])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit__plus_symbol2(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 2:
+            children = []
+            children.extend(self.visit_rule(node.children[0]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_rule(node.children[0]))
+        expr = self.visit__plus_symbol2(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_rules(self, node):
+        #auto-generated code, don't edit
+        children = []
+        expr = self.visit__plus_symbol2(node.children[0])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit__maybe_symbol8(self, node):
+        #auto-generated code, don't edit
+        children = []
+        children.extend(self.visit_patterns(node.children[0]))
+        return [Nonterminal(node.symbol, children)]
+    def visit_rule(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 4:
+            children = []
+            children.extend(self.visit_expression(node.children[3]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__maybe_symbol8(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        children.extend(self.visit_expression(node.children[4]))
+        return [Nonterminal(node.symbol, children)]
+    def visit__maybe_symbol9(self, node):
+        #auto-generated code, don't edit
+        children = []
+        return [Nonterminal(node.symbol, children)]
+    def visit__star_symbol10(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 2:
+            children = []
+            expr = self.visit____star_symbol10_rest_0_0(node.children[1])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__maybe_symbol9(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        expr = self.visit____star_symbol10_rest_0_0(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_patterns(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            children.extend(self.visit_pattern(node.children[0]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_pattern(node.children[0]))
+        expr = self.visit__star_symbol10(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_pattern(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if node.children[0].symbol == 'constructor_pattern':
+            return self.visit_constructor_pattern(node.children[0])
+        if node.children[0].symbol == 'primary_pattern':
+            return self.visit_primary_pattern(node.children[0])
+        return self.visit_variable_pattern(node.children[0])
+    def visit_variable_pattern(self, node):
+        #auto-generated code, don't edit
+        children = []
+        expr = self.visit_variable(node.children[0])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_primary_pattern(self, node):
+        #auto-generated code, don't edit
+        children = []
+        children.extend(self.visit_primary(node.children[0]))
+        return [Nonterminal(node.symbol, children)]
+    def visit_constructor_pattern(self, node):
+        #auto-generated code, don't edit
+        children = []
+        children.extend([node.children[0]])
+        children.extend(self.visit_constructor_pattern_args(node.children[1]))
+        return [Nonterminal(node.symbol, children)]
+    def visit_constructor_pattern_args(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 2:
+            children = []
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit_pattern_arglist(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit__maybe_symbol11(self, node):
+        #auto-generated code, don't edit
+        children = []
+        return [Nonterminal(node.symbol, children)]
+    def visit__star_symbol12(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 2:
+            children = []
+            expr = self.visit____star_symbol12_rest_0_0(node.children[1])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__maybe_symbol11(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        expr = self.visit____star_symbol12_rest_0_0(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_pattern_arglist(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            children.extend(self.visit_pattern(node.children[0]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_pattern(node.children[0]))
+        expr = self.visit__star_symbol12(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_primitive(self, node):
+        #auto-generated code, don't edit
+        children = []
+        children.extend([node.children[1]])
+        return [Nonterminal(node.symbol, children)]
+    def visit___lamb_source_rest_0_0(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__maybe_symbol1(node.children[0])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit___toplevel_expressions_rest_0_0(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 0:
+            children = []
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__star_symbol3(node.children[0])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit____star_symbol5_rest_0_0(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            children.extend(self.visit_expression(node.children[0]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_expression(node.children[0]))
+        expr = self.visit__star_symbol5(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit____star_symbol10_rest_0_0(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            children.extend(self.visit_pattern(node.children[0]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_pattern(node.children[0]))
+        expr = self.visit__star_symbol10(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit____star_symbol12_rest_0_0(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            children.extend(self.visit_pattern(node.children[0]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_pattern(node.children[0]))
+        expr = self.visit__star_symbol12(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def transform(self, tree):
+        #auto-generated code, don't edit
+        assert isinstance(tree, Nonterminal)
+        assert tree.symbol == 'lamb_source'
+        r = self.visit_lamb_source(tree)
+        assert len(r) == 1
+        if not we_are_translated():
+            try:
+                if py.test.config.option.view:
+                    r[0].view()
+            except AttributeError:
+                pass
+        return r[0]
+parser = PackratParser([Rule('lamb_source', [['_star_symbol0', '__lamb_source_rest_0_0'], ['__lamb_source_rest_0_0']]),
+  Rule('_maybe_symbol1', [['toplevel_expressions']]),
+  Rule('_star_symbol0', [['NEWLINE', '_star_symbol0'], ['NEWLINE']]),
+  Rule('_plus_symbol0', [['NEWLINE', '_plus_symbol0'], ['NEWLINE']]),
+  Rule('_star_symbol2', [['_plus_symbol0', 'toplevel_expressions', '_star_symbol2'], ['_plus_symbol0', 'toplevel_expressions']]),
+  Rule('_star_symbol3', [['NEWLINE', '_star_symbol3'], ['NEWLINE']]),
+  Rule('toplevel_expressions', [['toplevel_expression', '_star_symbol2', '__toplevel_expressions_rest_0_0'], ['toplevel_expression', '__toplevel_expressions_rest_0_0']]),
+  Rule('toplevel_expression', [['definition'], ['application']]),
+  Rule('expression', [['constructor'], ['application'], ['lambda'], ['variable'], ['primitive'], ['primary']]),
+  Rule('primary', [['INTEGER'], ['QSTRING'], ['QQSTRING']]),
+  Rule('variable', [['NAME']]),
+  Rule('definition', [['NAME', 'DEFINEDAS', 'lambda'], ['NAME', 'DEFINEDAS', 'expression']]),
+  Rule('constructor', [['NAME', 'constructor_args']]),
+  Rule('constructor_args', [['LEFT_PARENTHESIS', 'arglist', 'RIGHT_PARENTHESIS'], ['LEFT_PARENTHESIS', 'RIGHT_PARENTHESIS']]),
+  Rule('_maybe_symbol4', [['NEWLINE']]),
+  Rule('_star_symbol5', [['__0_,', '_maybe_symbol4', '___star_symbol5_rest_0_0'], ['__0_,', '___star_symbol5_rest_0_0']]),
+  Rule('arglist', [['expression', '_star_symbol5'], ['expression']]),
+  Rule('application', [['MU', 'LEFT_PARENTHESIS', 'expression', 'application_args', 'RIGHT_PARENTHESIS'], ['MU', 'LEFT_PARENTHESIS', 'expression', 'RIGHT_PARENTHESIS']]),
+  Rule('_maybe_symbol6', [['NEWLINE']]),
+  Rule('_plus_symbol1', [['__0_,', '_maybe_symbol6', 'expression', '_plus_symbol1'], ['__0_,', 'expression', '_plus_symbol1'], ['__0_,', '_maybe_symbol6', 'expression'], ['__0_,', 'expression']]),
+  Rule('application_args', [['_plus_symbol1']]),
+  Rule('_maybe_symbol7', [['NEWLINE']]),
+  Rule('lambda', [['LAMBDA', '__1_.', '_maybe_symbol7', 'rules'], ['LAMBDA', '__1_.', 'rules']]),
+  Rule('_plus_symbol2', [['rule', 'NEWLINE', '_plus_symbol2'], ['rule', 'NEWLINE']]),
+  Rule('rules', [['_plus_symbol2']]),
+  Rule('_maybe_symbol8', [['patterns']]),
+  Rule('rule', [['INTEGER', '__1_.', '_maybe_symbol8', 'MAPSTO', 'expression'], ['INTEGER', '__1_.', 'MAPSTO', 'expression']]),
+  Rule('_maybe_symbol9', [['NEWLINE']]),
+  Rule('_star_symbol10', [['__0_,', '_maybe_symbol9', '___star_symbol10_rest_0_0'], ['__0_,', '___star_symbol10_rest_0_0']]),
+  Rule('patterns', [['pattern', '_star_symbol10'], ['pattern']]),
+  Rule('pattern', [['constructor_pattern'], ['variable_pattern'], ['primary_pattern']]),
+  Rule('variable_pattern', [['variable']]),
+  Rule('primary_pattern', [['primary']]),
+  Rule('constructor_pattern', [['NAME', 'constructor_pattern_args']]),
+  Rule('constructor_pattern_args', [['LEFT_PARENTHESIS', 'pattern_arglist', 'RIGHT_PARENTHESIS'], ['LEFT_PARENTHESIS', 'RIGHT_PARENTHESIS']]),
+  Rule('_maybe_symbol11', [['NEWLINE']]),
+  Rule('_star_symbol12', [['__0_,', '_maybe_symbol11', '___star_symbol12_rest_0_0'], ['__0_,', '___star_symbol12_rest_0_0']]),
+  Rule('pattern_arglist', [['pattern', '_star_symbol12'], ['pattern']]),
+  Rule('primitive', [['LEFT_DOUBLE_ANGLE', 'NAME', 'RIGHT_DOUBLE_ANGLE']]),
+  Rule('__lamb_source_rest_0_0', [['_maybe_symbol1', 'EOF'], ['EOF']]),
+  Rule('__toplevel_expressions_rest_0_0', [['_star_symbol3'], []]),
+  Rule('___star_symbol5_rest_0_0', [['expression', '_star_symbol5'], ['expression']]),
+  Rule('___star_symbol10_rest_0_0', [['pattern', '_star_symbol10'], ['pattern']]),
+  Rule('___star_symbol12_rest_0_0', [['pattern', '_star_symbol12'], ['pattern']])],
+ 'lamb_source')
+def recognize(runner, i):
+    #auto-generated code, don't edit
+    assert i >= 0
+    input = runner.text
+    state = 0
+    while 1:
+        if state == 0:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 0
+                return i
+            if ':' <= char <= '\x9e':
+                state = 1
+            elif '\xac' <= char <= '\xcd':
+                state = 1
+            elif '\xe3' <= char <= '\xff':
+                state = 1
+            elif '\xcf' <= char <= '\xe1':
+                state = 1
+            elif '\x0e' <= char <= '\x1f':
+                state = 1
+            elif '\xa0' <= char <= '\xa9':
+                state = 1
+            elif '\x00' <= char <= '\x08':
+                state = 1
+            elif '$' <= char <= "'":
+                state = 1
+            elif char == '!':
+                state = 1
+            elif char == '"':
+                state = 1
+            elif char == '*':
+                state = 1
+            elif char == '+':
+                state = 1
+            elif char == '\x0b':
+                state = 1
+            elif char == '-':
+                state = 1
+            elif char == '/':
+                state = 1
+            elif char == '\t':
+                state = 2
+            elif char == '\x0c':
+                state = 2
+            elif char == ' ':
+                state = 2
+            elif char == '(':
+                state = 3
+            elif char == ',':
+                state = 4
+            elif '0' <= char <= '9':
+                state = 5
+            elif char == '#':
+                state = 6
+            elif char == '\n':
+                state = 7
+            elif char == '\r':
+                state = 7
+            elif char == '.':
+                state = 8
+            elif char == ')':
+                state = 9
+            elif char == '\xce':
+                state = 10
+            elif char == '\xe2':
+                state = 11
+            else:
+                break
+        if state == 1:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 1
+                return i
+            if '/' <= char <= '\x9e':
+                state = 1
+                continue
+            elif '\xac' <= char <= '\xe1':
+                state = 1
+                continue
+            elif '\xe3' <= char <= '\xff':
+                state = 1
+                continue
+            elif '\x0e' <= char <= '\x1f':
+                state = 1
+                continue
+            elif '\xa0' <= char <= '\xa9':
+                state = 1
+                continue
+            elif '\x00' <= char <= '\x08':
+                state = 1
+                continue
+            elif '!' <= char <= "'":
+                state = 1
+                continue
+            elif char == '*':
+                state = 1
+                continue
+            elif char == '+':
+                state = 1
+                continue
+            elif char == '\x0b':
+                state = 1
+                continue
+            elif char == '-':
+                state = 1
+                continue
+            else:
+                break
+        if state == 2:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 2
+                return i
+            if char == '\t':
+                state = 2
+                continue
+            elif char == '\x0c':
+                state = 2
+                continue
+            elif char == ' ':
+                state = 2
+                continue
+            else:
+                break
+        if state == 5:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 5
+                return i
+            if '0' <= char <= '9':
+                state = 5
+                continue
+            else:
+                break
+        if state == 6:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 6
+                return i
+            if '/' <= char <= '\x9e':
+                state = 6
+                continue
+            elif '\xac' <= char <= '\xe1':
+                state = 6
+                continue
+            elif '\xe3' <= char <= '\xff':
+                state = 6
+                continue
+            elif '\x0e' <= char <= '\x1f':
+                state = 6
+                continue
+            elif '\xa0' <= char <= '\xa9':
+                state = 6
+                continue
+            elif '\x00' <= char <= '\x08':
+                state = 6
+                continue
+            elif '!' <= char <= "'":
+                state = 6
+                continue
+            elif char == '*':
+                state = 6
+                continue
+            elif char == '+':
+                state = 6
+                continue
+            elif char == '\x0b':
+                state = 6
+                continue
+            elif char == '-':
+                state = 6
+                continue
+            elif char == '\x0c':
+                state = 31
+            elif char == '\r':
+                state = 31
+            elif char == '(':
+                state = 31
+            elif char == ')':
+                state = 31
+            elif char == '\xaa':
+                state = 31
+            elif char == '\xab':
+                state = 31
+            elif char == '\t':
+                state = 31
+            elif char == ' ':
+                state = 31
+            elif char == ',':
+                state = 31
+            elif char == '.':
+                state = 31
+            elif char == '\x9f':
+                state = 31
+            elif char == '\xe2':
+                state = 31
+            else:
+                break
+        if state == 10:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 10
+                return i
+            if '/' <= char <= '\x9e':
+                state = 1
+                continue
+            elif '\xbd' <= char <= '\xe1':
+                state = 1
+                continue
+            elif '\xe3' <= char <= '\xff':
+                state = 1
+                continue
+            elif '\x0e' <= char <= '\x1f':
+                state = 1
+                continue
+            elif '\xac' <= char <= '\xba':
+                state = 1
+                continue
+            elif '\xa0' <= char <= '\xa9':
+                state = 1
+                continue
+            elif '\x00' <= char <= '\x08':
+                state = 1
+                continue
+            elif '!' <= char <= "'":
+                state = 1
+                continue
+            elif char == '*':
+                state = 1
+                continue
+            elif char == '+':
+                state = 1
+                continue
+            elif char == '\x0b':
+                state = 1
+                continue
+            elif char == '-':
+                state = 1
+                continue
+            elif char == '\xbb':
+                state = 29
+            elif char == '\xbc':
+                state = 30
+            else:
+                break
+        if state == 11:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 11
+                return ~i
+            if char == '\x89':
+                state = 12
+            elif char == '\x80':
+                state = 13
+            elif char == '\x9f':
+                state = 14
+            elif char == '\x86':
+                state = 15
+            else:
+                break
+        if state == 12:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 12
+                return ~i
+            if char == '\x94':
+                state = 28
+            else:
+                break
+        if state == 13:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 13
+                return ~i
+            if char == '\x98':
+                state = 19
+            elif char == '\x9c':
+                state = 20
+            else:
+                break
+        if state == 14:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 14
+                return ~i
+            if char == '\xab':
+                state = 17
+            elif char == '\xaa':
+                state = 18
+            else:
+                break
+        if state == 15:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 15
+                return ~i
+            if char == '\xa6':
+                state = 16
+            else:
+                break
+        if state == 19:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 19
+                return ~i
+            if char == '\xe2':
+                state = 25
+            elif '\x00' <= char <= '\x7f':
+                state = 19
+                continue
+            elif '\x9a' <= char <= '\xe1':
+                state = 19
+                continue
+            elif '\xe3' <= char <= '\xff':
+                state = 19
+                continue
+            elif '\x81' <= char <= '\x98':
+                state = 19
+                continue
+            else:
+                break
+        if state == 20:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 20
+                return ~i
+            if '\x00' <= char <= '\x7f':
+                state = 21
+            elif '\x9e' <= char <= '\xe1':
+                state = 21
+            elif '\xe3' <= char <= '\xff':
+                state = 21
+            elif '\x81' <= char <= '\x9c':
+                state = 21
+            else:
+                break
+        if state == 21:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 21
+                return ~i
+            if char == '\xe2':
+                state = 22
+            else:
+                break
+        if state == 22:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 22
+                return ~i
+            if char == '\x80':
+                state = 23
+            else:
+                break
+        if state == 23:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 23
+                return ~i
+            if char == '\x9d':
+                state = 24
+            else:
+                break
+        if state == 25:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 25
+                return ~i
+            if char == '\x80':
+                state = 26
+            else:
+                break
+        if state == 26:
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 26
+                return ~i
+            if char == '\x99':
+                state = 27
+            else:
+                break
+        if state == 29:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 29
+                return i
+            if '/' <= char <= '\x9e':
+                state = 1
+                continue
+            elif '\xac' <= char <= '\xe1':
+                state = 1
+                continue
+            elif '\xe3' <= char <= '\xff':
+                state = 1
+                continue
+            elif '\x0e' <= char <= '\x1f':
+                state = 1
+                continue
+            elif '\xa0' <= char <= '\xa9':
+                state = 1
+                continue
+            elif '\x00' <= char <= '\x08':
+                state = 1
+                continue
+            elif '!' <= char <= "'":
+                state = 1
+                continue
+            elif char == '*':
+                state = 1
+                continue
+            elif char == '+':
+                state = 1
+                continue
+            elif char == '\x0b':
+                state = 1
+                continue
+            elif char == '-':
+                state = 1
+                continue
+            else:
+                break
+        if state == 30:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 30
+                return i
+            if '/' <= char <= '\x9e':
+                state = 1
+                continue
+            elif '\xac' <= char <= '\xe1':
+                state = 1
+                continue
+            elif '\xe3' <= char <= '\xff':
+                state = 1
+                continue
+            elif '\x0e' <= char <= '\x1f':
+                state = 1
+                continue
+            elif '\xa0' <= char <= '\xa9':
+                state = 1
+                continue
+            elif '\x00' <= char <= '\x08':
+                state = 1
+                continue
+            elif '!' <= char <= "'":
+                state = 1
+                continue
+            elif char == '*':
+                state = 1
+                continue
+            elif char == '+':
+                state = 1
+                continue
+            elif char == '\x0b':
+                state = 1
+                continue
+            elif char == '-':
+                state = 1
+                continue
+            else:
+                break
+        if state == 31:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 31
+                return i
+            if '\x0b' <= char <= '\xff':
+                state = 31
+                continue
+            elif '\x00' <= char <= '\t':
+                state = 31
+                continue
+            else:
+                break
+        runner.last_matched_state = state
+        runner.last_matched_index = i - 1
+        runner.state = state
+        if i == len(input):
+            return i
+        else:
+            return ~i
+        break
+    runner.state = state
+    return ~i
+lexer = DummyLexer(recognize, DFA(32,
+ {(0, '\x00'): 1,
+  (0, '\x01'): 1,
+  (0, '\x02'): 1,
+  (0, '\x03'): 1,
+  (0, '\x04'): 1,
+  (0, '\x05'): 1,
+  (0, '\x06'): 1,
+  (0, '\x07'): 1,
+  (0, '\x08'): 1,
+  (0, '\t'): 2,
+  (0, '\n'): 7,
+  (0, '\x0b'): 1,
+  (0, '\x0c'): 2,
+  (0, '\r'): 7,
+  (0, '\x0e'): 1,
+  (0, '\x0f'): 1,
+  (0, '\x10'): 1,
+  (0, '\x11'): 1,
+  (0, '\x12'): 1,
+  (0, '\x13'): 1,
+  (0, '\x14'): 1,
+  (0, '\x15'): 1,
+  (0, '\x16'): 1,
+  (0, '\x17'): 1,
+  (0, '\x18'): 1,
+  (0, '\x19'): 1,
+  (0, '\x1a'): 1,
+  (0, '\x1b'): 1,
+  (0, '\x1c'): 1,
+  (0, '\x1d'): 1,
+  (0, '\x1e'): 1,
+  (0, '\x1f'): 1,
+  (0, ' '): 2,
+  (0, '!'): 1,
+  (0, '"'): 1,
+  (0, '#'): 6,
+  (0, '$'): 1,
+  (0, '%'): 1,
+  (0, '&'): 1,
+  (0, "'"): 1,
+  (0, '('): 3,
+  (0, ')'): 9,
+  (0, '*'): 1,
+  (0, '+'): 1,
+  (0, ','): 4,
+  (0, '-'): 1,
+  (0, '.'): 8,
+  (0, '/'): 1,
+  (0, '0'): 5,
+  (0, '1'): 5,
+  (0, '2'): 5,
+  (0, '3'): 5,
+  (0, '4'): 5,
+  (0, '5'): 5,
+  (0, '6'): 5,
+  (0, '7'): 5,
+  (0, '8'): 5,
+  (0, '9'): 5,
+  (0, ':'): 1,
+  (0, ';'): 1,
+  (0, '<'): 1,
+  (0, '='): 1,
+  (0, '>'): 1,
+  (0, '?'): 1,
+  (0, '@'): 1,
+  (0, 'A'): 1,
+  (0, 'B'): 1,
+  (0, 'C'): 1,
+  (0, 'D'): 1,
+  (0, 'E'): 1,
+  (0, 'F'): 1,
+  (0, 'G'): 1,
+  (0, 'H'): 1,
+  (0, 'I'): 1,
+  (0, 'J'): 1,
+  (0, 'K'): 1,
+  (0, 'L'): 1,
+  (0, 'M'): 1,
+  (0, 'N'): 1,
+  (0, 'O'): 1,
+  (0, 'P'): 1,
+  (0, 'Q'): 1,
+  (0, 'R'): 1,
+  (0, 'S'): 1,
+  (0, 'T'): 1,
+  (0, 'U'): 1,
+  (0, 'V'): 1,
+  (0, 'W'): 1,
+  (0, 'X'): 1,
+  (0, 'Y'): 1,
+  (0, 'Z'): 1,
+  (0, '['): 1,
+  (0, '\\'): 1,
+  (0, ']'): 1,
+  (0, '^'): 1,
+  (0, '_'): 1,
+  (0, '`'): 1,
+  (0, 'a'): 1,
+  (0, 'b'): 1,
+  (0, 'c'): 1,
+  (0, 'd'): 1,
+  (0, 'e'): 1,
+  (0, 'f'): 1,
+  (0, 'g'): 1,
+  (0, 'h'): 1,
+  (0, 'i'): 1,
+  (0, 'j'): 1,
+  (0, 'k'): 1,
+  (0, 'l'): 1,
+  (0, 'm'): 1,
+  (0, 'n'): 1,
+  (0, 'o'): 1,
+  (0, 'p'): 1,
+  (0, 'q'): 1,
+  (0, 'r'): 1,
+  (0, 's'): 1,
+  (0, 't'): 1,
+  (0, 'u'): 1,
+  (0, 'v'): 1,
+  (0, 'w'): 1,
+  (0, 'x'): 1,
+  (0, 'y'): 1,
+  (0, 'z'): 1,
+  (0, '{'): 1,
+  (0, '|'): 1,
+  (0, '}'): 1,
+  (0, '~'): 1,
+  (0, '\x7f'): 1,
+  (0, '\x80'): 1,
+  (0, '\x81'): 1,
+  (0, '\x82'): 1,
+  (0, '\x83'): 1,
+  (0, '\x84'): 1,
+  (0, '\x85'): 1,
+  (0, '\x86'): 1,
+  (0, '\x87'): 1,
+  (0, '\x88'): 1,
+  (0, '\x89'): 1,
+  (0, '\x8a'): 1,
+  (0, '\x8b'): 1,
+  (0, '\x8c'): 1,
+  (0, '\x8d'): 1,
+  (0, '\x8e'): 1,
+  (0, '\x8f'): 1,
+  (0, '\x90'): 1,
+  (0, '\x91'): 1,
+  (0, '\x92'): 1,
+  (0, '\x93'): 1,
+  (0, '\x94'): 1,
+  (0, '\x95'): 1,
+  (0, '\x96'): 1,
+  (0, '\x97'): 1,
+  (0, '\x98'): 1,
+  (0, '\x99'): 1,
+  (0, '\x9a'): 1,
+  (0, '\x9b'): 1,
+  (0, '\x9c'): 1,
+  (0, '\x9d'): 1,
+  (0, '\x9e'): 1,
+  (0, '\xa0'): 1,
+  (0, '\xa1'): 1,
+  (0, '\xa2'): 1,
+  (0, '\xa3'): 1,
+  (0, '\xa4'): 1,
+  (0, '\xa5'): 1,
+  (0, '\xa6'): 1,
+  (0, '\xa7'): 1,
+  (0, '\xa8'): 1,
+  (0, '\xa9'): 1,
+  (0, '\xac'): 1,
+  (0, '\xad'): 1,
+  (0, '\xae'): 1,
+  (0, '\xaf'): 1,
+  (0, '\xb0'): 1,
+  (0, '\xb1'): 1,
+  (0, '\xb2'): 1,
+  (0, '\xb3'): 1,
+  (0, '\xb4'): 1,
+  (0, '\xb5'): 1,
+  (0, '\xb6'): 1,
+  (0, '\xb7'): 1,
+  (0, '\xb8'): 1,
+  (0, '\xb9'): 1,
+  (0, '\xba'): 1,
+  (0, '\xbb'): 1,
+  (0, '\xbc'): 1,
+  (0, '\xbd'): 1,
+  (0, '\xbe'): 1,
+  (0, '\xbf'): 1,
+  (0, '\xc0'): 1,
+  (0, '\xc1'): 1,
+  (0, '\xc2'): 1,
+  (0, '\xc3'): 1,
+  (0, '\xc4'): 1,
+  (0, '\xc5'): 1,
+  (0, '\xc6'): 1,
+  (0, '\xc7'): 1,
+  (0, '\xc8'): 1,
+  (0, '\xc9'): 1,
+  (0, '\xca'): 1,
+  (0, '\xcb'): 1,
+  (0, '\xcc'): 1,
+  (0, '\xcd'): 1,
+  (0, '\xce'): 10,
+  (0, '\xcf'): 1,
+  (0, '\xd0'): 1,
+  (0, '\xd1'): 1,
+  (0, '\xd2'): 1,
+  (0, '\xd3'): 1,
+  (0, '\xd4'): 1,
+  (0, '\xd5'): 1,
+  (0, '\xd6'): 1,
+  (0, '\xd7'): 1,
+  (0, '\xd8'): 1,
+  (0, '\xd9'): 1,
+  (0, '\xda'): 1,
+  (0, '\xdb'): 1,
+  (0, '\xdc'): 1,
+  (0, '\xdd'): 1,
+  (0, '\xde'): 1,
+  (0, '\xdf'): 1,
+  (0, '\xe0'): 1,
+  (0, '\xe1'): 1,
+  (0, '\xe2'): 11,
+  (0, '\xe3'): 1,
+  (0, '\xe4'): 1,
+  (0, '\xe5'): 1,
+  (0, '\xe6'): 1,
+  (0, '\xe7'): 1,
+  (0, '\xe8'): 1,
+  (0, '\xe9'): 1,
+  (0, '\xea'): 1,
+  (0, '\xeb'): 1,
+  (0, '\xec'): 1,
+  (0, '\xed'): 1,
+  (0, '\xee'): 1,
+  (0, '\xef'): 1,
+  (0, '\xf0'): 1,
+  (0, '\xf1'): 1,
+  (0, '\xf2'): 1,
+  (0, '\xf3'): 1,
+  (0, '\xf4'): 1,
+  (0, '\xf5'): 1,
+  (0, '\xf6'): 1,
+  (0, '\xf7'): 1,
+  (0, '\xf8'): 1,
+  (0, '\xf9'): 1,
+  (0, '\xfa'): 1,
+  (0, '\xfb'): 1,
+  (0, '\xfc'): 1,
+  (0, '\xfd'): 1,
+  (0, '\xfe'): 1,
+  (0, '\xff'): 1,
+  (1, '\x00'): 1,
+  (1, '\x01'): 1,
+  (1, '\x02'): 1,
+  (1, '\x03'): 1,
+  (1, '\x04'): 1,
+  (1, '\x05'): 1,
+  (1, '\x06'): 1,
+  (1, '\x07'): 1,
+  (1, '\x08'): 1,
+  (1, '\x0b'): 1,
+  (1, '\x0e'): 1,
+  (1, '\x0f'): 1,
+  (1, '\x10'): 1,
+  (1, '\x11'): 1,
+  (1, '\x12'): 1,
+  (1, '\x13'): 1,
+  (1, '\x14'): 1,
+  (1, '\x15'): 1,
+  (1, '\x16'): 1,
+  (1, '\x17'): 1,
+  (1, '\x18'): 1,
+  (1, '\x19'): 1,
+  (1, '\x1a'): 1,
+  (1, '\x1b'): 1,
+  (1, '\x1c'): 1,
+  (1, '\x1d'): 1,
+  (1, '\x1e'): 1,
+  (1, '\x1f'): 1,
+  (1, '!'): 1,
+  (1, '"'): 1,
+  (1, '#'): 1,
+  (1, '$'): 1,
+  (1, '%'): 1,
+  (1, '&'): 1,
+  (1, "'"): 1,
+  (1, '*'): 1,
+  (1, '+'): 1,
+  (1, '-'): 1,
+  (1, '/'): 1,
+  (1, '0'): 1,
+  (1, '1'): 1,
+  (1, '2'): 1,
+  (1, '3'): 1,
+  (1, '4'): 1,
+  (1, '5'): 1,
+  (1, '6'): 1,
+  (1, '7'): 1,
+  (1, '8'): 1,
+  (1, '9'): 1,
+  (1, ':'): 1,
+  (1, ';'): 1,
+  (1, '<'): 1,
+  (1, '='): 1,
+  (1, '>'): 1,
+  (1, '?'): 1,
+  (1, '@'): 1,
+  (1, 'A'): 1,
+  (1, 'B'): 1,
+  (1, 'C'): 1,
+  (1, 'D'): 1,
+  (1, 'E'): 1,
+  (1, 'F'): 1,
+  (1, 'G'): 1,
+  (1, 'H'): 1,
+  (1, 'I'): 1,
+  (1, 'J'): 1,
+  (1, 'K'): 1,
+  (1, 'L'): 1,
+  (1, 'M'): 1,
+  (1, 'N'): 1,
+  (1, 'O'): 1,
+  (1, 'P'): 1,
+  (1, 'Q'): 1,
+  (1, 'R'): 1,
+  (1, 'S'): 1,
+  (1, 'T'): 1,
+  (1, 'U'): 1,
+  (1, 'V'): 1,
+  (1, 'W'): 1,
+  (1, 'X'): 1,
+  (1, 'Y'): 1,
+  (1, 'Z'): 1,
+  (1, '['): 1,
+  (1, '\\'): 1,
+  (1, ']'): 1,
+  (1, '^'): 1,
+  (1, '_'): 1,
+  (1, '`'): 1,
+  (1, 'a'): 1,
+  (1, 'b'): 1,
+  (1, 'c'): 1,
+  (1, 'd'): 1,
+  (1, 'e'): 1,
+  (1, 'f'): 1,
+  (1, 'g'): 1,
+  (1, 'h'): 1,
+  (1, 'i'): 1,
+  (1, 'j'): 1,
+  (1, 'k'): 1,
+  (1, 'l'): 1,
+  (1, 'm'): 1,
+  (1, 'n'): 1,
+  (1, 'o'): 1,
+  (1, 'p'): 1,
+  (1, 'q'): 1,
+  (1, 'r'): 1,
+  (1, 's'): 1,
+  (1, 't'): 1,
+  (1, 'u'): 1,
+  (1, 'v'): 1,
+  (1, 'w'): 1,
+  (1, 'x'): 1,
+  (1, 'y'): 1,
+  (1, 'z'): 1,
+  (1, '{'): 1,
+  (1, '|'): 1,
+  (1, '}'): 1,
+  (1, '~'): 1,
+  (1, '\x7f'): 1,
+  (1, '\x80'): 1,
+  (1, '\x81'): 1,
+  (1, '\x82'): 1,
+  (1, '\x83'): 1,
+  (1, '\x84'): 1,
+  (1, '\x85'): 1,
+  (1, '\x86'): 1,
+  (1, '\x87'): 1,
+  (1, '\x88'): 1,
+  (1, '\x89'): 1,
+  (1, '\x8a'): 1,
+  (1, '\x8b'): 1,
+  (1, '\x8c'): 1,
+  (1, '\x8d'): 1,
+  (1, '\x8e'): 1,
+  (1, '\x8f'): 1,
+  (1, '\x90'): 1,
+  (1, '\x91'): 1,
+  (1, '\x92'): 1,
+  (1, '\x93'): 1,
+  (1, '\x94'): 1,
+  (1, '\x95'): 1,
+  (1, '\x96'): 1,
+  (1, '\x97'): 1,
+  (1, '\x98'): 1,
+  (1, '\x99'): 1,
+  (1, '\x9a'): 1,
+  (1, '\x9b'): 1,
+  (1, '\x9c'): 1,
+  (1, '\x9d'): 1,
+  (1, '\x9e'): 1,
+  (1, '\xa0'): 1,
+  (1, '\xa1'): 1,
+  (1, '\xa2'): 1,
+  (1, '\xa3'): 1,
+  (1, '\xa4'): 1,
+  (1, '\xa5'): 1,
+  (1, '\xa6'): 1,
+  (1, '\xa7'): 1,
+  (1, '\xa8'): 1,
+  (1, '\xa9'): 1,
+  (1, '\xac'): 1,
+  (1, '\xad'): 1,
+  (1, '\xae'): 1,
+  (1, '\xaf'): 1,
+  (1, '\xb0'): 1,
+  (1, '\xb1'): 1,
+  (1, '\xb2'): 1,
+  (1, '\xb3'): 1,
+  (1, '\xb4'): 1,
+  (1, '\xb5'): 1,
+  (1, '\xb6'): 1,
+  (1, '\xb7'): 1,
+  (1, '\xb8'): 1,
+  (1, '\xb9'): 1,
+  (1, '\xba'): 1,
+  (1, '\xbb'): 1,
+  (1, '\xbc'): 1,
+  (1, '\xbd'): 1,
+  (1, '\xbe'): 1,
+  (1, '\xbf'): 1,
+  (1, '\xc0'): 1,
+  (1, '\xc1'): 1,
+  (1, '\xc2'): 1,
+  (1, '\xc3'): 1,
+  (1, '\xc4'): 1,
+  (1, '\xc5'): 1,
+  (1, '\xc6'): 1,
+  (1, '\xc7'): 1,
+  (1, '\xc8'): 1,
+  (1, '\xc9'): 1,
+  (1, '\xca'): 1,
+  (1, '\xcb'): 1,
+  (1, '\xcc'): 1,
+  (1, '\xcd'): 1,
+  (1, '\xce'): 1,
+  (1, '\xcf'): 1,
+  (1, '\xd0'): 1,
+  (1, '\xd1'): 1,
+  (1, '\xd2'): 1,
+  (1, '\xd3'): 1,
+  (1, '\xd4'): 1,
+  (1, '\xd5'): 1,
+  (1, '\xd6'): 1,
+  (1, '\xd7'): 1,
+  (1, '\xd8'): 1,
+  (1, '\xd9'): 1,
+  (1, '\xda'): 1,
+  (1, '\xdb'): 1,
+  (1, '\xdc'): 1,
+  (1, '\xdd'): 1,
+  (1, '\xde'): 1,
+  (1, '\xdf'): 1,
+  (1, '\xe0'): 1,
+  (1, '\xe1'): 1,
+  (1, '\xe3'): 1,
+  (1, '\xe4'): 1,
+  (1, '\xe5'): 1,
+  (1, '\xe6'): 1,
+  (1, '\xe7'): 1,
+  (1, '\xe8'): 1,
+  (1, '\xe9'): 1,
+  (1, '\xea'): 1,
+  (1, '\xeb'): 1,
+  (1, '\xec'): 1,
+  (1, '\xed'): 1,
+  (1, '\xee'): 1,
+  (1, '\xef'): 1,
+  (1, '\xf0'): 1,
+  (1, '\xf1'): 1,
+  (1, '\xf2'): 1,
+  (1, '\xf3'): 1,
+  (1, '\xf4'): 1,
+  (1, '\xf5'): 1,
+  (1, '\xf6'): 1,
+  (1, '\xf7'): 1,
+  (1, '\xf8'): 1,
+  (1, '\xf9'): 1,
+  (1, '\xfa'): 1,
+  (1, '\xfb'): 1,
+  (1, '\xfc'): 1,
+  (1, '\xfd'): 1,
+  (1, '\xfe'): 1,
+  (1, '\xff'): 1,
+  (2, '\t'): 2,
+  (2, '\x0c'): 2,
+  (2, ' '): 2,
+  (5, '0'): 5,
+  (5, '1'): 5,
+  (5, '2'): 5,
+  (5, '3'): 5,
+  (5, '4'): 5,
+  (5, '5'): 5,
+  (5, '6'): 5,
+  (5, '7'): 5,
+  (5, '8'): 5,
+  (5, '9'): 5,
+  (6, '\x00'): 6,
+  (6, '\x01'): 6,
+  (6, '\x02'): 6,
+  (6, '\x03'): 6,
+  (6, '\x04'): 6,
+  (6, '\x05'): 6,
+  (6, '\x06'): 6,
+  (6, '\x07'): 6,
+  (6, '\x08'): 6,
+  (6, '\t'): 31,
+  (6, '\x0b'): 6,
+  (6, '\x0c'): 31,
+  (6, '\r'): 31,
+  (6, '\x0e'): 6,
+  (6, '\x0f'): 6,
+  (6, '\x10'): 6,
+  (6, '\x11'): 6,
+  (6, '\x12'): 6,
+  (6, '\x13'): 6,
+  (6, '\x14'): 6,
+  (6, '\x15'): 6,
+  (6, '\x16'): 6,
+  (6, '\x17'): 6,
+  (6, '\x18'): 6,
+  (6, '\x19'): 6,
+  (6, '\x1a'): 6,
+  (6, '\x1b'): 6,
+  (6, '\x1c'): 6,
+  (6, '\x1d'): 6,
+  (6, '\x1e'): 6,
+  (6, '\x1f'): 6,
+  (6, ' '): 31,
+  (6, '!'): 6,
+  (6, '"'): 6,
+  (6, '#'): 6,
+  (6, '$'): 6,
+  (6, '%'): 6,
+  (6, '&'): 6,
+  (6, "'"): 6,
+  (6, '('): 31,
+  (6, ')'): 31,
+  (6, '*'): 6,
+  (6, '+'): 6,
+  (6, ','): 31,
+  (6, '-'): 6,
+  (6, '.'): 31,
+  (6, '/'): 6,
+  (6, '0'): 6,
+  (6, '1'): 6,
+  (6, '2'): 6,
+  (6, '3'): 6,
+  (6, '4'): 6,
+  (6, '5'): 6,
+  (6, '6'): 6,
+  (6, '7'): 6,
+  (6, '8'): 6,
+  (6, '9'): 6,
+  (6, ':'): 6,
+  (6, ';'): 6,
+  (6, '<'): 6,
+  (6, '='): 6,
+  (6, '>'): 6,
+  (6, '?'): 6,
+  (6, '@'): 6,
+  (6, 'A'): 6,
+  (6, 'B'): 6,
+  (6, 'C'): 6,
+  (6, 'D'): 6,
+  (6, 'E'): 6,
+  (6, 'F'): 6,
+  (6, 'G'): 6,
+  (6, 'H'): 6,
+  (6, 'I'): 6,
+  (6, 'J'): 6,
+  (6, 'K'): 6,
+  (6, 'L'): 6,
+  (6, 'M'): 6,
+  (6, 'N'): 6,
+  (6, 'O'): 6,
+  (6, 'P'): 6,
+  (6, 'Q'): 6,
+  (6, 'R'): 6,
+  (6, 'S'): 6,
+  (6, 'T'): 6,
+  (6, 'U'): 6,
+  (6, 'V'): 6,
+  (6, 'W'): 6,
+  (6, 'X'): 6,
+  (6, 'Y'): 6,
+  (6, 'Z'): 6,
+  (6, '['): 6,
+  (6, '\\'): 6,
+  (6, ']'): 6,
+  (6, '^'): 6,
+  (6, '_'): 6,
+  (6, '`'): 6,
+  (6, 'a'): 6,
+  (6, 'b'): 6,
+  (6, 'c'): 6,
+  (6, 'd'): 6,
+  (6, 'e'): 6,
+  (6, 'f'): 6,
+  (6, 'g'): 6,
+  (6, 'h'): 6,
+  (6, 'i'): 6,
+  (6, 'j'): 6,
+  (6, 'k'): 6,
+  (6, 'l'): 6,
+  (6, 'm'): 6,
+  (6, 'n'): 6,
+  (6, 'o'): 6,
+  (6, 'p'): 6,
+  (6, 'q'): 6,
+  (6, 'r'): 6,
+  (6, 's'): 6,
+  (6, 't'): 6,
+  (6, 'u'): 6,
+  (6, 'v'): 6,
+  (6, 'w'): 6,
+  (6, 'x'): 6,
+  (6, 'y'): 6,
+  (6, 'z'): 6,
+  (6, '{'): 6,
+  (6, '|'): 6,
+  (6, '}'): 6,
+  (6, '~'): 6,
+  (6, '\x7f'): 6,
+  (6, '\x80'): 6,
+  (6, '\x81'): 6,
+  (6, '\x82'): 6,
+  (6, '\x83'): 6,
+  (6, '\x84'): 6,
+  (6, '\x85'): 6,
+  (6, '\x86'): 6,
+  (6, '\x87'): 6,
+  (6, '\x88'): 6,
+  (6, '\x89'): 6,
+  (6, '\x8a'): 6,
+  (6, '\x8b'): 6,
+  (6, '\x8c'): 6,
+  (6, '\x8d'): 6,
+  (6, '\x8e'): 6,
+  (6, '\x8f'): 6,
+  (6, '\x90'): 6,
+  (6, '\x91'): 6,
+  (6, '\x92'): 6,
+  (6, '\x93'): 6,
+  (6, '\x94'): 6,
+  (6, '\x95'): 6,
+  (6, '\x96'): 6,
+  (6, '\x97'): 6,
+  (6, '\x98'): 6,
+  (6, '\x99'): 6,
+  (6, '\x9a'): 6,
+  (6, '\x9b'): 6,
+  (6, '\x9c'): 6,
+  (6, '\x9d'): 6,
+  (6, '\x9e'): 6,
+  (6, '\x9f'): 31,
+  (6, '\xa0'): 6,
+  (6, '\xa1'): 6,
+  (6, '\xa2'): 6,
+  (6, '\xa3'): 6,
+  (6, '\xa4'): 6,
+  (6, '\xa5'): 6,
+  (6, '\xa6'): 6,
+  (6, '\xa7'): 6,
+  (6, '\xa8'): 6,
+  (6, '\xa9'): 6,
+  (6, '\xaa'): 31,
+  (6, '\xab'): 31,
+  (6, '\xac'): 6,
+  (6, '\xad'): 6,
+  (6, '\xae'): 6,
+  (6, '\xaf'): 6,
+  (6, '\xb0'): 6,
+  (6, '\xb1'): 6,
+  (6, '\xb2'): 6,
+  (6, '\xb3'): 6,
+  (6, '\xb4'): 6,
+  (6, '\xb5'): 6,
+  (6, '\xb6'): 6,
+  (6, '\xb7'): 6,
+  (6, '\xb8'): 6,
+  (6, '\xb9'): 6,
+  (6, '\xba'): 6,
+  (6, '\xbb'): 6,
+  (6, '\xbc'): 6,
+  (6, '\xbd'): 6,
+  (6, '\xbe'): 6,
+  (6, '\xbf'): 6,
+  (6, '\xc0'): 6,
+  (6, '\xc1'): 6,
+  (6, '\xc2'): 6,
+  (6, '\xc3'): 6,
+  (6, '\xc4'): 6,
+  (6, '\xc5'): 6,
+  (6, '\xc6'): 6,
+  (6, '\xc7'): 6,
+  (6, '\xc8'): 6,
+  (6, '\xc9'): 6,
+  (6, '\xca'): 6,
+  (6, '\xcb'): 6,
+  (6, '\xcc'): 6,
+  (6, '\xcd'): 6,
+  (6, '\xce'): 6,
+  (6, '\xcf'): 6,
+  (6, '\xd0'): 6,
+  (6, '\xd1'): 6,
+  (6, '\xd2'): 6,
+  (6, '\xd3'): 6,
+  (6, '\xd4'): 6,
+  (6, '\xd5'): 6,
+  (6, '\xd6'): 6,
+  (6, '\xd7'): 6,
+  (6, '\xd8'): 6,
+  (6, '\xd9'): 6,
+  (6, '\xda'): 6,
+  (6, '\xdb'): 6,
+  (6, '\xdc'): 6,
+  (6, '\xdd'): 6,
+  (6, '\xde'): 6,
+  (6, '\xdf'): 6,
+  (6, '\xe0'): 6,
+  (6, '\xe1'): 6,
+  (6, '\xe2'): 31,
+  (6, '\xe3'): 6,
+  (6, '\xe4'): 6,
+  (6, '\xe5'): 6,
+  (6, '\xe6'): 6,
+  (6, '\xe7'): 6,
+  (6, '\xe8'): 6,
+  (6, '\xe9'): 6,
+  (6, '\xea'): 6,
+  (6, '\xeb'): 6,
+  (6, '\xec'): 6,
+  (6, '\xed'): 6,
+  (6, '\xee'): 6,
+  (6, '\xef'): 6,
+  (6, '\xf0'): 6,
+  (6, '\xf1'): 6,
+  (6, '\xf2'): 6,
+  (6, '\xf3'): 6,
+  (6, '\xf4'): 6,
+  (6, '\xf5'): 6,
+  (6, '\xf6'): 6,
+  (6, '\xf7'): 6,
+  (6, '\xf8'): 6,
+  (6, '\xf9'): 6,
+  (6, '\xfa'): 6,
+  (6, '\xfb'): 6,
+  (6, '\xfc'): 6,
+  (6, '\xfd'): 6,
+  (6, '\xfe'): 6,
+  (6, '\xff'): 6,
+  (10, '\x00'): 1,
+  (10, '\x01'): 1,
+  (10, '\x02'): 1,
+  (10, '\x03'): 1,
+  (10, '\x04'): 1,
+  (10, '\x05'): 1,
+  (10, '\x06'): 1,
+  (10, '\x07'): 1,
+  (10, '\x08'): 1,
+  (10, '\x0b'): 1,
+  (10, '\x0e'): 1,
+  (10, '\x0f'): 1,
+  (10, '\x10'): 1,
+  (10, '\x11'): 1,
+  (10, '\x12'): 1,
+  (10, '\x13'): 1,
+  (10, '\x14'): 1,
+  (10, '\x15'): 1,
+  (10, '\x16'): 1,
+  (10, '\x17'): 1,
+  (10, '\x18'): 1,
+  (10, '\x19'): 1,
+  (10, '\x1a'): 1,
+  (10, '\x1b'): 1,
+  (10, '\x1c'): 1,
+  (10, '\x1d'): 1,
+  (10, '\x1e'): 1,
+  (10, '\x1f'): 1,
+  (10, '!'): 1,
+  (10, '"'): 1,
+  (10, '#'): 1,
+  (10, '$'): 1,
+  (10, '%'): 1,
+  (10, '&'): 1,
+  (10, "'"): 1,
+  (10, '*'): 1,
+  (10, '+'): 1,
+  (10, '-'): 1,
+  (10, '/'): 1,
+  (10, '0'): 1,
+  (10, '1'): 1,
+  (10, '2'): 1,
+  (10, '3'): 1,
+  (10, '4'): 1,
+  (10, '5'): 1,
+  (10, '6'): 1,
+  (10, '7'): 1,
+  (10, '8'): 1,
+  (10, '9'): 1,
+  (10, ':'): 1,
+  (10, ';'): 1,
+  (10, '<'): 1,
+  (10, '='): 1,
+  (10, '>'): 1,
+  (10, '?'): 1,
+  (10, '@'): 1,
+  (10, 'A'): 1,
+  (10, 'B'): 1,
+  (10, 'C'): 1,
+  (10, 'D'): 1,
+  (10, 'E'): 1,
+  (10, 'F'): 1,
+  (10, 'G'): 1,
+  (10, 'H'): 1,
+  (10, 'I'): 1,
+  (10, 'J'): 1,
+  (10, 'K'): 1,
+  (10, 'L'): 1,
+  (10, 'M'): 1,
+  (10, 'N'): 1,
+  (10, 'O'): 1,
+  (10, 'P'): 1,
+  (10, 'Q'): 1,
+  (10, 'R'): 1,
+  (10, 'S'): 1,
+  (10, 'T'): 1,
+  (10, 'U'): 1,
+  (10, 'V'): 1,
+  (10, 'W'): 1,
+  (10, 'X'): 1,
+  (10, 'Y'): 1,
+  (10, 'Z'): 1,
+  (10, '['): 1,
+  (10, '\\'): 1,
+  (10, ']'): 1,
+  (10, '^'): 1,
+  (10, '_'): 1,
+  (10, '`'): 1,
+  (10, 'a'): 1,
+  (10, 'b'): 1,
+  (10, 'c'): 1,
+  (10, 'd'): 1,
+  (10, 'e'): 1,
+  (10, 'f'): 1,
+  (10, 'g'): 1,
+  (10, 'h'): 1,
+  (10, 'i'): 1,
+  (10, 'j'): 1,
+  (10, 'k'): 1,
+  (10, 'l'): 1,
+  (10, 'm'): 1,
+  (10, 'n'): 1,
+  (10, 'o'): 1,
+  (10, 'p'): 1,
+  (10, 'q'): 1,
+  (10, 'r'): 1,
+  (10, 's'): 1,
+  (10, 't'): 1,
+  (10, 'u'): 1,
+  (10, 'v'): 1,
+  (10, 'w'): 1,
+  (10, 'x'): 1,
+  (10, 'y'): 1,
+  (10, 'z'): 1,
+  (10, '{'): 1,
+  (10, '|'): 1,
+  (10, '}'): 1,
+  (10, '~'): 1,
+  (10, '\x7f'): 1,
+  (10, '\x80'): 1,
+  (10, '\x81'): 1,
+  (10, '\x82'): 1,
+  (10, '\x83'): 1,
+  (10, '\x84'): 1,
+  (10, '\x85'): 1,
+  (10, '\x86'): 1,
+  (10, '\x87'): 1,
+  (10, '\x88'): 1,
+  (10, '\x89'): 1,
+  (10, '\x8a'): 1,
+  (10, '\x8b'): 1,
+  (10, '\x8c'): 1,
+  (10, '\x8d'): 1,
+  (10, '\x8e'): 1,
+  (10, '\x8f'): 1,
+  (10, '\x90'): 1,
+  (10, '\x91'): 1,
+  (10, '\x92'): 1,
+  (10, '\x93'): 1,
+  (10, '\x94'): 1,
+  (10, '\x95'): 1,
+  (10, '\x96'): 1,
+  (10, '\x97'): 1,
+  (10, '\x98'): 1,
+  (10, '\x99'): 1,
+  (10, '\x9a'): 1,
+  (10, '\x9b'): 1,
+  (10, '\x9c'): 1,
+  (10, '\x9d'): 1,
+  (10, '\x9e'): 1,
+  (10, '\xa0'): 1,
+  (10, '\xa1'): 1,
+  (10, '\xa2'): 1,
+  (10, '\xa3'): 1,
+  (10, '\xa4'): 1,
+  (10, '\xa5'): 1,
+  (10, '\xa6'): 1,
+  (10, '\xa7'): 1,
+  (10, '\xa8'): 1,
+  (10, '\xa9'): 1,
+  (10, '\xac'): 1,
+  (10, '\xad'): 1,
+  (10, '\xae'): 1,
+  (10, '\xaf'): 1,
+  (10, '\xb0'): 1,
+  (10, '\xb1'): 1,
+  (10, '\xb2'): 1,
+  (10, '\xb3'): 1,
+  (10, '\xb4'): 1,
+  (10, '\xb5'): 1,
+  (10, '\xb6'): 1,
+  (10, '\xb7'): 1,
+  (10, '\xb8'): 1,
+  (10, '\xb9'): 1,
+  (10, '\xba'): 1,
+  (10, '\xbb'): 29,
+  (10, '\xbc'): 30,
+  (10, '\xbd'): 1,
+  (10, '\xbe'): 1,
+  (10, '\xbf'): 1,
+  (10, '\xc0'): 1,
+  (10, '\xc1'): 1,
+  (10, '\xc2'): 1,
+  (10, '\xc3'): 1,
+  (10, '\xc4'): 1,
+  (10, '\xc5'): 1,
+  (10, '\xc6'): 1,
+  (10, '\xc7'): 1,
+  (10, '\xc8'): 1,
+  (10, '\xc9'): 1,
+  (10, '\xca'): 1,
+  (10, '\xcb'): 1,
+  (10, '\xcc'): 1,
+  (10, '\xcd'): 1,
+  (10, '\xce'): 1,
+  (10, '\xcf'): 1,
+  (10, '\xd0'): 1,
+  (10, '\xd1'): 1,
+  (10, '\xd2'): 1,
+  (10, '\xd3'): 1,
+  (10, '\xd4'): 1,
+  (10, '\xd5'): 1,
+  (10, '\xd6'): 1,
+  (10, '\xd7'): 1,
+  (10, '\xd8'): 1,
+  (10, '\xd9'): 1,
+  (10, '\xda'): 1,
+  (10, '\xdb'): 1,
+  (10, '\xdc'): 1,
+  (10, '\xdd'): 1,
+  (10, '\xde'): 1,
+  (10, '\xdf'): 1,
+  (10, '\xe0'): 1,
+  (10, '\xe1'): 1,
+  (10, '\xe3'): 1,
+  (10, '\xe4'): 1,
+  (10, '\xe5'): 1,
+  (10, '\xe6'): 1,
+  (10, '\xe7'): 1,
+  (10, '\xe8'): 1,
+  (10, '\xe9'): 1,
+  (10, '\xea'): 1,
+  (10, '\xeb'): 1,
+  (10, '\xec'): 1,
+  (10, '\xed'): 1,
+  (10, '\xee'): 1,
+  (10, '\xef'): 1,
+  (10, '\xf0'): 1,
+  (10, '\xf1'): 1,
+  (10, '\xf2'): 1,
+  (10, '\xf3'): 1,
+  (10, '\xf4'): 1,
+  (10, '\xf5'): 1,
+  (10, '\xf6'): 1,
+  (10, '\xf7'): 1,
+  (10, '\xf8'): 1,
+  (10, '\xf9'): 1,
+  (10, '\xfa'): 1,
+  (10, '\xfb'): 1,
+  (10, '\xfc'): 1,
+  (10, '\xfd'): 1,
+  (10, '\xfe'): 1,
+  (10, '\xff'): 1,
+  (11, '\x80'): 13,
+  (11, '\x86'): 15,
+  (11, '\x89'): 12,
+  (11, '\x9f'): 14,
+  (12, '\x94'): 28,
+  (13, '\x98'): 19,
+  (13, '\x9c'): 20,
+  (14, '\xaa'): 18,
+  (14, '\xab'): 17,
+  (15, '\xa6'): 16,
+  (19, '\x00'): 19,
+  (19, '\x01'): 19,
+  (19, '\x02'): 19,
+  (19, '\x03'): 19,
+  (19, '\x04'): 19,
+  (19, '\x05'): 19,
+  (19, '\x06'): 19,
+  (19, '\x07'): 19,
+  (19, '\x08'): 19,
+  (19, '\t'): 19,
+  (19, '\n'): 19,
+  (19, '\x0b'): 19,
+  (19, '\x0c'): 19,
+  (19, '\r'): 19,
+  (19, '\x0e'): 19,
+  (19, '\x0f'): 19,
+  (19, '\x10'): 19,
+  (19, '\x11'): 19,
+  (19, '\x12'): 19,
+  (19, '\x13'): 19,
+  (19, '\x14'): 19,
+  (19, '\x15'): 19,
+  (19, '\x16'): 19,
+  (19, '\x17'): 19,
+  (19, '\x18'): 19,
+  (19, '\x19'): 19,
+  (19, '\x1a'): 19,
+  (19, '\x1b'): 19,
+  (19, '\x1c'): 19,
+  (19, '\x1d'): 19,
+  (19, '\x1e'): 19,
+  (19, '\x1f'): 19,
+  (19, ' '): 19,
+  (19, '!'): 19,
+  (19, '"'): 19,
+  (19, '#'): 19,
+  (19, '$'): 19,
+  (19, '%'): 19,
+  (19, '&'): 19,
+  (19, "'"): 19,
+  (19, '('): 19,
+  (19, ')'): 19,
+  (19, '*'): 19,
+  (19, '+'): 19,
+  (19, ','): 19,
+  (19, '-'): 19,
+  (19, '.'): 19,
+  (19, '/'): 19,
+  (19, '0'): 19,
+  (19, '1'): 19,
+  (19, '2'): 19,
+  (19, '3'): 19,
+  (19, '4'): 19,
+  (19, '5'): 19,
+  (19, '6'): 19,
+  (19, '7'): 19,
+  (19, '8'): 19,
+  (19, '9'): 19,
+  (19, ':'): 19,
+  (19, ';'): 19,
+  (19, '<'): 19,
+  (19, '='): 19,
+  (19, '>'): 19,
+  (19, '?'): 19,
+  (19, '@'): 19,
+  (19, 'A'): 19,
+  (19, 'B'): 19,
+  (19, 'C'): 19,
+  (19, 'D'): 19,
+  (19, 'E'): 19,
+  (19, 'F'): 19,
+  (19, 'G'): 19,
+  (19, 'H'): 19,
+  (19, 'I'): 19,
+  (19, 'J'): 19,
+  (19, 'K'): 19,
+  (19, 'L'): 19,
+  (19, 'M'): 19,
+  (19, 'N'): 19,
+  (19, 'O'): 19,
+  (19, 'P'): 19,
+  (19, 'Q'): 19,
+  (19, 'R'): 19,
+  (19, 'S'): 19,
+  (19, 'T'): 19,
+  (19, 'U'): 19,
+  (19, 'V'): 19,
+  (19, 'W'): 19,
+  (19, 'X'): 19,
+  (19, 'Y'): 19,
+  (19, 'Z'): 19,
+  (19, '['): 19,
+  (19, '\\'): 19,
+  (19, ']'): 19,
+  (19, '^'): 19,
+  (19, '_'): 19,
+  (19, '`'): 19,
+  (19, 'a'): 19,
+  (19, 'b'): 19,
+  (19, 'c'): 19,
+  (19, 'd'): 19,
+  (19, 'e'): 19,
+  (19, 'f'): 19,
+  (19, 'g'): 19,
+  (19, 'h'): 19,
+  (19, 'i'): 19,
+  (19, 'j'): 19,
+  (19, 'k'): 19,
+  (19, 'l'): 19,
+  (19, 'm'): 19,
+  (19, 'n'): 19,
+  (19, 'o'): 19,
+  (19, 'p'): 19,
+  (19, 'q'): 19,
+  (19, 'r'): 19,
+  (19, 's'): 19,
+  (19, 't'): 19,
+  (19, 'u'): 19,
+  (19, 'v'): 19,
+  (19, 'w'): 19,
+  (19, 'x'): 19,
+  (19, 'y'): 19,
+  (19, 'z'): 19,
+  (19, '{'): 19,
+  (19, '|'): 19,
+  (19, '}'): 19,
+  (19, '~'): 19,
+  (19, '\x7f'): 19,
+  (19, '\x81'): 19,
+  (19, '\x82'): 19,
+  (19, '\x83'): 19,
+  (19, '\x84'): 19,
+  (19, '\x85'): 19,
+  (19, '\x86'): 19,
+  (19, '\x87'): 19,
+  (19, '\x88'): 19,
+  (19, '\x89'): 19,
+  (19, '\x8a'): 19,
+  (19, '\x8b'): 19,
+  (19, '\x8c'): 19,
+  (19, '\x8d'): 19,
+  (19, '\x8e'): 19,
+  (19, '\x8f'): 19,
+  (19, '\x90'): 19,
+  (19, '\x91'): 19,
+  (19, '\x92'): 19,
+  (19, '\x93'): 19,
+  (19, '\x94'): 19,
+  (19, '\x95'): 19,
+  (19, '\x96'): 19,
+  (19, '\x97'): 19,
+  (19, '\x98'): 19,
+  (19, '\x9a'): 19,
+  (19, '\x9b'): 19,
+  (19, '\x9c'): 19,
+  (19, '\x9d'): 19,
+  (19, '\x9e'): 19,
+  (19, '\x9f'): 19,
+  (19, '\xa0'): 19,
+  (19, '\xa1'): 19,
+  (19, '\xa2'): 19,
+  (19, '\xa3'): 19,
+  (19, '\xa4'): 19,
+  (19, '\xa5'): 19,
+  (19, '\xa6'): 19,
+  (19, '\xa7'): 19,
+  (19, '\xa8'): 19,
+  (19, '\xa9'): 19,
+  (19, '\xaa'): 19,
+  (19, '\xab'): 19,
+  (19, '\xac'): 19,
+  (19, '\xad'): 19,
+  (19, '\xae'): 19,
+  (19, '\xaf'): 19,
+  (19, '\xb0'): 19,
+  (19, '\xb1'): 19,
+  (19, '\xb2'): 19,
+  (19, '\xb3'): 19,
+  (19, '\xb4'): 19,
+  (19, '\xb5'): 19,
+  (19, '\xb6'): 19,
+  (19, '\xb7'): 19,
+  (19, '\xb8'): 19,
+  (19, '\xb9'): 19,
+  (19, '\xba'): 19,
+  (19, '\xbb'): 19,
+  (19, '\xbc'): 19,
+  (19, '\xbd'): 19,
+  (19, '\xbe'): 19,
+  (19, '\xbf'): 19,
+  (19, '\xc0'): 19,
+  (19, '\xc1'): 19,
+  (19, '\xc2'): 19,
+  (19, '\xc3'): 19,
+  (19, '\xc4'): 19,
+  (19, '\xc5'): 19,
+  (19, '\xc6'): 19,
+  (19, '\xc7'): 19,
+  (19, '\xc8'): 19,
+  (19, '\xc9'): 19,
+  (19, '\xca'): 19,
+  (19, '\xcb'): 19,
+  (19, '\xcc'): 19,
+  (19, '\xcd'): 19,
+  (19, '\xce'): 19,
+  (19, '\xcf'): 19,
+  (19, '\xd0'): 19,
+  (19, '\xd1'): 19,
+  (19, '\xd2'): 19,
+  (19, '\xd3'): 19,
+  (19, '\xd4'): 19,
+  (19, '\xd5'): 19,
+  (19, '\xd6'): 19,
+  (19, '\xd7'): 19,
+  (19, '\xd8'): 19,
+  (19, '\xd9'): 19,
+  (19, '\xda'): 19,
+  (19, '\xdb'): 19,
+  (19, '\xdc'): 19,
+  (19, '\xdd'): 19,
+  (19, '\xde'): 19,
+  (19, '\xdf'): 19,
+  (19, '\xe0'): 19,
+  (19, '\xe1'): 19,
+  (19, '\xe2'): 25,
+  (19, '\xe3'): 19,
+  (19, '\xe4'): 19,
+  (19, '\xe5'): 19,
+  (19, '\xe6'): 19,
+  (19, '\xe7'): 19,
+  (19, '\xe8'): 19,
+  (19, '\xe9'): 19,
+  (19, '\xea'): 19,
+  (19, '\xeb'): 19,
+  (19, '\xec'): 19,
+  (19, '\xed'): 19,
+  (19, '\xee'): 19,
+  (19, '\xef'): 19,
+  (19, '\xf0'): 19,
+  (19, '\xf1'): 19,
+  (19, '\xf2'): 19,
+  (19, '\xf3'): 19,
+  (19, '\xf4'): 19,
+  (19, '\xf5'): 19,
+  (19, '\xf6'): 19,
+  (19, '\xf7'): 19,
+  (19, '\xf8'): 19,
+  (19, '\xf9'): 19,
+  (19, '\xfa'): 19,
+  (19, '\xfb'): 19,
+  (19, '\xfc'): 19,
+  (19, '\xfd'): 19,
+  (19, '\xfe'): 19,
+  (19, '\xff'): 19,
+  (20, '\x00'): 21,
+  (20, '\x01'): 21,
+  (20, '\x02'): 21,
+  (20, '\x03'): 21,
+  (20, '\x04'): 21,
+  (20, '\x05'): 21,
+  (20, '\x06'): 21,
+  (20, '\x07'): 21,
+  (20, '\x08'): 21,
+  (20, '\t'): 21,
+  (20, '\n'): 21,
+  (20, '\x0b'): 21,
+  (20, '\x0c'): 21,
+  (20, '\r'): 21,
+  (20, '\x0e'): 21,
+  (20, '\x0f'): 21,
+  (20, '\x10'): 21,
+  (20, '\x11'): 21,
+  (20, '\x12'): 21,
+  (20, '\x13'): 21,
+  (20, '\x14'): 21,
+  (20, '\x15'): 21,
+  (20, '\x16'): 21,
+  (20, '\x17'): 21,
+  (20, '\x18'): 21,
+  (20, '\x19'): 21,
+  (20, '\x1a'): 21,
+  (20, '\x1b'): 21,
+  (20, '\x1c'): 21,
+  (20, '\x1d'): 21,
+  (20, '\x1e'): 21,
+  (20, '\x1f'): 21,
+  (20, ' '): 21,
+  (20, '!'): 21,
+  (20, '"'): 21,
+  (20, '#'): 21,
+  (20, '$'): 21,
+  (20, '%'): 21,
+  (20, '&'): 21,
+  (20, "'"): 21,
+  (20, '('): 21,
+  (20, ')'): 21,
+  (20, '*'): 21,
+  (20, '+'): 21,
+  (20, ','): 21,
+  (20, '-'): 21,
+  (20, '.'): 21,
+  (20, '/'): 21,
+  (20, '0'): 21,
+  (20, '1'): 21,
+  (20, '2'): 21,
+  (20, '3'): 21,
+  (20, '4'): 21,
+  (20, '5'): 21,
+  (20, '6'): 21,
+  (20, '7'): 21,
+  (20, '8'): 21,
+  (20, '9'): 21,
+  (20, ':'): 21,
+  (20, ';'): 21,
+  (20, '<'): 21,
+  (20, '='): 21,
+  (20, '>'): 21,
+  (20, '?'): 21,
+  (20, '@'): 21,
+  (20, 'A'): 21,
+  (20, 'B'): 21,
+  (20, 'C'): 21,
+  (20, 'D'): 21,
+  (20, 'E'): 21,
+  (20, 'F'): 21,
+  (20, 'G'): 21,
+  (20, 'H'): 21,
+  (20, 'I'): 21,
+  (20, 'J'): 21,
+  (20, 'K'): 21,
+  (20, 'L'): 21,
+  (20, 'M'): 21,
+  (20, 'N'): 21,
+  (20, 'O'): 21,
+  (20, 'P'): 21,
+  (20, 'Q'): 21,
+  (20, 'R'): 21,
+  (20, 'S'): 21,
+  (20, 'T'): 21,
+  (20, 'U'): 21,
+  (20, 'V'): 21,
+  (20, 'W'): 21,
+  (20, 'X'): 21,
+  (20, 'Y'): 21,
+  (20, 'Z'): 21,
+  (20, '['): 21,
+  (20, '\\'): 21,
+  (20, ']'): 21,
+  (20, '^'): 21,
+  (20, '_'): 21,
+  (20, '`'): 21,
+  (20, 'a'): 21,
+  (20, 'b'): 21,
+  (20, 'c'): 21,
+  (20, 'd'): 21,
+  (20, 'e'): 21,
+  (20, 'f'): 21,
+  (20, 'g'): 21,
+  (20, 'h'): 21,
+  (20, 'i'): 21,
+  (20, 'j'): 21,
+  (20, 'k'): 21,
+  (20, 'l'): 21,
+  (20, 'm'): 21,
+  (20, 'n'): 21,
+  (20, 'o'): 21,
+  (20, 'p'): 21,
+  (20, 'q'): 21,
+  (20, 'r'): 21,
+  (20, 's'): 21,
+  (20, 't'): 21,
+  (20, 'u'): 21,
+  (20, 'v'): 21,
+  (20, 'w'): 21,
+  (20, 'x'): 21,
+  (20, 'y'): 21,
+  (20, 'z'): 21,
+  (20, '{'): 21,
+  (20, '|'): 21,
+  (20, '}'): 21,
+  (20, '~'): 21,
+  (20, '\x7f'): 21,
+  (20, '\x81'): 21,
+  (20, '\x82'): 21,
+  (20, '\x83'): 21,
+  (20, '\x84'): 21,
+  (20, '\x85'): 21,
+  (20, '\x86'): 21,
+  (20, '\x87'): 21,
+  (20, '\x88'): 21,
+  (20, '\x89'): 21,
+  (20, '\x8a'): 21,
+  (20, '\x8b'): 21,
+  (20, '\x8c'): 21,
+  (20, '\x8d'): 21,
+  (20, '\x8e'): 21,
+  (20, '\x8f'): 21,
+  (20, '\x90'): 21,
+  (20, '\x91'): 21,
+  (20, '\x92'): 21,
+  (20, '\x93'): 21,
+  (20, '\x94'): 21,
+  (20, '\x95'): 21,
+  (20, '\x96'): 21,
+  (20, '\x97'): 21,
+  (20, '\x98'): 21,
+  (20, '\x99'): 21,
+  (20, '\x9a'): 21,
+  (20, '\x9b'): 21,
+  (20, '\x9c'): 21,
+  (20, '\x9e'): 21,
+  (20, '\x9f'): 21,
+  (20, '\xa0'): 21,
+  (20, '\xa1'): 21,
+  (20, '\xa2'): 21,
+  (20, '\xa3'): 21,
+  (20, '\xa4'): 21,
+  (20, '\xa5'): 21,
+  (20, '\xa6'): 21,
+  (20, '\xa7'): 21,
+  (20, '\xa8'): 21,
+  (20, '\xa9'): 21,
+  (20, '\xaa'): 21,
+  (20, '\xab'): 21,
+  (20, '\xac'): 21,
+  (20, '\xad'): 21,
+  (20, '\xae'): 21,
+  (20, '\xaf'): 21,
+  (20, '\xb0'): 21,
+  (20, '\xb1'): 21,
+  (20, '\xb2'): 21,
+  (20, '\xb3'): 21,
+  (20, '\xb4'): 21,
+  (20, '\xb5'): 21,
+  (20, '\xb6'): 21,
+  (20, '\xb7'): 21,
+  (20, '\xb8'): 21,
+  (20, '\xb9'): 21,
+  (20, '\xba'): 21,
+  (20, '\xbb'): 21,
+  (20, '\xbc'): 21,
+  (20, '\xbd'): 21,
+  (20, '\xbe'): 21,
+  (20, '\xbf'): 21,
+  (20, '\xc0'): 21,
+  (20, '\xc1'): 21,
+  (20, '\xc2'): 21,
+  (20, '\xc3'): 21,
+  (20, '\xc4'): 21,
+  (20, '\xc5'): 21,
+  (20, '\xc6'): 21,
+  (20, '\xc7'): 21,
+  (20, '\xc8'): 21,
+  (20, '\xc9'): 21,
+  (20, '\xca'): 21,
+  (20, '\xcb'): 21,
+  (20, '\xcc'): 21,
+  (20, '\xcd'): 21,
+  (20, '\xce'): 21,
+  (20, '\xcf'): 21,
+  (20, '\xd0'): 21,
+  (20, '\xd1'): 21,
+  (20, '\xd2'): 21,
+  (20, '\xd3'): 21,
+  (20, '\xd4'): 21,
+  (20, '\xd5'): 21,
+  (20, '\xd6'): 21,
+  (20, '\xd7'): 21,
+  (20, '\xd8'): 21,
+  (20, '\xd9'): 21,
+  (20, '\xda'): 21,
+  (20, '\xdb'): 21,
+  (20, '\xdc'): 21,
+  (20, '\xdd'): 21,
+  (20, '\xde'): 21,
+  (20, '\xdf'): 21,
+  (20, '\xe0'): 21,
+  (20, '\xe1'): 21,
+  (20, '\xe3'): 21,
+  (20, '\xe4'): 21,
+  (20, '\xe5'): 21,
+  (20, '\xe6'): 21,
+  (20, '\xe7'): 21,
+  (20, '\xe8'): 21,
+  (20, '\xe9'): 21,
+  (20, '\xea'): 21,
+  (20, '\xeb'): 21,
+  (20, '\xec'): 21,
+  (20, '\xed'): 21,
+  (20, '\xee'): 21,
+  (20, '\xef'): 21,
+  (20, '\xf0'): 21,
+  (20, '\xf1'): 21,
+  (20, '\xf2'): 21,
+  (20, '\xf3'): 21,
+  (20, '\xf4'): 21,
+  (20, '\xf5'): 21,
+  (20, '\xf6'): 21,
+  (20, '\xf7'): 21,
+  (20, '\xf8'): 21,
+  (20, '\xf9'): 21,
+  (20, '\xfa'): 21,
+  (20, '\xfb'): 21,
+  (20, '\xfc'): 21,
+  (20, '\xfd'): 21,
+  (20, '\xfe'): 21,
+  (20, '\xff'): 21,
+  (21, '\xe2'): 22,
+  (22, '\x80'): 23,
+  (23, '\x9d'): 24,
+  (25, '\x80'): 26,
+  (26, '\x99'): 27,
+  (29, '\x00'): 1,
+  (29, '\x01'): 1,
+  (29, '\x02'): 1,
+  (29, '\x03'): 1,
+  (29, '\x04'): 1,
+  (29, '\x05'): 1,
+  (29, '\x06'): 1,
+  (29, '\x07'): 1,
+  (29, '\x08'): 1,
+  (29, '\x0b'): 1,
+  (29, '\x0e'): 1,
+  (29, '\x0f'): 1,
+  (29, '\x10'): 1,
+  (29, '\x11'): 1,
+  (29, '\x12'): 1,
+  (29, '\x13'): 1,
+  (29, '\x14'): 1,
+  (29, '\x15'): 1,
+  (29, '\x16'): 1,
+  (29, '\x17'): 1,
+  (29, '\x18'): 1,
+  (29, '\x19'): 1,
+  (29, '\x1a'): 1,
+  (29, '\x1b'): 1,
+  (29, '\x1c'): 1,
+  (29, '\x1d'): 1,
+  (29, '\x1e'): 1,
+  (29, '\x1f'): 1,
+  (29, '!'): 1,
+  (29, '"'): 1,
+  (29, '#'): 1,
+  (29, '$'): 1,
+  (29, '%'): 1,
+  (29, '&'): 1,
+  (29, "'"): 1,
+  (29, '*'): 1,
+  (29, '+'): 1,
+  (29, '-'): 1,
+  (29, '/'): 1,
+  (29, '0'): 1,
+  (29, '1'): 1,
+  (29, '2'): 1,
+  (29, '3'): 1,
+  (29, '4'): 1,
+  (29, '5'): 1,
+  (29, '6'): 1,
+  (29, '7'): 1,
+  (29, '8'): 1,
+  (29, '9'): 1,
+  (29, ':'): 1,
+  (29, ';'): 1,
+  (29, '<'): 1,
+  (29, '='): 1,
+  (29, '>'): 1,
+  (29, '?'): 1,
+  (29, '@'): 1,
+  (29, 'A'): 1,
+  (29, 'B'): 1,
+  (29, 'C'): 1,
+  (29, 'D'): 1,
+  (29, 'E'): 1,
+  (29, 'F'): 1,
+  (29, 'G'): 1,
+  (29, 'H'): 1,
+  (29, 'I'): 1,
+  (29, 'J'): 1,
+  (29, 'K'): 1,
+  (29, 'L'): 1,
+  (29, 'M'): 1,
+  (29, 'N'): 1,
+  (29, 'O'): 1,
+  (29, 'P'): 1,
+  (29, 'Q'): 1,
+  (29, 'R'): 1,
+  (29, 'S'): 1,
+  (29, 'T'): 1,
+  (29, 'U'): 1,
+  (29, 'V'): 1,
+  (29, 'W'): 1,
+  (29, 'X'): 1,
+  (29, 'Y'): 1,
+  (29, 'Z'): 1,
+  (29, '['): 1,
+  (29, '\\'): 1,
+  (29, ']'): 1,
+  (29, '^'): 1,
+  (29, '_'): 1,
+  (29, '`'): 1,
+  (29, 'a'): 1,
+  (29, 'b'): 1,
+  (29, 'c'): 1,
+  (29, 'd'): 1,
+  (29, 'e'): 1,
+  (29, 'f'): 1,
+  (29, 'g'): 1,
+  (29, 'h'): 1,
+  (29, 'i'): 1,
+  (29, 'j'): 1,
+  (29, 'k'): 1,
+  (29, 'l'): 1,
+  (29, 'm'): 1,
+  (29, 'n'): 1,
+  (29, 'o'): 1,
+  (29, 'p'): 1,
+  (29, 'q'): 1,
+  (29, 'r'): 1,
+  (29, 's'): 1,
+  (29, 't'): 1,
+  (29, 'u'): 1,
+  (29, 'v'): 1,
+  (29, 'w'): 1,
+  (29, 'x'): 1,
+  (29, 'y'): 1,
+  (29, 'z'): 1,
+  (29, '{'): 1,
+  (29, '|'): 1,
+  (29, '}'): 1,
+  (29, '~'): 1,
+  (29, '\x7f'): 1,
+  (29, '\x80'): 1,
+  (29, '\x81'): 1,
+  (29, '\x82'): 1,
+  (29, '\x83'): 1,
+  (29, '\x84'): 1,
+  (29, '\x85'): 1,
+  (29, '\x86'): 1,
+  (29, '\x87'): 1,
+  (29, '\x88'): 1,
+  (29, '\x89'): 1,
+  (29, '\x8a'): 1,
+  (29, '\x8b'): 1,
+  (29, '\x8c'): 1,
+  (29, '\x8d'): 1,
+  (29, '\x8e'): 1,
+  (29, '\x8f'): 1,
+  (29, '\x90'): 1,
+  (29, '\x91'): 1,
+  (29, '\x92'): 1,
+  (29, '\x93'): 1,
+  (29, '\x94'): 1,
+  (29, '\x95'): 1,
+  (29, '\x96'): 1,
+  (29, '\x97'): 1,
+  (29, '\x98'): 1,
+  (29, '\x99'): 1,
+  (29, '\x9a'): 1,
+  (29, '\x9b'): 1,
+  (29, '\x9c'): 1,
+  (29, '\x9d'): 1,
+  (29, '\x9e'): 1,
+  (29, '\xa0'): 1,
+  (29, '\xa1'): 1,
+  (29, '\xa2'): 1,
+  (29, '\xa3'): 1,
+  (29, '\xa4'): 1,
+  (29, '\xa5'): 1,
+  (29, '\xa6'): 1,
+  (29, '\xa7'): 1,
+  (29, '\xa8'): 1,
+  (29, '\xa9'): 1,
+  (29, '\xac'): 1,
+  (29, '\xad'): 1,
+  (29, '\xae'): 1,
+  (29, '\xaf'): 1,
+  (29, '\xb0'): 1,
+  (29, '\xb1'): 1,
+  (29, '\xb2'): 1,
+  (29, '\xb3'): 1,
+  (29, '\xb4'): 1,
+  (29, '\xb5'): 1,
+  (29, '\xb6'): 1,
+  (29, '\xb7'): 1,
+  (29, '\xb8'): 1,
+  (29, '\xb9'): 1,
+  (29, '\xba'): 1,
+  (29, '\xbb'): 1,
+  (29, '\xbc'): 1,
+  (29, '\xbd'): 1,
+  (29, '\xbe'): 1,
+  (29, '\xbf'): 1,
+  (29, '\xc0'): 1,
+  (29, '\xc1'): 1,
+  (29, '\xc2'): 1,
+  (29, '\xc3'): 1,
+  (29, '\xc4'): 1,
+  (29, '\xc5'): 1,
+  (29, '\xc6'): 1,
+  (29, '\xc7'): 1,
+  (29, '\xc8'): 1,
+  (29, '\xc9'): 1,
+  (29, '\xca'): 1,
+  (29, '\xcb'): 1,
+  (29, '\xcc'): 1,
+  (29, '\xcd'): 1,
+  (29, '\xce'): 1,
+  (29, '\xcf'): 1,
+  (29, '\xd0'): 1,
+  (29, '\xd1'): 1,
+  (29, '\xd2'): 1,
+  (29, '\xd3'): 1,
+  (29, '\xd4'): 1,
+  (29, '\xd5'): 1,
+  (29, '\xd6'): 1,
+  (29, '\xd7'): 1,
+  (29, '\xd8'): 1,
+  (29, '\xd9'): 1,
+  (29, '\xda'): 1,
+  (29, '\xdb'): 1,
+  (29, '\xdc'): 1,
+  (29, '\xdd'): 1,
+  (29, '\xde'): 1,
+  (29, '\xdf'): 1,
+  (29, '\xe0'): 1,
+  (29, '\xe1'): 1,
+  (29, '\xe3'): 1,
+  (29, '\xe4'): 1,
+  (29, '\xe5'): 1,
+  (29, '\xe6'): 1,
+  (29, '\xe7'): 1,
+  (29, '\xe8'): 1,
+  (29, '\xe9'): 1,
+  (29, '\xea'): 1,
+  (29, '\xeb'): 1,
+  (29, '\xec'): 1,
+  (29, '\xed'): 1,
+  (29, '\xee'): 1,
+  (29, '\xef'): 1,
+  (29, '\xf0'): 1,
+  (29, '\xf1'): 1,
+  (29, '\xf2'): 1,
+  (29, '\xf3'): 1,
+  (29, '\xf4'): 1,
+  (29, '\xf5'): 1,
+  (29, '\xf6'): 1,
+  (29, '\xf7'): 1,
+  (29, '\xf8'): 1,
+  (29, '\xf9'): 1,
+  (29, '\xfa'): 1,
+  (29, '\xfb'): 1,
+  (29, '\xfc'): 1,
+  (29, '\xfd'): 1,
+  (29, '\xfe'): 1,
+  (29, '\xff'): 1,
+  (30, '\x00'): 1,
+  (30, '\x01'): 1,
+  (30, '\x02'): 1,
+  (30, '\x03'): 1,
+  (30, '\x04'): 1,
+  (30, '\x05'): 1,
+  (30, '\x06'): 1,
+  (30, '\x07'): 1,
+  (30, '\x08'): 1,
+  (30, '\x0b'): 1,
+  (30, '\x0e'): 1,
+  (30, '\x0f'): 1,
+  (30, '\x10'): 1,
+  (30, '\x11'): 1,
+  (30, '\x12'): 1,
+  (30, '\x13'): 1,
+  (30, '\x14'): 1,
+  (30, '\x15'): 1,
+  (30, '\x16'): 1,
+  (30, '\x17'): 1,
+  (30, '\x18'): 1,
+  (30, '\x19'): 1,
+  (30, '\x1a'): 1,
+  (30, '\x1b'): 1,
+  (30, '\x1c'): 1,
+  (30, '\x1d'): 1,
+  (30, '\x1e'): 1,
+  (30, '\x1f'): 1,
+  (30, '!'): 1,
+  (30, '"'): 1,
+  (30, '#'): 1,
+  (30, '$'): 1,
+  (30, '%'): 1,
+  (30, '&'): 1,
+  (30, "'"): 1,
+  (30, '*'): 1,
+  (30, '+'): 1,
+  (30, '-'): 1,
+  (30, '/'): 1,
+  (30, '0'): 1,
+  (30, '1'): 1,
+  (30, '2'): 1,
+  (30, '3'): 1,
+  (30, '4'): 1,
+  (30, '5'): 1,
+  (30, '6'): 1,
+  (30, '7'): 1,
+  (30, '8'): 1,
+  (30, '9'): 1,
+  (30, ':'): 1,
+  (30, ';'): 1,
+  (30, '<'): 1,
+  (30, '='): 1,
+  (30, '>'): 1,
+  (30, '?'): 1,
+  (30, '@'): 1,
+  (30, 'A'): 1,
+  (30, 'B'): 1,
+  (30, 'C'): 1,
+  (30, 'D'): 1,
+  (30, 'E'): 1,
+  (30, 'F'): 1,
+  (30, 'G'): 1,
+  (30, 'H'): 1,
+  (30, 'I'): 1,
+  (30, 'J'): 1,
+  (30, 'K'): 1,
+  (30, 'L'): 1,
+  (30, 'M'): 1,
+  (30, 'N'): 1,
+  (30, 'O'): 1,
+  (30, 'P'): 1,
+  (30, 'Q'): 1,
+  (30, 'R'): 1,
+  (30, 'S'): 1,
+  (30, 'T'): 1,
+  (30, 'U'): 1,
+  (30, 'V'): 1,
+  (30, 'W'): 1,
+  (30, 'X'): 1,
+  (30, 'Y'): 1,
+  (30, 'Z'): 1,
+  (30, '['): 1,
+  (30, '\\'): 1,
+  (30, ']'): 1,
+  (30, '^'): 1,
+  (30, '_'): 1,
+  (30, '`'): 1,
+  (30, 'a'): 1,
+  (30, 'b'): 1,
+  (30, 'c'): 1,
+  (30, 'd'): 1,
+  (30, 'e'): 1,
+  (30, 'f'): 1,
+  (30, 'g'): 1,
+  (30, 'h'): 1,
+  (30, 'i'): 1,
+  (30, 'j'): 1,
+  (30, 'k'): 1,
+  (30, 'l'): 1,
+  (30, 'm'): 1,
+  (30, 'n'): 1,
+  (30, 'o'): 1,
+  (30, 'p'): 1,
+  (30, 'q'): 1,
+  (30, 'r'): 1,
+  (30, 's'): 1,
+  (30, 't'): 1,
+  (30, 'u'): 1,
+  (30, 'v'): 1,
+  (30, 'w'): 1,
+  (30, 'x'): 1,
+  (30, 'y'): 1,
+  (30, 'z'): 1,
+  (30, '{'): 1,
+  (30, '|'): 1,
+  (30, '}'): 1,
+  (30, '~'): 1,
+  (30, '\x7f'): 1,
+  (30, '\x80'): 1,
+  (30, '\x81'): 1,
+  (30, '\x82'): 1,
+  (30, '\x83'): 1,
+  (30, '\x84'): 1,
+  (30, '\x85'): 1,
+  (30, '\x86'): 1,
+  (30, '\x87'): 1,
+  (30, '\x88'): 1,
+  (30, '\x89'): 1,
+  (30, '\x8a'): 1,
+  (30, '\x8b'): 1,
+  (30, '\x8c'): 1,
+  (30, '\x8d'): 1,
+  (30, '\x8e'): 1,
+  (30, '\x8f'): 1,
+  (30, '\x90'): 1,
+  (30, '\x91'): 1,
+  (30, '\x92'): 1,
+  (30, '\x93'): 1,
+  (30, '\x94'): 1,
+  (30, '\x95'): 1,
+  (30, '\x96'): 1,
+  (30, '\x97'): 1,
+  (30, '\x98'): 1,
+  (30, '\x99'): 1,
+  (30, '\x9a'): 1,
+  (30, '\x9b'): 1,
+  (30, '\x9c'): 1,
+  (30, '\x9d'): 1,
+  (30, '\x9e'): 1,
+  (30, '\xa0'): 1,
+  (30, '\xa1'): 1,
+  (30, '\xa2'): 1,
+  (30, '\xa3'): 1,
+  (30, '\xa4'): 1,
+  (30, '\xa5'): 1,
+  (30, '\xa6'): 1,
+  (30, '\xa7'): 1,
+  (30, '\xa8'): 1,
+  (30, '\xa9'): 1,
+  (30, '\xac'): 1,
+  (30, '\xad'): 1,
+  (30, '\xae'): 1,
+  (30, '\xaf'): 1,
+  (30, '\xb0'): 1,
+  (30, '\xb1'): 1,
+  (30, '\xb2'): 1,
+  (30, '\xb3'): 1,
+  (30, '\xb4'): 1,
+  (30, '\xb5'): 1,
+  (30, '\xb6'): 1,
+  (30, '\xb7'): 1,
+  (30, '\xb8'): 1,
+  (30, '\xb9'): 1,
+  (30, '\xba'): 1,
+  (30, '\xbb'): 1,
+  (30, '\xbc'): 1,
+  (30, '\xbd'): 1,
+  (30, '\xbe'): 1,
+  (30, '\xbf'): 1,
+  (30, '\xc0'): 1,
+  (30, '\xc1'): 1,
+  (30, '\xc2'): 1,
+  (30, '\xc3'): 1,
+  (30, '\xc4'): 1,
+  (30, '\xc5'): 1,
+  (30, '\xc6'): 1,
+  (30, '\xc7'): 1,
+  (30, '\xc8'): 1,
+  (30, '\xc9'): 1,
+  (30, '\xca'): 1,
+  (30, '\xcb'): 1,
+  (30, '\xcc'): 1,
+  (30, '\xcd'): 1,
+  (30, '\xce'): 1,
+  (30, '\xcf'): 1,
+  (30, '\xd0'): 1,
+  (30, '\xd1'): 1,
+  (30, '\xd2'): 1,
+  (30, '\xd3'): 1,
+  (30, '\xd4'): 1,
+  (30, '\xd5'): 1,
+  (30, '\xd6'): 1,
+  (30, '\xd7'): 1,
+  (30, '\xd8'): 1,
+  (30, '\xd9'): 1,
+  (30, '\xda'): 1,
+  (30, '\xdb'): 1,
+  (30, '\xdc'): 1,
+  (30, '\xdd'): 1,
+  (30, '\xde'): 1,
+  (30, '\xdf'): 1,
+  (30, '\xe0'): 1,
+  (30, '\xe1'): 1,
+  (30, '\xe3'): 1,
+  (30, '\xe4'): 1,
+  (30, '\xe5'): 1,
+  (30, '\xe6'): 1,
+  (30, '\xe7'): 1,
+  (30, '\xe8'): 1,
+  (30, '\xe9'): 1,
+  (30, '\xea'): 1,
+  (30, '\xeb'): 1,
+  (30, '\xec'): 1,
+  (30, '\xed'): 1,
+  (30, '\xee'): 1,
+  (30, '\xef'): 1,
+  (30, '\xf0'): 1,
+  (30, '\xf1'): 1,
+  (30, '\xf2'): 1,
+  (30, '\xf3'): 1,
+  (30, '\xf4'): 1,
+  (30, '\xf5'): 1,
+  (30, '\xf6'): 1,
+  (30, '\xf7'): 1,
+  (30, '\xf8'): 1,
+  (30, '\xf9'): 1,
+  (30, '\xfa'): 1,
+  (30, '\xfb'): 1,
+  (30, '\xfc'): 1,
+  (30, '\xfd'): 1,
+  (30, '\xfe'): 1,
+  (30, '\xff'): 1,
+  (31, '\x00'): 31,
+  (31, '\x01'): 31,
+  (31, '\x02'): 31,
+  (31, '\x03'): 31,
+  (31, '\x04'): 31,
+  (31, '\x05'): 31,
+  (31, '\x06'): 31,
+  (31, '\x07'): 31,
+  (31, '\x08'): 31,
+  (31, '\t'): 31,
+  (31, '\x0b'): 31,
+  (31, '\x0c'): 31,
+  (31, '\r'): 31,
+  (31, '\x0e'): 31,
+  (31, '\x0f'): 31,
+  (31, '\x10'): 31,
+  (31, '\x11'): 31,
+  (31, '\x12'): 31,
+  (31, '\x13'): 31,
+  (31, '\x14'): 31,
+  (31, '\x15'): 31,
+  (31, '\x16'): 31,
+  (31, '\x17'): 31,
+  (31, '\x18'): 31,
+  (31, '\x19'): 31,
+  (31, '\x1a'): 31,
+  (31, '\x1b'): 31,
+  (31, '\x1c'): 31,
+  (31, '\x1d'): 31,
+  (31, '\x1e'): 31,
+  (31, '\x1f'): 31,
+  (31, ' '): 31,
+  (31, '!'): 31,
+  (31, '"'): 31,
+  (31, '#'): 31,
+  (31, '$'): 31,
+  (31, '%'): 31,
+  (31, '&'): 31,
+  (31, "'"): 31,
+  (31, '('): 31,
+  (31, ')'): 31,
+  (31, '*'): 31,
+  (31, '+'): 31,
+  (31, ','): 31,
+  (31, '-'): 31,
+  (31, '.'): 31,
+  (31, '/'): 31,
+  (31, '0'): 31,
+  (31, '1'): 31,
+  (31, '2'): 31,
+  (31, '3'): 31,
+  (31, '4'): 31,
+  (31, '5'): 31,
+  (31, '6'): 31,
+  (31, '7'): 31,
+  (31, '8'): 31,
+  (31, '9'): 31,
+  (31, ':'): 31,
+  (31, ';'): 31,
+  (31, '<'): 31,
+  (31, '='): 31,
+  (31, '>'): 31,
+  (31, '?'): 31,
+  (31, '@'): 31,
+  (31, 'A'): 31,
+  (31, 'B'): 31,
+  (31, 'C'): 31,
+  (31, 'D'): 31,
+  (31, 'E'): 31,
+  (31, 'F'): 31,
+  (31, 'G'): 31,
+  (31, 'H'): 31,
+  (31, 'I'): 31,
+  (31, 'J'): 31,
+  (31, 'K'): 31,
+  (31, 'L'): 31,
+  (31, 'M'): 31,
+  (31, 'N'): 31,
+  (31, 'O'): 31,
+  (31, 'P'): 31,
+  (31, 'Q'): 31,
+  (31, 'R'): 31,
+  (31, 'S'): 31,
+  (31, 'T'): 31,
+  (31, 'U'): 31,
+  (31, 'V'): 31,
+  (31, 'W'): 31,
+  (31, 'X'): 31,
+  (31, 'Y'): 31,
+  (31, 'Z'): 31,
+  (31, '['): 31,
+  (31, '\\'): 31,
+  (31, ']'): 31,
+  (31, '^'): 31,
+  (31, '_'): 31,
+  (31, '`'): 31,
+  (31, 'a'): 31,
+  (31, 'b'): 31,
+  (31, 'c'): 31,
+  (31, 'd'): 31,
+  (31, 'e'): 31,
+  (31, 'f'): 31,
+  (31, 'g'): 31,
+  (31, 'h'): 31,
+  (31, 'i'): 31,
+  (31, 'j'): 31,
+  (31, 'k'): 31,
+  (31, 'l'): 31,
+  (31, 'm'): 31,
+  (31, 'n'): 31,
+  (31, 'o'): 31,
+  (31, 'p'): 31,
+  (31, 'q'): 31,
+  (31, 'r'): 31,
+  (31, 's'): 31,
+  (31, 't'): 31,
+  (31, 'u'): 31,
+  (31, 'v'): 31,
+  (31, 'w'): 31,
+  (31, 'x'): 31,
+  (31, 'y'): 31,
+  (31, 'z'): 31,
+  (31, '{'): 31,
+  (31, '|'): 31,
+  (31, '}'): 31,
+  (31, '~'): 31,
+  (31, '\x7f'): 31,
+  (31, '\x80'): 31,
+  (31, '\x81'): 31,
+  (31, '\x82'): 31,
+  (31, '\x83'): 31,
+  (31, '\x84'): 31,
+  (31, '\x85'): 31,
+  (31, '\x86'): 31,
+  (31, '\x87'): 31,
+  (31, '\x88'): 31,
+  (31, '\x89'): 31,
+  (31, '\x8a'): 31,
+  (31, '\x8b'): 31,
+  (31, '\x8c'): 31,
+  (31, '\x8d'): 31,
+  (31, '\x8e'): 31,
+  (31, '\x8f'): 31,
+  (31, '\x90'): 31,
+  (31, '\x91'): 31,
+  (31, '\x92'): 31,
+  (31, '\x93'): 31,
+  (31, '\x94'): 31,
+  (31, '\x95'): 31,
+  (31, '\x96'): 31,
+  (31, '\x97'): 31,
+  (31, '\x98'): 31,
+  (31, '\x99'): 31,
+  (31, '\x9a'): 31,
+  (31, '\x9b'): 31,
+  (31, '\x9c'): 31,
+  (31, '\x9d'): 31,
+  (31, '\x9e'): 31,
+  (31, '\x9f'): 31,
+  (31, '\xa0'): 31,
+  (31, '\xa1'): 31,
+  (31, '\xa2'): 31,
+  (31, '\xa3'): 31,
+  (31, '\xa4'): 31,
+  (31, '\xa5'): 31,
+  (31, '\xa6'): 31,
+  (31, '\xa7'): 31,
+  (31, '\xa8'): 31,
+  (31, '\xa9'): 31,
+  (31, '\xaa'): 31,
+  (31, '\xab'): 31,
+  (31, '\xac'): 31,
+  (31, '\xad'): 31,
+  (31, '\xae'): 31,
+  (31, '\xaf'): 31,
+  (31, '\xb0'): 31,
+  (31, '\xb1'): 31,
+  (31, '\xb2'): 31,
+  (31, '\xb3'): 31,
+  (31, '\xb4'): 31,
+  (31, '\xb5'): 31,
+  (31, '\xb6'): 31,
+  (31, '\xb7'): 31,
+  (31, '\xb8'): 31,
+  (31, '\xb9'): 31,
+  (31, '\xba'): 31,
+  (31, '\xbb'): 31,
+  (31, '\xbc'): 31,
+  (31, '\xbd'): 31,
+  (31, '\xbe'): 31,
+  (31, '\xbf'): 31,
+  (31, '\xc0'): 31,
+  (31, '\xc1'): 31,
+  (31, '\xc2'): 31,
+  (31, '\xc3'): 31,
+  (31, '\xc4'): 31,
+  (31, '\xc5'): 31,
+  (31, '\xc6'): 31,
+  (31, '\xc7'): 31,
+  (31, '\xc8'): 31,
+  (31, '\xc9'): 31,
+  (31, '\xca'): 31,
+  (31, '\xcb'): 31,
+  (31, '\xcc'): 31,
+  (31, '\xcd'): 31,
+  (31, '\xce'): 31,
+  (31, '\xcf'): 31,
+  (31, '\xd0'): 31,
+  (31, '\xd1'): 31,
+  (31, '\xd2'): 31,
+  (31, '\xd3'): 31,
+  (31, '\xd4'): 31,
+  (31, '\xd5'): 31,
+  (31, '\xd6'): 31,
+  (31, '\xd7'): 31,
+  (31, '\xd8'): 31,
+  (31, '\xd9'): 31,
+  (31, '\xda'): 31,
+  (31, '\xdb'): 31,
+  (31, '\xdc'): 31,
+  (31, '\xdd'): 31,
+  (31, '\xde'): 31,
+  (31, '\xdf'): 31,
+  (31, '\xe0'): 31,
+  (31, '\xe1'): 31,
+  (31, '\xe2'): 31,
+  (31, '\xe3'): 31,
+  (31, '\xe4'): 31,
+  (31, '\xe5'): 31,
+  (31, '\xe6'): 31,
+  (31, '\xe7'): 31,
+  (31, '\xe8'): 31,
+  (31, '\xe9'): 31,
+  (31, '\xea'): 31,
+  (31, '\xeb'): 31,
+  (31, '\xec'): 31,
+  (31, '\xed'): 31,
+  (31, '\xee'): 31,
+  (31, '\xef'): 31,
+  (31, '\xf0'): 31,
+  (31, '\xf1'): 31,
+  (31, '\xf2'): 31,
+  (31, '\xf3'): 31,
+  (31, '\xf4'): 31,
+  (31, '\xf5'): 31,
+  (31, '\xf6'): 31,
+  (31, '\xf7'): 31,
+  (31, '\xf8'): 31,
+  (31, '\xf9'): 31,
+  (31, '\xfa'): 31,
+  (31, '\xfb'): 31,
+  (31, '\xfc'): 31,
+  (31, '\xfd'): 31,
+  (31, '\xfe'): 31,
+  (31, '\xff'): 31},
+ set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 24, 27, 28, 29, 30, 31]),
+ set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 24, 27, 28, 29, 30, 31]),
+ ['IGNORE',
+  'NAME',
+  'IGNORE',
+  'LEFT_PARENTHESIS',
+  '__0_,',
+  'INTEGER',
+  'NAME',
+  'NEWLINE',
+  '__1_.',
+  'RIGHT_PARENTHESIS',
+  'NAME',
+  '1, 1, 1, 1, 1, 1',
+  '2',
+  '2, 2',
+  '2, 2',
+  '2',
+  'MAPSTO',
+  'RIGHT_DOUBLE_ANGLE',
+  'LEFT_DOUBLE_ANGLE',
+  '3, final*, 0, start|, 0, start|, 0, start|, 0, final*, start*, 0, final*, 0, 1, final|, start|, 0, final|, start|, 0, final|, start|, 0, final*, start*, 0, final*, 0, start|, 0, start|, 0, final|, start|, 0, 1, final*, start*, 0, final*, 0, final|, start|, 0, 1, final|, start|, 0, final|, start|, 0, final*, start*, 0, final*, 0, start|, 0, final|, start|, 0, 1, final|, start|, 0, final*, start*, 0',
+  '3, 0, start|, 0, start|, 0, start|, 0',
+  'final*, 1, final|, final|, final|, 0, 0, 1, final*, final|, final*, final|, 1, final|, final|, 0, 0, final|, final*, 1, final|',
+  'final*, 1, 0',
+  '1, 0, final*',
+  'QQSTRING',
+  '0, final*, 1',
+  'final*, 1, 0',
+  'QSTRING',
+  'DEFINEDAS',
+  'LAMBDA',
+  'MU',
+  'IGNORE']), {'IGNORE': None})
 # generated code between this line and its other occurence
 
 def make_lamb_parser_dynamic():
@@ -399,8 +3786,8 @@ def make_lamb_parser_generated():
     return parser, lexer, LambToAST
 
 def make_lamb_parser():
-    return make_lamb_parser_dynamic()
-#    return make_lamb_parser_generated()
+#    return make_lamb_parser_dynamic()
+    return make_lamb_parser_generated()
 
 ############################################################################
 if __name__ == '__main__':
@@ -411,8 +3798,8 @@ if __name__ == '__main__':
 
     parser, lexer, ToAST = make_lamb_parser_dynamic()
     transformer = ToAST.source
-    newcontent = "%s%s%s\nparser = %r\nlexer = %r\n%s%s" % (
+    newcontent = "%s%s%s\nparser = %r\n%s\n%s%s" % (
             pre, s, transformer.replace("ToAST", "LambToAST"),
-            parser, lexer, s, after)
+            parser, lexer.get_dummy_repr(), s, after)
     print newcontent
     f.write(newcontent)
