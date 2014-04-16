@@ -12,7 +12,7 @@ RIGHT_DOUBLE_ANGLE: "⟫";
 INTEGER: "[0-9]+";
 QSTRING: "‘[^’]*’";
 QQSTRING: "“[^”]*”";
-NAME: "[^0-9,\(\)⟪⟫ \n\r\t\f][^,\(\)⟪⟫ \n\r\t\f]*";
+NAME: "[^0-9,\(\)⟪⟫ \n\r\t\f#][^,\(\)⟪⟫ \n\r\t\f#]*";
 IGNORE: "[ \f\t]*|#[^\n]*";
 
 

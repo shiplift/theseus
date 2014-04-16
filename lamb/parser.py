@@ -134,6 +134,8 @@ class Parser(RPythonVisitor):
                 from pprint import pprint
                 pprint(tokens)
             parsed = self.parser.parse(tokens)
+            pre_ast = self.transformer().transform(parsed)
+            actual_ast = self.dispatch(pre_ast)
         except ParseError, e:
             print e.nice_error_message(filename=self.source.filename,
                                        source=self.source.contents())
@@ -142,8 +144,6 @@ class Parser(RPythonVisitor):
             print e.nice_error_message(filename=self.source.filename,
                                        source=self.source.contents())
             raise
-        pre_ast = self.transformer().transform(parsed)
-        actual_ast = self.dispatch(pre_ast)
         if not we_are_translated():
             try:
                 if py.test.config.option.view:
@@ -1028,7 +1028,13 @@ def recognize(runner, i):
             elif '\x00' <= char <= '\x08':
                 state = 1
                 continue
-            elif '!' <= char <= "'":
+            elif '$' <= char <= "'":
+                state = 1
+                continue
+            elif char == '!':
+                state = 1
+                continue
+            elif char == '"':
                 state = 1
                 continue
             elif char == '*':
@@ -1085,56 +1091,10 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 6
                 return i
-            if char == '\x0c':
-                state = 32
-            elif char == '\r':
-                state = 32
-            elif char == '(':
-                state = 32
-            elif char == ')':
-                state = 32
-            elif char == '\xaa':
-                state = 32
-            elif char == '\xab':
-                state = 32
-            elif char == '\t':
-                state = 32
-            elif char == ' ':
-                state = 32
-            elif char == ',':
-                state = 32
-            elif char == '\x9f':
-                state = 32
-            elif char == '\xe2':
-                state = 32
-            elif '-' <= char <= '\x9e':
+            if '\x0b' <= char <= '\xff':
                 state = 6
                 continue
-            elif '\xac' <= char <= '\xe1':
-                state = 6
-                continue
-            elif '\xe3' <= char <= '\xff':
-                state = 6
-                continue
-            elif '\x0e' <= char <= '\x1f':
-                state = 6
-                continue
-            elif '\xa0' <= char <= '\xa9':
-                state = 6
-                continue
-            elif '\x00' <= char <= '\x08':
-                state = 6
-                continue
-            elif '!' <= char <= "'":
-                state = 6
-                continue
-            elif char == '*':
-                state = 6
-                continue
-            elif char == '+':
-                state = 6
-                continue
-            elif char == '\x0b':
+            elif '\x00' <= char <= '\t':
                 state = 6
                 continue
             else:
@@ -1166,7 +1126,13 @@ def recognize(runner, i):
             elif '\x00' <= char <= '\x08':
                 state = 1
                 continue
-            elif '!' <= char <= "'":
+            elif '$' <= char <= "'":
+                state = 1
+                continue
+            elif char == '!':
+                state = 1
+                continue
+            elif char == '"':
                 state = 1
                 continue
             elif char == '*':
@@ -1210,7 +1176,13 @@ def recognize(runner, i):
             elif '\x00' <= char <= '\x08':
                 state = 1
                 continue
-            elif '!' <= char <= "'":
+            elif '$' <= char <= "'":
+                state = 1
+                continue
+            elif char == '!':
+                state = 1
+                continue
+            elif char == '"':
                 state = 1
                 continue
             elif char == '*':
@@ -1404,7 +1376,11 @@ def recognize(runner, i):
                 state = 30
             elif '\x00' <= char <= '\x08':
                 state = 30
-            elif '!' <= char <= "'":
+            elif '$' <= char <= "'":
+                state = 30
+            elif char == '!':
+                state = 30
+            elif char == '"':
                 state = 30
             elif char == '*':
                 state = 30
@@ -1429,6 +1405,8 @@ def recognize(runner, i):
             elif char == '\xab':
                 state = 31
             elif char == ' ':
+                state = 31
+            elif char == '#':
                 state = 31
             elif char == ',':
                 state = 31
@@ -1465,7 +1443,13 @@ def recognize(runner, i):
             elif '\x00' <= char <= '\x08':
                 state = 1
                 continue
-            elif '!' <= char <= "'":
+            elif '$' <= char <= "'":
+                state = 1
+                continue
+            elif char == '!':
+                state = 1
+                continue
+            elif char == '"':
                 state = 1
                 continue
             elif char == '*':
@@ -1506,7 +1490,13 @@ def recognize(runner, i):
             elif '\x00' <= char <= '\x08':
                 state = 1
                 continue
-            elif '!' <= char <= "'":
+            elif '$' <= char <= "'":
+                state = 1
+                continue
+            elif char == '!':
+                state = 1
+                continue
+            elif char == '"':
                 state = 1
                 continue
             elif char == '*':
@@ -1520,23 +1510,6 @@ def recognize(runner, i):
                 continue
             else:
                 break
-        if state == 32:
-            runner.last_matched_index = i - 1
-            runner.last_matched_state = state
-            try:
-                char = input[i]
-                i += 1
-            except IndexError:
-                runner.state = 32
-                return i
-            if '\x0b' <= char <= '\xff':
-                state = 32
-                continue
-            elif '\x00' <= char <= '\t':
-                state = 32
-                continue
-            else:
-                break
         runner.last_matched_state = state
         runner.last_matched_index = i - 1
         runner.state = state
@@ -1547,7 +1520,7 @@ def recognize(runner, i):
         break
     runner.state = state
     return ~i
-lexer = DummyLexer(recognize, DFA(33,
+lexer = DummyLexer(recognize, DFA(32,
  {(0, '\x00'): 1,
   (0, '\x01'): 1,
   (0, '\x02'): 1,
@@ -1831,7 +1804,6 @@ lexer = DummyLexer(recognize, DFA(33,
   (1, '\x1f'): 1,
   (1, '!'): 1,
   (1, '"'): 1,
-  (1, '#'): 1,
   (1, '$'): 1,
   (1, '%'): 1,
   (1, '&'): 1,
@@ -2067,10 +2039,10 @@ lexer = DummyLexer(recognize, DFA(33,
   (6, '\x06'): 6,
   (6, '\x07'): 6,
   (6, '\x08'): 6,
-  (6, '\t'): 32,
+  (6, '\t'): 6,
   (6, '\x0b'): 6,
-  (6, '\x0c'): 32,
-  (6, '\r'): 32,
+  (6, '\x0c'): 6,
+  (6, '\r'): 6,
   (6, '\x0e'): 6,
   (6, '\x0f'): 6,
   (6, '\x10'): 6,
@@ -2089,7 +2061,7 @@ lexer = DummyLexer(recognize, DFA(33,
   (6, '\x1d'): 6,
   (6, '\x1e'): 6,
   (6, '\x1f'): 6,
-  (6, ' '): 32,
+  (6, ' '): 6,
   (6, '!'): 6,
   (6, '"'): 6,
   (6, '#'): 6,
@@ -2097,11 +2069,11 @@ lexer = DummyLexer(recognize, DFA(33,
   (6, '%'): 6,
   (6, '&'): 6,
   (6, "'"): 6,
-  (6, '('): 32,
-  (6, ')'): 32,
+  (6, '('): 6,
+  (6, ')'): 6,
   (6, '*'): 6,
   (6, '+'): 6,
-  (6, ','): 32,
+  (6, ','): 6,
   (6, '-'): 6,
   (6, '.'): 6,
   (6, '/'): 6,
@@ -2216,7 +2188,7 @@ lexer = DummyLexer(recognize, DFA(33,
   (6, '\x9c'): 6,
   (6, '\x9d'): 6,
   (6, '\x9e'): 6,
-  (6, '\x9f'): 32,
+  (6, '\x9f'): 6,
   (6, '\xa0'): 6,
   (6, '\xa1'): 6,
   (6, '\xa2'): 6,
@@ -2227,8 +2199,8 @@ lexer = DummyLexer(recognize, DFA(33,
   (6, '\xa7'): 6,
   (6, '\xa8'): 6,
   (6, '\xa9'): 6,
-  (6, '\xaa'): 32,
-  (6, '\xab'): 32,
+  (6, '\xaa'): 6,
+  (6, '\xab'): 6,
   (6, '\xac'): 6,
   (6, '\xad'): 6,
   (6, '\xae'): 6,
@@ -2283,7 +2255,7 @@ lexer = DummyLexer(recognize, DFA(33,
   (6, '\xdf'): 6,
   (6, '\xe0'): 6,
   (6, '\xe1'): 6,
-  (6, '\xe2'): 32,
+  (6, '\xe2'): 6,
   (6, '\xe3'): 6,
   (6, '\xe4'): 6,
   (6, '\xe5'): 6,
@@ -2343,7 +2315,6 @@ lexer = DummyLexer(recognize, DFA(33,
   (8, '\x1f'): 1,
   (8, '!'): 1,
   (8, '"'): 1,
-  (8, '#'): 1,
   (8, '$'): 1,
   (8, '%'): 1,
   (8, '&'): 1,
@@ -2587,7 +2558,6 @@ lexer = DummyLexer(recognize, DFA(33,
   (10, '\x1f'): 1,
   (10, '!'): 1,
   (10, '"'): 1,
-  (10, '#'): 1,
   (10, '$'): 1,
   (10, '%'): 1,
   (10, '&'): 1,
@@ -3358,7 +3328,7 @@ lexer = DummyLexer(recognize, DFA(33,
   (28, ' '): 31,
   (28, '!'): 30,
   (28, '"'): 30,
-  (28, '#'): 30,
+  (28, '#'): 31,
   (28, '$'): 30,
   (28, '%'): 30,
   (28, '&'): 30,
@@ -3609,7 +3579,6 @@ lexer = DummyLexer(recognize, DFA(33,
   (29, '\x1f'): 1,
   (29, '!'): 1,
   (29, '"'): 1,
-  (29, '#'): 1,
   (29, '$'): 1,
   (29, '%'): 1,
   (29, '&'): 1,
@@ -3853,7 +3822,6 @@ lexer = DummyLexer(recognize, DFA(33,
   (30, '\x1f'): 1,
   (30, '!'): 1,
   (30, '"'): 1,
-  (30, '#'): 1,
   (30, '$'): 1,
   (30, '%'): 1,
   (30, '&'): 1,
@@ -4066,262 +4034,7 @@ lexer = DummyLexer(recognize, DFA(33,
   (30, '\xfc'): 1,
   (30, '\xfd'): 1,
   (30, '\xfe'): 1,
-  (30, '\xff'): 1,
-  (32, '\x00'): 32,
-  (32, '\x01'): 32,
-  (32, '\x02'): 32,
-  (32, '\x03'): 32,
-  (32, '\x04'): 32,
-  (32, '\x05'): 32,
-  (32, '\x06'): 32,
-  (32, '\x07'): 32,
-  (32, '\x08'): 32,
-  (32, '\t'): 32,
-  (32, '\x0b'): 32,
-  (32, '\x0c'): 32,
-  (32, '\r'): 32,
-  (32, '\x0e'): 32,
-  (32, '\x0f'): 32,
-  (32, '\x10'): 32,
-  (32, '\x11'): 32,
-  (32, '\x12'): 32,
-  (32, '\x13'): 32,
-  (32, '\x14'): 32,
-  (32, '\x15'): 32,
-  (32, '\x16'): 32,
-  (32, '\x17'): 32,
-  (32, '\x18'): 32,
-  (32, '\x19'): 32,
-  (32, '\x1a'): 32,
-  (32, '\x1b'): 32,
-  (32, '\x1c'): 32,
-  (32, '\x1d'): 32,
-  (32, '\x1e'): 32,
-  (32, '\x1f'): 32,
-  (32, ' '): 32,
-  (32, '!'): 32,
-  (32, '"'): 32,
-  (32, '#'): 32,
-  (32, '$'): 32,
-  (32, '%'): 32,
-  (32, '&'): 32,
-  (32, "'"): 32,
-  (32, '('): 32,
-  (32, ')'): 32,
-  (32, '*'): 32,
-  (32, '+'): 32,
-  (32, ','): 32,
-  (32, '-'): 32,
-  (32, '.'): 32,
-  (32, '/'): 32,
-  (32, '0'): 32,
-  (32, '1'): 32,
-  (32, '2'): 32,
-  (32, '3'): 32,
-  (32, '4'): 32,
-  (32, '5'): 32,
-  (32, '6'): 32,
-  (32, '7'): 32,
-  (32, '8'): 32,
-  (32, '9'): 32,
-  (32, ':'): 32,
-  (32, ';'): 32,
-  (32, '<'): 32,
-  (32, '='): 32,
-  (32, '>'): 32,
-  (32, '?'): 32,
-  (32, '@'): 32,
-  (32, 'A'): 32,
-  (32, 'B'): 32,
-  (32, 'C'): 32,
-  (32, 'D'): 32,
-  (32, 'E'): 32,
-  (32, 'F'): 32,
-  (32, 'G'): 32,
-  (32, 'H'): 32,
-  (32, 'I'): 32,
-  (32, 'J'): 32,
-  (32, 'K'): 32,
-  (32, 'L'): 32,
-  (32, 'M'): 32,
-  (32, 'N'): 32,
-  (32, 'O'): 32,
-  (32, 'P'): 32,
-  (32, 'Q'): 32,
-  (32, 'R'): 32,
-  (32, 'S'): 32,
-  (32, 'T'): 32,
-  (32, 'U'): 32,
-  (32, 'V'): 32,
-  (32, 'W'): 32,
-  (32, 'X'): 32,
-  (32, 'Y'): 32,
-  (32, 'Z'): 32,
-  (32, '['): 32,
-  (32, '\\'): 32,
-  (32, ']'): 32,
-  (32, '^'): 32,
-  (32, '_'): 32,
-  (32, '`'): 32,
-  (32, 'a'): 32,
-  (32, 'b'): 32,
-  (32, 'c'): 32,
-  (32, 'd'): 32,
-  (32, 'e'): 32,
-  (32, 'f'): 32,
-  (32, 'g'): 32,
-  (32, 'h'): 32,
-  (32, 'i'): 32,
-  (32, 'j'): 32,
-  (32, 'k'): 32,
-  (32, 'l'): 32,
-  (32, 'm'): 32,
-  (32, 'n'): 32,
-  (32, 'o'): 32,
-  (32, 'p'): 32,
-  (32, 'q'): 32,
-  (32, 'r'): 32,
-  (32, 's'): 32,
-  (32, 't'): 32,
-  (32, 'u'): 32,
-  (32, 'v'): 32,
-  (32, 'w'): 32,
-  (32, 'x'): 32,
-  (32, 'y'): 32,
-  (32, 'z'): 32,
-  (32, '{'): 32,
-  (32, '|'): 32,
-  (32, '}'): 32,
-  (32, '~'): 32,
-  (32, '\x7f'): 32,
-  (32, '\x80'): 32,
-  (32, '\x81'): 32,
-  (32, '\x82'): 32,
-  (32, '\x83'): 32,
-  (32, '\x84'): 32,
-  (32, '\x85'): 32,
-  (32, '\x86'): 32,
-  (32, '\x87'): 32,
-  (32, '\x88'): 32,
-  (32, '\x89'): 32,
-  (32, '\x8a'): 32,
-  (32, '\x8b'): 32,
-  (32, '\x8c'): 32,
-  (32, '\x8d'): 32,
-  (32, '\x8e'): 32,
-  (32, '\x8f'): 32,
-  (32, '\x90'): 32,
-  (32, '\x91'): 32,
-  (32, '\x92'): 32,
-  (32, '\x93'): 32,
-  (32, '\x94'): 32,
-  (32, '\x95'): 32,
-  (32, '\x96'): 32,
-  (32, '\x97'): 32,
-  (32, '\x98'): 32,
-  (32, '\x99'): 32,
-  (32, '\x9a'): 32,
-  (32, '\x9b'): 32,
-  (32, '\x9c'): 32,
-  (32, '\x9d'): 32,
-  (32, '\x9e'): 32,
-  (32, '\x9f'): 32,
-  (32, '\xa0'): 32,
-  (32, '\xa1'): 32,
-  (32, '\xa2'): 32,
-  (32, '\xa3'): 32,
-  (32, '\xa4'): 32,
-  (32, '\xa5'): 32,
-  (32, '\xa6'): 32,
-  (32, '\xa7'): 32,
-  (32, '\xa8'): 32,
-  (32, '\xa9'): 32,
-  (32, '\xaa'): 32,
-  (32, '\xab'): 32,
-  (32, '\xac'): 32,
-  (32, '\xad'): 32,
-  (32, '\xae'): 32,
-  (32, '\xaf'): 32,
-  (32, '\xb0'): 32,
-  (32, '\xb1'): 32,
-  (32, '\xb2'): 32,
-  (32, '\xb3'): 32,
-  (32, '\xb4'): 32,
-  (32, '\xb5'): 32,
-  (32, '\xb6'): 32,
-  (32, '\xb7'): 32,
-  (32, '\xb8'): 32,
-  (32, '\xb9'): 32,
-  (32, '\xba'): 32,
-  (32, '\xbb'): 32,
-  (32, '\xbc'): 32,
-  (32, '\xbd'): 32,
-  (32, '\xbe'): 32,
-  (32, '\xbf'): 32,
-  (32, '\xc0'): 32,
-  (32, '\xc1'): 32,
-  (32, '\xc2'): 32,
-  (32, '\xc3'): 32,
-  (32, '\xc4'): 32,
-  (32, '\xc5'): 32,
-  (32, '\xc6'): 32,
-  (32, '\xc7'): 32,
-  (32, '\xc8'): 32,
-  (32, '\xc9'): 32,
-  (32, '\xca'): 32,
-  (32, '\xcb'): 32,
-  (32, '\xcc'): 32,
-  (32, '\xcd'): 32,
-  (32, '\xce'): 32,
-  (32, '\xcf'): 32,
-  (32, '\xd0'): 32,
-  (32, '\xd1'): 32,
-  (32, '\xd2'): 32,
-  (32, '\xd3'): 32,
-  (32, '\xd4'): 32,
-  (32, '\xd5'): 32,
-  (32, '\xd6'): 32,
-  (32, '\xd7'): 32,
-  (32, '\xd8'): 32,
-  (32, '\xd9'): 32,
-  (32, '\xda'): 32,
-  (32, '\xdb'): 32,
-  (32, '\xdc'): 32,
-  (32, '\xdd'): 32,
-  (32, '\xde'): 32,
-  (32, '\xdf'): 32,
-  (32, '\xe0'): 32,
-  (32, '\xe1'): 32,
-  (32, '\xe2'): 32,
-  (32, '\xe3'): 32,
-  (32, '\xe4'): 32,
-  (32, '\xe5'): 32,
-  (32, '\xe6'): 32,
-  (32, '\xe7'): 32,
-  (32, '\xe8'): 32,
-  (32, '\xe9'): 32,
-  (32, '\xea'): 32,
-  (32, '\xeb'): 32,
-  (32, '\xec'): 32,
-  (32, '\xed'): 32,
-  (32, '\xee'): 32,
-  (32, '\xef'): 32,
-  (32, '\xf0'): 32,
-  (32, '\xf1'): 32,
-  (32, '\xf2'): 32,
-  (32, '\xf3'): 32,
-  (32, '\xf4'): 32,
-  (32, '\xf5'): 32,
-  (32, '\xf6'): 32,
-  (32, '\xf7'): 32,
-  (32, '\xf8'): 32,
-  (32, '\xf9'): 32,
-  (32, '\xfa'): 32,
-  (32, '\xfb'): 32,
-  (32, '\xfc'): 32,
-  (32, '\xfd'): 32,
-  (32, '\xfe'): 32,
-  (32, '\xff'): 32},
+  (30, '\xff'): 1},
  set([0,
       1,
       2,
@@ -4342,8 +4055,7 @@ lexer = DummyLexer(recognize, DFA(33,
       28,
       29,
       30,
-      31,
-      32]),
+      31]),
  set([0,
       1,
       2,
@@ -4364,15 +4076,14 @@ lexer = DummyLexer(recognize, DFA(33,
       28,
       29,
       30,
-      31,
-      32]),
+      31]),
  ['IGNORE',
   'NAME',
   'IGNORE',
   'LEFT_PARENTHESIS',
   '__0_,',
   'INTEGER',
-  'NAME',
+  'IGNORE',
   'NEWLINE',
   '__1_.',
   'RIGHT_PARENTHESIS',
@@ -4397,8 +4108,7 @@ lexer = DummyLexer(recognize, DFA(33,
   'NAME',
   'MU',
   'LAMBDA',
-  'LAMBDA',
-  'IGNORE']), {'IGNORE': None})
+  'LAMBDA']), {'IGNORE': None})
 # generated code between this line and its other occurence
 
 def make_lamb_parser_dynamic():
