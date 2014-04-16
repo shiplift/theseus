@@ -8,7 +8,8 @@ from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
-from lamb.stack import ExecutionStackElement, OperandStackElement, Stack
+from lamb.stack import (Stack, ExecutionStackElement, OperandStackElement,
+                        ex_push, op_push)
 
 from lamb.pattern import NoMatch
 from lamb.object import Object
@@ -33,7 +34,7 @@ class __extend__(W_Object):
         return self
 
     def interpret(self, op_stack, ex_stack):
-        return (OperandStackElement(self, op_stack), ex_stack)
+        return (op_push(op_stack, self), ex_stack)
 
 class __extend__(W_Constructor):
     def evaluate(self):
@@ -59,8 +60,7 @@ class __extend__(W_Lambda):
         num_args = self.arity()
         w_arguments = [None] * num_args
         for i in range(num_args):
-            w_arguments[i] = op_stack._data
-            op_stack = op_stack._next
+            w_arguments[i], op_stack = op_stack.pop()
         for rule in self._rules:
             try:
                 binding = [None] * rule.maximal_number_of_variables
@@ -69,7 +69,7 @@ class __extend__(W_Lambda):
                 pass
             else:
                 resolved = expression.copy(binding)
-                ex_stack = ExecutionStackElement(resolved, ex_stack)
+                ex_stack = ex_push(ex_stack, resolved)
                 return (op_stack, ex_stack)
         raise NoMatch()
 
@@ -84,9 +84,8 @@ class __extend__(W_Primitive):
         num_args = self.arity()
         w_arguments = [None] * num_args
         for i in range(num_args):
-            w_arguments[i] = op_stack._data
-            op_stack = op_stack._next
-        ex_stack = ExecutionStackElement(self._fun(w_arguments), ex_stack)
+            w_arguments[i], op_stack = op_stack.pop()
+        ex_stack = ex_push(ex_stack, self._fun(w_arguments))
         return (op_stack, ex_stack)
 
 class __extend__(W_ConstructorEvaluator):
@@ -96,9 +95,9 @@ class __extend__(W_ConstructorEvaluator):
 
     @jit.unroll_safe
     def interpret(self, op_stack, ex_stack):
-        ex_stack = ExecutionStackElement(self._tag._cursor, ex_stack)
+        ex_stack = ex_push(ex_stack, self._tag._cursor)
         for child in self._children:
-            ex_stack = ExecutionStackElement(child, ex_stack)
+            ex_stack = ex_stack.push(child)
         return (op_stack, ex_stack)
 
 class __extend__(W_VariableExpression):
@@ -120,7 +119,7 @@ class __extend__(W_Call):
         lamb = self.callee
         jit.promote(lamb)
         assert isinstance(lamb, W_Lambda)
-        ex_stack = ExecutionStackElement(lamb._cursor, ex_stack)
+        ex_stack = ex_push(ex_stack, lamb._cursor)
         return (op_stack, ex_stack)
 
 class __extend__(W_NAryCall):
@@ -130,7 +129,7 @@ class __extend__(W_NAryCall):
         (op_stack, ex_stack) = W_Call.interpret(self, op_stack, ex_stack)
         for index in range(self.get_number_of_arguments()):
             arg = self.get_argument(index)
-            ex_stack = ExecutionStackElement(arg, ex_stack)
+            ex_stack = ex_push(ex_stack, arg)
         return (op_stack, ex_stack)
 
 #
@@ -151,10 +150,10 @@ class __extend__(W_ConstructorCursor):
         jit.promote(self)
         children = []
         for i in range(self._tag.arity()):
-            children.append(op_stack._data)
-            op_stack = op_stack._next
+            child, op_stack = op_stack.pop()
+            children.append(child)
         new_top = w_constructor(self._tag, children)
-        op_stack = OperandStackElement(new_top, op_stack)
+        op_stack = op_push(op_stack, new_top)
         return (op_stack, ex_stack)
 
 class __extend__(W_LambdaCursor):
@@ -194,7 +193,7 @@ def _stack_to_list(op_stack, depth):
     for i in range(depth):
         w = op_data_or_none(op_s)
         shapes[i] = w._shape if isinstance(w, W_Constructor) else None
-        op_s = op_s._next if op_s is not None else None
+        _, op_s = op_s.pop() if op_s is not None else (None, None)
     return shapes
 
 def current_shapes(depth, op_stack):
@@ -249,6 +248,7 @@ def jitdriver():
     else:
         return jitdriver_n
 
+
 def interpret(expression_stack, arguments_stack=None,
               debug=False, debug_callback=None):
 
@@ -292,9 +292,9 @@ def interpret(expression_stack, arguments_stack=None,
 
 
         if debug: debug_callback(Stack(ex_stack, op_stack))
-        expr = ex_stack._data
-        ex_stack = ex_stack._next
+        expr, ex_stack = ex_stack.pop()
         (op_stack, ex_stack) = expr.interpret(op_stack, ex_stack)
 
     if debug: debug_callback(Stack(ex_stack, op_stack))
-    return op_stack._data
+    res, _ = op_stack.pop()
+    return res

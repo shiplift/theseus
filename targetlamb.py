@@ -17,7 +17,7 @@ from rpython.rlib.objectmodel import we_are_translated
 take_options = True
 
 from lamb.startup import boot
-from lamb.stack import ExecutionStackElement, OperandStackElement
+from lamb.stack import op_push, ex_push
 from lamb.execution import jitdriver, toplevel_bindings
 from lamb.shape import CompoundShape
 
@@ -222,14 +222,12 @@ def run(config, filename, debug=False, debug_callback=None):
     #
     # Main run stuff.
     #
-    result = nil()
-    for _ in range(config["Nums"]):
-        stack_w = OperandStackElement(None)
-        stack_e = None
-        for exp in reversed(expressions):
-            stack_e = ExecutionStackElement(exp, stack_e)
+    stack_w = op_push(None, nil())
+    stack_e = None
+    for exp in expressions:
+        stack_e = ex_push(stack_e, exp)
 
-        result = interpret(stack_e, stack_w, debug, debug_callback)
+    result = interpret(stack_e, stack_w, debug, debug_callback)
     #
     #
     #

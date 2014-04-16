@@ -9,7 +9,7 @@ from lamb.util.repr import urepr, who, uni
 _iteration = 0
 _stacks = {}
 
-from lamb import model, shape, pattern, expression, object as obj
+from lamb import model, shape, pattern, expression, stack, object as obj
 # Monkeypatch debug output
 #
 
@@ -199,6 +199,34 @@ class __extend__(expression.Variable):
     def to_repr(self, seen):
         i = ("@%s" % self.binding_index if self.binding_index != -1 else "")
         return self.name + u"_" + who(self) + i
+
+
+class __extend__(stack.StackElement):
+    #
+    # useful when inspecing the stack
+    #
+    def linearize(self): # pragma: no cover
+        element = self
+        ret = []
+        while element is not None:
+            ret.insert(0, element)
+            try:
+                element = element._next
+            except AttributeError:
+                element = None
+        return ret
+
+    #
+    # Testing and Debug
+    #
+    @uni
+    def to_repr(self, seen):
+        r = u""
+        if self._next is None:
+            r += u"⊥"
+        if self._data is not None:
+            r += urepr(self._data, seen)
+        return r
 
 ###############################################################################
 

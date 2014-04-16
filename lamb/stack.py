@@ -13,37 +13,22 @@ class StackElement(Object):
         self._data = data
         self._next = next
 
-    #
-    # useful when inspecing the stack
-    #
-    def linearize(self): # pragma: no cover
-        element = self
-        ret = []
-        while element is not None:
-            ret.insert(0, element)
-            try:
-                element = element._next
-            except AttributeError:
-                element = None
-        return ret
-
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        r = u""
-        if self._next is None:
-            r += u"⊥"
-        if self._data is not None:
-            r += urepr(self._data, seen)
-        return r
+    def pop(self):
+        return (self._data, self._next)
 
 class ExecutionStackElement(StackElement):
-    pass
+    def push(self, val):
+        return ExecutionStackElement(val, self)
+
+def ex_push(es, val):
+    return es.push(val) if es else ExecutionStackElement(val)
 
 class OperandStackElement(StackElement):
-    pass
+    def push(self, val):
+        return OperandStackElement(val, self)
+
+def op_push(op, val):
+    return op.push(val) if op else OperandStackElement(val)
 
 class Stack(Object):
     def __init__(self, ex, op):
