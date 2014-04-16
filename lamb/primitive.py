@@ -127,6 +127,19 @@ def currentmilliseconds():
 def minus(x, y):
     return model.w_integer(x - y)
 
+@expose_primitive("+", unwrap_spec=[int, int])
+def plus(x, y):
+    return model.w_integer(x + y)
+
+@expose_primitive("*", unwrap_spec=[int, int])
+def mult(x, y):
+    return model.w_integer(x * y)
+
+@expose_primitive("/", unwrap_spec=[int, int])
+def div(x, y):
+    return model.w_integer(x / y)
+
+
 @expose_primitive(unwrap_spec=[int])
 def print_int(x):
     from lamb.util.construction_helper import nil
