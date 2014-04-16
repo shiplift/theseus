@@ -9,10 +9,7 @@ from lamb.util.repr import urepr, who, uni
 _iteration = 0
 _stacks = {}
 
-from lamb.model import W_Tag, W_Integer, W_Constructor, W_Lambda, Object, W_Primitive
-from lamb.shape import Shape, CompoundShape, InStorageShape
-from lamb.pattern import VariablePattern, ConstructorPattern, IntegerPattern
-#
+from lamb import model, shape, pattern, expression, object as obj
 # Monkeypatch debug output
 #
 
@@ -20,7 +17,7 @@ hard_debug = False
 
 ### General ###
 
-class __extend__(Object):
+class __extend__(obj.Object):
     def __repr__(self):
         r = self.to_repr(set())
         r = r if isinstance(r, str) else r.encode("utf-8")
@@ -34,14 +31,14 @@ class __extend__(Object):
 
 ### Shapes ###
 
-class __extend__(Shape):
+class __extend__(shape.Shape):
     @uni
     def to_repr(self, seen):
         res = u"σ"
         res += u"%d" % self.get_number_of_direct_children()
         return res
 
-class __extend__(CompoundShape):
+class __extend__(shape.CompoundShape):
     @uni
     def to_repr(self, seen):
         def mini_urepr(x):
@@ -56,24 +53,24 @@ class __extend__(CompoundShape):
         res += u"]"
         return res
 
-class __extend__(InStorageShape):
+class __extend__(shape.InStorageShape):
     @uni
     def to_repr(self, seen):
         return u"◊"
 
 ### Pattern ###
 
-class __extend__(IntegerPattern):
+class __extend__(pattern.IntegerPattern):
     @uni
     def to_repr(self, seen):
         return u"&" + unicode(repr(self.value))
 
-class __extend__(VariablePattern):
+class __extend__(pattern.VariablePattern):
     @uni
     def to_repr(self, seen):
         return u"&" + urepr(self.variable, seen)
 
-class __extend__(ConstructorPattern):
+class __extend__(pattern.ConstructorPattern):
     @uni
     def to_repr(self, seen):
         return u"&" + urepr(self._tag, seen) + u"(" \
@@ -83,17 +80,25 @@ class __extend__(ConstructorPattern):
 ### Models ###
 
 
-class __extend__(W_Tag):
+class __extend__(model.W_Tag):
     @uni
     def to_repr(self, seen):
         return u"%s/%d" % (self.name, self.arity())
 
-class __extend__(W_Integer):
+class __extend__(model.W_Integer):
     @uni
     def to_repr(self, seen):
         return u"#%d" % self._value
 
-class __extend__(W_Constructor):
+class __extend__(model.W_String):
+    @uni
+    def to_repr(self, seen):
+        if len(self._value) > 0:
+            return u"»" + self._value.decode("utf-8") + u"«"
+        else:
+            return u"»«"
+
+class __extend__(model.W_Constructor):
     @uni
     def to_repr(self, seen):
         return u"Γ" + u"%s%s" % (urepr(self.get_tag(), seen), self.children_to_repr(seen))
@@ -109,7 +114,13 @@ class __extend__(W_Constructor):
         else:
             return u""
 
-class __extend__(W_Lambda):
+class __extend__(model.W_Lambda):
+    def name(self):
+        if len(self._name) > 0:
+            return unicode(self._name)
+        else:
+            return who(self)
+
     @uni
     def to_repr(self, seen):
         res = u"λ"
@@ -119,7 +130,7 @@ class __extend__(W_Lambda):
         res += u")"
         return res
 
-class __extend__(W_Primitive):
+class __extend__(model.W_Primitive):
     @uni
     def to_repr(self, seen):
         res = u"⟪"
@@ -130,11 +141,7 @@ class __extend__(W_Primitive):
         return res
 
 ### Expressions ###
-from lamb.expression import (W_ConstructorEvaluator,
-                             W_VariableExpression, W_Call,
-                             W_ConstructorCursor, W_LambdaCursor,
-                             Rule, Variable)
-class __extend__(W_ConstructorEvaluator):
+class __extend__(expression.W_ConstructorEvaluator):
     @uni
     def to_repr(self, seen):
         return u"^" + urepr(self._tag, seen) \
@@ -142,16 +149,16 @@ class __extend__(W_ConstructorEvaluator):
                 map(lambda x: urepr(x, seen), self._children)) + u")") \
                 if len(self._children) > 0 else "")
 
-class __extend__(W_VariableExpression):
+class __extend__(expression.W_VariableExpression):
     @uni
     def to_repr(self, seen):
         return u"!" + urepr(self.variable, seen)
 
-class __extend__(W_Call):
+class __extend__(expression.W_Call):
     @uni
     def to_repr(self, seen):
         res = u"μ"
-        if isinstance(self.callee, W_Lambda):
+        if isinstance(self.callee, model.W_Lambda):
             res += unicode(self.callee._name)
         else:
             res += urepr(self.callee, seen)
@@ -165,17 +172,17 @@ class __extend__(W_Call):
             return u""
 
 
-class __extend__(W_ConstructorCursor):
+class __extend__(expression.W_ConstructorCursor):
     @uni
     def to_repr(self, seen):
         return u"%" + urepr(self._tag, seen)
 
-class __extend__(W_LambdaCursor):
+class __extend__(expression.W_LambdaCursor):
     @uni
     def to_repr(self, seen):
         return u"%" + urepr(self._lamb, seen)
 
-class __extend__(Rule):
+class __extend__(expression.Rule):
     @uni
     def to_repr(self, seen):
         res = u""
@@ -187,7 +194,7 @@ class __extend__(Rule):
         res += urepr(self._expression, exp_seen)
         return res
 
-class __extend__(Variable):
+class __extend__(expression.Variable):
     @uni
     def to_repr(self, seen):
         i = ("@%s" % self.binding_index if self.binding_index != -1 else "")

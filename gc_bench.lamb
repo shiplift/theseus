@@ -1,0 +1,39 @@
+#!/usr/bin/env lamb
+
+currentmilliseconds ≔ ⟪currentmilliseconds⟫
+print_int ≔ ⟪print_int⟫
+- ≔ ⟪-⟫
+
+nil ≔ nil()
+
+kStretchTreeDepth ≔ 18
+
+append ≔ λ.
+         1. nil             , X ↦ X
+         2. Cons(Head, Tail), X ↦ Cons(Head, μ(append, Tail, X))
+
+MakeTree ≔ λ.
+           1. 0      ↦ Node(nil, nil)
+           2. iDepth ↦ Node(μ(MakeTree, μ(-, iDepth, 1)),
+                            μ(MakeTree, μ(-, iDepth, 1)))
+
+gc_bench$cont1 ≔ λ.
+                 1. tStart, tFinish, _ ↦ μ(print_int, μ(-, tFinish, tStart))
+
+gc_bench$cont0 ≔ λ.
+                 1. tStart, root ↦ μ(gc_bench$cont1,
+                                     tStart,
+                                     μ(currentmilliseconds),
+                                     root)
+
+gc_bench$let0 ≔ λ.
+                1. tStart ↦ μ(gc_bench$cont0,
+                              tStart,
+                              μ(MakeTree,
+                                kStretchTreeDepth))
+
+gc_bench ≔ λ.
+           1. ↦ μ(gc_bench$let0,
+                  μ(currentmilliseconds))
+
+μ(gc_bench)

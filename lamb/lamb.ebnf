@@ -1,7 +1,7 @@
 # Tokens
 
 NEWLINE: "[\n\r]";
-LAMBDA: "λ";
+LAMBDA: "λ.";
 MU: "μ";
 MAPSTO: "↦";
 DEFINEDAS: "≔";
@@ -11,8 +11,8 @@ LEFT_DOUBLE_ANGLE: "⟪";
 RIGHT_DOUBLE_ANGLE: "⟫";
 INTEGER: "[0-9]+";
 QSTRING: "‘[^’]*’";
-QQSTRING: "“[^”]”";
-NAME: "[^0-9,.\(\)⟪⟫ \n\r\t\f][^,.\(\)⟪⟫ \n\r\t\f]*";
+QQSTRING: "“[^”]*”";
+NAME: "[^0-9,\(\)⟪⟫ \n\r\t\f][^,\(\)⟪⟫ \n\r\t\f]*";
 IGNORE: "[ \f\t]*|#[^\n]*";
 
 
@@ -25,7 +25,7 @@ toplevel_expressions : toplevel_expression ([NEWLINE]+ >toplevel_expressions< )*
                      ;
 
 toplevel_expression : <definition>
-                    | <application>
+                    | <expression>
                     ;
 
 expression : <constructor>
@@ -63,10 +63,11 @@ application : [MU] [LEFT_PARENTHESIS] expression application_args [RIGHT_PARENTH
 
 application_args : ([","] [NEWLINE]? expression )+
                  ;
-lambda : [LAMBDA] ["."] [NEWLINE]? >rules<
+
+lambda : [LAMBDA] [NEWLINE]? >rules<
        ;
 
-rules : (rule [NEWLINE])+
+rules : rule ([NEWLINE] rule)*
       ;
 
 rule : [INTEGER] ["."] patterns? [MAPSTO] expression

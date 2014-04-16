@@ -4,21 +4,35 @@ Components
 ==========
 
     :::text
-    λ                   ≔ rule*
-    rule                ≔ pattern* expression
-                          (λ arity)
+    expression          ≔ constuctor
+                        | application
+                        | lambda
+                        | variable
+                        | primitive
+                        | primary
+
+    constructor         ≔ Name ( expression* )
+                        #      {arity}
+
+    application         ≔ µ( expression expression* )
+                        #    {function} {agruments}
+
+    lambda              ≔ λ. rule+
+    rule                ≔ pattern* ↦ expression
+                        # {arity}
+
     pattern             ≔ variable
+                        | primary
                         | constructor_pattern
-    constructor_pattern ≔ Symbol pattern*
-                                  (constructor arity)
-    expression          ≔ variable
-                        | call
-                        | constructor
-                        | integer
-    call                ≔ expression expression*
-                          (function) (agruments)
-    constructor         ≔ Symbol expression*
-                                  (constructor arity)
+    constructor_pattern ≔ Name ( pattern* )
+                        #        {arity}
+
+    variable            ≔ Name
+    primitive           ≔ ⟪ Name ⟫
+    primary             ≔ Integer
+                        | “ String ”
+                        | ‘ String ’
+
 
 Behavior
 ========
@@ -44,20 +58,20 @@ Some functions
 ==============
 
     :::text
-    nil    ≔ (nil)
+    nil    ≔ nil()
     append ≔ λ x, y:
-             1. nil              , X ↦ X
-             2. (cons Head, Tail), X ↦ (cons Head, μ(append, Tail, X))
+             1. nil             , X ↦ X
+             2. Cons(Head, Tail), X ↦ Cons(Head, μ(append, Tail, X))
 
-    a ≔ (cons 1, (cons 2, (cons 3, nil)))
-    b ≔ (cons 4, (cons 5, (cons 6, nil)))
+    a ≔ Cons(1, Cons(2, Cons(3, nil)))
+    b ≔ Cons(4, Cons(5, Cons(6, nil)))
     
     μ(append, a, b)
-    ↳ μ(append, (cons 1, (cons 2, (cons 3, nil))), (cons 4, (cons 5, (cons 6, nil))))
-    ↳ (cons 1, μ(append, (cons 2, (cons 3, nil)), (cons 4, (cons 5, (cons 6, nil)))))
-    ↳ (cons 1, (cons 2, μ(append, (cons 3, nil), (cons 4, (cons 5, (cons 6, nil))))))
-    ↳ (cons 1, (cons 2, (cons 3, μ(append, nil, (cons 4, (cons 5, (cons 6, nil)))))))
-    ↳ (cons 1, (cons 2, (cons 3, (cons 4, (cons 5, (cons 6, nil))))))
+    ↳ μ(append, Cons(1, Cons(2, Cons(3, nil))), Cons(4, Cons(5, Cons(6, nil))))
+    ↳ Cons(1, μ(append, Cons(2, Cons(3, nil)), Cons(4, Cons(5, Cons(6, nil)))))
+    ↳ Cons(1, Cons(2, μ(append, Cons(3, nil), Cons(4, Cons(5, Cons(6, nil))))))
+    ↳ Cons(1, Cons(2, Cons(3, μ(append, nil, Cons(4, Cons(5, Cons(6, nil)))))))
+    ↳ Cons(1, Cons(2, Cons(3, Cons(4, Cons(5, Cons(6, nil))))))
     
 Shapes
 =====

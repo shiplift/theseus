@@ -15,6 +15,25 @@ from lamb.pattern import NoMatch, Pattern
 from lamb.model import W_Object, W_Tag, W_Lambda, W_Constructor, w_constructor
 
 
+
+def pytest_funcarg__parser(request):
+    """
+    Returns a Lamb parser
+    """
+    def build_space():
+        space = lambada.space.Space()
+        space.make_atoms()
+        space.initialize_globals([None] * 16)
+        return space
+
+    space = request.cached_setup(
+            setup=build_space,
+            scope="session",
+    )
+
+    return copy.deepcopy(space)
+
+
 #
 # Resolved copy behavior
 #
