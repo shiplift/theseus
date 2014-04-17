@@ -19,7 +19,7 @@ from lamb.shape import (default_shape, find_shape_tuple,
                         CompoundShape, InStorageShape)
 from lamb.expression import (W_LambdaCursor, W_ConstructorCursor, W_Cursor,
                              W_ConstructorEvaluator, W_VariableExpression,
-                             W_Call, W_NAryCall, VariableUnbound)
+                             W_Call, W_NAryCall, VariableUnbound, Rule)
 
 use_jitdriver_with_tracing = False
 

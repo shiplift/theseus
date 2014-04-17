@@ -116,7 +116,7 @@ class Parser(RPythonVisitor):
             try:
                 f = open_file_as_stream(source, buffering=0)
             except OSError as e:
-                os.write(2, "Error [%s] %\n" % (source, os.strerror(e.errno)))
+                os.write(2, "Error [%s] %s\n" % (source, os.strerror(e.errno)))
                 return
             try:
                 self.source = Source(f.readall(), source)
@@ -159,7 +159,7 @@ class Parser(RPythonVisitor):
 
     def handle_all(self, nodes):
         """ Dispatches on all nodes in list """
-        processed_nodes = [self.dispatch(child) for child in nodes]
+        processed_nodes = [self.dispatch(child)[0] for child in nodes]
         return processed_nodes
 
     def lookup(self, key):
@@ -173,9 +173,20 @@ class Parser(RPythonVisitor):
         innermost_scope = self.bindings_stack[-1]
         innermost_scope[key] = value
 
+    def to_pattern(self, w_object):
+        if isinstance(w_object, model.W_Integer):
+            ret = pattern.IntegerPattern(w_object.value())
+        elif isinstance(w_object, model.W_String):
+            ret = pattern.StringPattern(w_object.value())
+        elif isinstance(w_object, model.W_Constructor):
+            ret = self.pattern_from_constructor(w_object)
+        else:
+            ret = w_object
+        return ret
+
     def pattern_from_constructor(self, w_constructor):
         _tag = w_constructor.get_tag()
-        _children = [pattern(w_constructor.get_child(i)) \
+        _children = [self.to_pattern(w_constructor.get_child(i)) \
                     for i in range(w_constructor.get_number_of_children())]
         return pattern.ConstructorPattern(_tag, _children)
 
@@ -198,12 +209,16 @@ class Parser(RPythonVisitor):
                 self.define(name, l)
             rules = self.handle_all(node.children)
             assert isinstance(rules, list)
-            l._rules = rules
+            # lets show the annotator that these all are indeed rules
+            l._rules = [None] * len(rules)
+            for i, r in enumerate(rules):
+                assert isinstance(r, expression.Rule)
+                l._rules[i] = r
             return l
 
     def get_name(self, node):
         assert len(node.children) >= 1
-        w_name = self.dispatch(node.children[0])
+        w_name = (self.dispatch(node.children[0]))[0]
         assert isinstance(w_name, model.W_String)
         name = w_name.value()
         return name
@@ -216,15 +231,15 @@ class Parser(RPythonVisitor):
 
     # detokenization
     def visit_NAME(self, node):
-        return self.make_string(node, strip=False)
+        return [self.make_string(node, strip=False)]
 
     def visit_QSTRING(self, node):
-        return self.make_string(node)
+        return [self.make_string(node)]
     def visit_QQSTRING(self, node):
-        return self.make_string(node)
+        return [self.make_string(node)]
 
     def visit_INTEGER(self, node):
-        return model.W_Integer(int(node.additional_info))
+        return [model.W_Integer(int(node.additional_info))]
 
     # def visit_FLOAT(self, node):
     #     f = model.W_Float(float(node.additional_info))
@@ -239,39 +254,39 @@ class Parser(RPythonVisitor):
         if node.children[1].symbol == "lambda":
             definee = self.make_lambda(node.children[1], name)
         else:
-            definee = self.dispatch(node.children[1])
+            definee = self.dispatch(node.children[1])[0]
         self.define(name, definee)
-        return no_result
+        return [no_result]
 
     def visit_lambda(self, node):
-        return self.make_lambda(node)
+        return [self.make_lambda(node)]
 
     def visit_rule(self, node):
         if len(node.children) == 1:
             patterns_ = None
-            effects_  = node.children[0]
+            effect_   = node.children[0]
         else:
             patterns_ = node.children[0]
-            effects_  = node.children[1]
+            effect_   = node.children[1]
 
         with Scope(self):
             with RulePatterns(self):
                 patterns = self.dispatch(patterns_) if patterns_ else []
             with RuleEffects(self):
-                effects = self.dispatch(effects_)
+                effect = self.dispatch(effect_)[0]
 
-        return expression.Rule(patterns, effects)
+        return [expression.Rule(patterns, effect)]
 
     # def visit_patterns(self, node):
     #     return self.handle_all(node.children)
 
     def visit_primary_pattern(self, node):
         assert len(node.children) == 1
-        primary = self.dispatch(node.children[0])
+        primary = self.dispatch(node.children[0])[0]
         if isinstance(primary, model.W_Integer):
-            return pattern.IntegerPattern(primary.value())
+            return [pattern.IntegerPattern(primary.value())]
         elif isinstance(primary, model.W_String):
-            return pattern.StringPattern(primary.value())
+            return [pattern.StringPattern(primary.value())]
         else:
             reason = "Unknown pattern %s " % primary
             raise ParseError(node.getsourcepos(), reason)
@@ -280,34 +295,33 @@ class Parser(RPythonVisitor):
         name = self.get_name(node)
 
         if name.startswith("_"):
-            return pattern.VariablePattern(expression.Variable(name))
+            return [pattern.VariablePattern(expression.Variable(name))]
 
         try:
-            found = self.lookup(name)
-            if isinstance(found, model.W_Integer):
-                return pattern.IntegerPattern(found.value())
-            elif isinstance(found, model.W_String):
-                return pattern.StringPattern(found.value())
-            elif isinstance(found, model.W_Constructor):
-                return self.pattern_from_constructor(found)
+            w_found = self.lookup(name)
+            found = self.to_pattern(w_found)
             if isinstance(found, expression.Variable):
                 reason = "Variable already defined: %s " % name
+                raise ParseError(node.getsourcepos(), reason)
             else:
                 reason = "Unknown value bound to %s" % name
-            raise ParseError(node.getsourcepos(), reason)
+                raise ParseError(node.getsourcepos(), reason)
+            ret = found
         except KeyError:
             var = expression.Variable(name)
             self.define(name, var)
-            return pattern.VariablePattern(var)
+            ret = pattern.VariablePattern(var)
+        return [ret]
 
     def visit_constructor_pattern(self, node):
         name = self.get_name(node)
         if len(node.children) == 1:
-            return pattern.ConstructorPattern(model.tag(name, 0), [])
+            ret = pattern.ConstructorPattern(model.tag(name, 0), [])
         else:
             ch = self.dispatch(node.children[1])
             tag = model.tag(name, len(ch))
-            return pattern.ConstructorPattern(tag, ch)
+            ret = pattern.ConstructorPattern(tag, ch)
+        return [ret]
 
     # def visit_constructor_pattern_args(self, node):
     #     children = self.handle_all(node.children)
@@ -317,7 +331,7 @@ class Parser(RPythonVisitor):
         assert len(node.children) == 2
         name = self.get_name(node)
         ch = self.dispatch(node.children[1])
-        return model.w_constructor(model.tag(name, len(ch)), ch)
+        return [model.w_constructor(model.tag(name, len(ch)), ch)]
 
     # def visit_constructor_args(self, node):
     #     return self.handle_all(node.children)
@@ -332,37 +346,32 @@ class Parser(RPythonVisitor):
         else:
             if isinstance(var, expression.Variable) and \
                self.rule_effect_tracker > 0:
-                return expression.W_VariableExpression(var)
+                return [expression.W_VariableExpression(var)]
             else:
-                return var
+                return [var]
 
 
     def visit_application(self, node):
-        if len(node.children) == 1:
-            return expression.w_call(self.dispatch(node.children[0]), [])
-        else:
-            return expression.w_call(
-                self.dispatch(node.children[0]),
-                self.dispatch(node.children[1]))
+        num = len(node.children)
+        args = self.dispatch(node.children[1]) if num > 1 else []
+        callee = self.dispatch(node.children[0])[0]
+        return [expression.w_call(callee, args)]
 
     # def visit_application_args(self, node):
     #     return self.handle_all(node.children)
 
     def visit_primitive(self, node):
-        return primitive.lookup(self.get_name(node))
+        name = self.get_name(node)
+        return [primitive.lookup(name)]
 
     # top level production
     def visit_lamb_source(self, node):
-        children = self.handle_all(node.children)
-        assert isinstance(children, list)
-        return children
+        return self.handle_all(node.children)
 
     # general visiting
     # catching all unimplemented with same behavior
     def general_nonterminal_visit(self, node):
-        children = self.handle_all(node.children)
-        assert isinstance(children, list)
-        return children
+        return self.handle_all(node.children)
 
     # def general_symbol_visit(self, node):
     #     """NOT_RPYTHON"""
