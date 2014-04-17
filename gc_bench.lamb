@@ -9,6 +9,11 @@ print_int ≔ ⟪print_int⟫
 
 nil ≔ nil()
 
+
+p$0 ≔ λ. 1. _, X ↦ X
+
+p ≔ λ. 1. X ↦ μ(p$0, μ(print_int, X), X)
+
 # append ≔ λ.
 #          1. nil             , X ↦ X
 #          2. Cons(Head, Tail), X ↦ Cons(Head, μ(append, Tail, X))
@@ -55,20 +60,24 @@ NumIters ≔ λ. 1. i ↦ μ(/,
                           μ(TreeSize, kStretchTreeDepth)),
                         μ(TreeSize, i))
 
+
 TimeConstruction$cont1 ≔ λ.
                          1. 1,    iNumIters, depth, _ ↦ nil
                          2. Diff, iNumIters, depth, _ ↦ μ(TimeConstruction$cont1,
-                                                          μ(-, iNumIters, Diff), iNumIters, depth,
+                                                          μ(-, iNumIters, Diff), μ(-, iNumIters, 1), depth,
                                                           μ(MakeTree, depth))
 
 TimeConstruction$cont0 ≔ λ.
                          1. iNumIters, depth ↦ μ(TimeConstruction$cont1, iNumIters, iNumIters, depth, nil)
 
 TimeConstruction ≔ λ.
-                   1. _, depth ↦ μ(TimeConstruction$cont0,  μ(NumIters, depth))
+                   1. depth ↦ μ(TimeConstruction$cont0,  μ(NumIters, depth), depth)
+
+mTimeConstruction ≔ λ.
+                    1. _, depth ↦ μ(TimeConstruction, depth)
 
 gc_bench$cont2 ≔ λ.
-                 1. _ ↦ μ(fromToByDo, kMinTreeDepth, kMaxTreeDepth, 2, TimeConstruction)
+                 1. _ ↦ μ(fromToByDo, kMinTreeDepth, kMaxTreeDepth, 2, mTimeConstruction)
 
 gc_bench$cont1 ≔ λ.
                  1. tStart, tFinish, _ ↦ μ(gc_bench$cont2,
