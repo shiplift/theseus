@@ -38,11 +38,12 @@ class W_Object(Object):
 class W_Tag(W_Object):
     tags = {}
 
-    _immutable_fields_ = ['name', 'arity', '_cursor', 'default_shape']
+    _immutable_fields_ = ['name', '_arity', '_cursor', 'default_shape']
 
     def __init__(self, name, arity):
         from lamb.expression import W_ConstructorCursor
         self.name = name
+        assert arity >= 0
         self._arity = arity
         self._cursor = W_ConstructorCursor(self)
         self.default_shape = default_shape(self, arity)
@@ -70,6 +71,8 @@ def tag(name, arity):
 
 class W_Integer(W_Object):
 
+    _immutable_fields_ = ['_value']
+
     def __init__(self, value):
         self._value = value
     def value(self):
@@ -81,6 +84,8 @@ def w_integer(value):
     return W_Integer(value)
 
 class W_String(W_Object):
+
+    _immutable_fields_ = ['_value']
     def __init__(self, value):
         self._value = value
     def value(self):
@@ -226,9 +231,12 @@ class W_Lambda(W_Object):
         self._cursor = W_LambdaCursor(self)
 
     @jit.elidable
-    def arity(self):
+    def _rule_arity(self):
         assert len(self._rules) > 0
         return self._rules[0].arity()
+
+    def arity(self):
+        return self._rule_arity()
 
 class W_Primitive(W_Lambda):
     """
@@ -240,6 +248,5 @@ class W_Primitive(W_Lambda):
         self._arity = arity
         self._fun = fun
 
-    @jit.elidable
     def arity(self):
         return self._arity

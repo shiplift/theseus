@@ -8,6 +8,7 @@ from lamb.util.repr import urepr, uni
 class StackElement(Object):
 
     _attrs_ = ['_data', '_next']
+    _immutable_fields_ = ['_data', '_next']
 
     def __init__(self, data=None, next=None):
         self._data = data

@@ -61,6 +61,8 @@ class W_PureExpression(W_Object):
 
 class W_ConstructorEvaluator(W_PureExpression):
 
+    _immutable_fields_ = ['_tag', '_children[*]']
+
     def __init__(self, tag, children=None):
         from lamb.model import W_Tag
         assert isinstance(tag, W_Tag)
@@ -240,7 +242,7 @@ class W_LambdaCursor(W_Cursor):
 
 class Rule(Object):
 
-    _immutable_fields_ = ['_patterns[*]', 'arity',
+    _immutable_fields_ = ['_patterns[*]', '_arity',
                           '_expression', 'maximal_number_of_variables']
 
     def __init__(self, patterns, expression):

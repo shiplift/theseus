@@ -21,6 +21,8 @@ class Pattern(Object):
 
 class IntegerPattern(Pattern):
 
+    _immutable_fields_ = ['value']
+
     def __init__(self, value):
         self.value = value
 
@@ -32,6 +34,8 @@ class IntegerPattern(Pattern):
         raise NoMatch()
 
 class StringPattern(Pattern):
+
+    _immutable_fields_ = ['value']
 
     def __init__(self, value):
         self.value = value

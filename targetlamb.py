@@ -265,7 +265,8 @@ def target(driver, args):
     else:
         driver.exe_name = 'lamb'
         ep = entry_point_normal
-    driver.exe_name = 'bin/' + driver.exe_name
+    if driver.exe_name is not None:
+        driver.exe_name = 'bin/' + driver.exe_name
     return ep, None
 
 
