@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from lamb.util.repr import urepr
-import py
 #
 # Graphviz
 #
@@ -60,7 +59,8 @@ def graph(objects, names):
 
 def view(*objects, **names):
     from dotviewer import graphclient
-    p = py.test.ensuretemp("lamb").join("temp.dot")
+    import py
+    p = py.path.local().mkdtemp().join("lamb").join("temp.dot")
     p.write(u"\n".join(graph(objects, names)).encode('utf-8'), 'wb')
     graphclient.display_dot_file(p, save_tmp_file='/tmp/foo/out.dot')
 

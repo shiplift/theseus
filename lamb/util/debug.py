@@ -8,6 +8,7 @@ from lamb.util.repr import urepr, who, uni
 
 _iteration = 0
 _stacks = {}
+_current_lambda = None
 
 from lamb import model, shape, pattern, expression, stack, object as obj
 # Monkeypatch debug output
@@ -234,6 +235,7 @@ def debug_stack(stack):
     """
     print dictionary of stacks.
     """
+    global _current_lambda
     print
     #print "%: Cursor, !: Expression, μ: Call, #: Value, λ: Lambda, &: Pattern, {}: Rule, _ Variable"
 
@@ -255,7 +257,12 @@ def debug_stack(stack):
     v = map(list, map(list, map(i_, d.values())))
 
     update_stack_mappings(stack)
+    expr, _ = stack.execution_stack.pop()
+    if isinstance(expr, expression.W_LambdaCursor):
+        _current_lambda = expr._lamb
 
+    if _current_lambda is not None:
+        print _current_lambda
     stacklists = map(list, map(reversed, zip(*list(izip_longest(*v, fillvalue="")))))
     stackreprs = map(lambda x: map(lambda y: t_(urepr(y)) if y else u"", x), stacklists)
     stacks = map(lambda x: map(lambda y: (u"[%%-%ds]" % length) % y, x), stackreprs)
