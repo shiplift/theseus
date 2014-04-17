@@ -5,6 +5,7 @@
 #
 
 import sys
+import py
 from rpython import conftest
 class o:
     view = False
@@ -195,11 +196,27 @@ class TestLLtype(LLJitMixin):
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
-    def test_gc_bench(self):
+    def test_pgcbench(self):
         arg1 = peano_num(100)
         arg2 = peano_num(100)
         stack_e = execution_stack(W_LambdaCursor(_gc_bench()))
         stack_w = operand_stack()
+        def interp_w():
+            return interpret(stack_e, stack_w)
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
+    def test_gc_bench(self):
+        from lamb.util.construction_helper import interpret, nil
+        from lamb.parser import parse_file
+        from lamb.execution import toplevel_bindings
+
+        filename = str(py.path.local(__file__).dirpath().dirpath().dirpath("gc_bench.lamb"))
+        expressions, bindings = parse_file(filename)
+        toplevel_bindings.set_bindings(bindings)
+
+        stack_e = execution_stack(expressions[-1])
+        stack_w = operand_stack(nil())
         def interp_w():
             return interpret(stack_e, stack_w)
 

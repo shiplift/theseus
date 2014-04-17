@@ -230,13 +230,6 @@ class W_Lambda(W_Object):
         assert len(self._rules) > 0
         return self._rules[0].arity()
 
-
-    def name(self):
-        if len(self._name) > 0:
-            return unicode(self._name)
-        else:
-            return who(self)
-
 class W_Primitive(W_Lambda):
     """
     like a λ, but calls a rpython function instead.
