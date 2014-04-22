@@ -17,6 +17,11 @@ from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            conslist, plist,
                                            execution_stack, operand_stack)
 
+def setup_module(module):
+    from lamb import execution
+    from lamb.util.debug import debug_stack
+    execution._debug_callback = debug_stack
+
 def clean_tag(name, arity):
     return W_Tag(name, arity)
 
@@ -450,9 +455,11 @@ class TestShapeMerger(object):
         clist1_w = _conslist(list1_w)
         assert clist1_w.get_tag() is c
 
-        debug_callback = stackinspect if debug else None
+        if debug:
+            from lamb import execution
+            execution._debug_callback = stackinspect
         res = interpret(execution_stack(W_LambdaCursor(reverse)),
-                        operand_stack(clist1_w), debug, debug_callback)
+                        operand_stack(clist1_w), debug)
         list1_w.reverse()
         assert plist(res) == list1_w
 

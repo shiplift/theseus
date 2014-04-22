@@ -149,7 +149,7 @@ def parse_options(argv, config):
                 break
             i += 1
             jitarg = argv[i]
-            jit.set_user_param(jitdriver(), jitarg)
+            jit.set_user_param(jitdriver, jitarg)
         elif argv[i] in ["-h", "--help"]:
             # printing done by caller
             ret = 0
@@ -249,7 +249,7 @@ def retrieve_fun_args(fun_name, argv):
 
 # __________  Entry points  __________
 
-def entry_point(argv, debug=False, debug_callback=None):
+def entry_point(argv, debug=False):
 
     (fun_name, fun_ops, ret, conf) = parse_options(argv, default_config)
     config = conf
@@ -272,7 +272,7 @@ def entry_point(argv, debug=False, debug_callback=None):
     if config["Verbose"] and config["Print"]:
         print_ops(ops)
 
-    (result, timing) = run(config, fun, ops, debug, debug_callback)
+    (result, timing) = run(config, fun, ops, debug)
 
     if config["WriteStatefile"]:
         do_settle(fun_name)
@@ -289,7 +289,7 @@ def entry_point(argv, debug=False, debug_callback=None):
     return 0
 
 def entry_point_normal(argv):
-    return entry_point(argv, False, None)
+    return entry_point(argv, False)
 
 def entry_point_n(argv):
     CompoundShape._config._inhibit_all= True
@@ -303,14 +303,13 @@ def entry_point_i(argv):
     return entry_point(argv)
 
 def entry_point_t(argv):
-    from lamb.util.transformation import \
-        record_predicates, print_transformations
-    ret = entry_point(argv, True, record_predicates)
+    from lamb.util.transformation import print_transformations
+    ret = entry_point(argv, True)
     print_transformations()
     return ret
 
 
-def run(config, fun, ops, debug=False, debug_callback=None):
+def run(config, fun, ops, debug=False):
 
     from lamb.util.construction_helper import interpret, nil
 
@@ -326,7 +325,7 @@ def run(config, fun, ops, debug=False, debug_callback=None):
             stack_w = OperandStackElement(op, stack_w)
         stack_e = ExecutionStackElement(fun.lamb._cursor, None)
 
-        result = interpret(stack_e, stack_w, debug, debug_callback)
+        result = interpret(stack_e, stack_w, debug)
     #
     #
     #
@@ -352,9 +351,10 @@ def target(driver, args):
         return entry_point_n, None
     elif "--record-transformations" in args:
         args.remove("--record-transformations")
+        from lamb.util.transformation import record_predicates
         from lamb import execution
-        execution.use_jitdriver_with_tracing = True
-        driver.exe_name = 'lambt-%(backend)s'
+        execution._debug_callback = record_predicates
+        driver.exe_name = 'lambt'
         return entry_point_t, None
     else:
         driver.exe_name = 'lamb-%(backend)s'

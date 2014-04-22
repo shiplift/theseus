@@ -21,8 +21,6 @@ from lamb.expression import (W_LambdaCursor, W_ConstructorCursor, W_Cursor,
                              W_ConstructorEvaluator, W_VariableExpression,
                              W_Call, W_NAryCall, VariableUnbound, Rule)
 
-use_jitdriver_with_tracing = False
-
 #
 # Execution behavior.
 #
@@ -210,12 +208,7 @@ def current_shapes(depth, op_stack):
 #  Support for the JIT.
 #
 #
-
-def get_printable_location_t(current_cursor, current_args_shapes):
-    return get_printable_location_d(None, False,
-                                    current_cursor, current_args_shapes)
-
-def get_printable_location_d(dc, d, current_cursor, current_args_shapes):
+def get_printable_location(current_cursor, current_args_shapes):
     res = ""
     if current_cursor is None:
         res += "<None>"
@@ -229,28 +222,14 @@ def get_printable_location_d(dc, d, current_cursor, current_args_shapes):
         res += current_args_shapes.merge_point_string()
     return res
 
-jitdriver_t = jit.JitDriver(
-    greens=["debug_callback", "debug",
-            "current_cursor", "current_args_shapes"],
-    reds=["op_stack", "ex_stack", "expr"],
-    get_printable_location=get_printable_location_d,
-)
-
-jitdriver_n = jit.JitDriver(
+jitdriver = jit.JitDriver(
     greens=["current_cursor", "current_args_shapes"],
     reds=["op_stack", "ex_stack", "expr"],
-    get_printable_location=get_printable_location_t,
+    get_printable_location=get_printable_location,
 )
 
-def jitdriver():
-    if use_jitdriver_with_tracing:
-        return jitdriver_t
-    else:
-        return jitdriver_n
-
-
-def interpret(expression_stack, arguments_stack=None,
-              debug=False, debug_callback=None):
+_debug_callback = None
+def interpret(expression_stack, arguments_stack=None, debug=False):
 
     op_stack = arguments_stack
     ex_stack = expression_stack
@@ -260,10 +239,10 @@ def interpret(expression_stack, arguments_stack=None,
     current_cursor = None
     current_args_shapes = None
 
-    if not we_are_translated():
-        if debug_callback is None:
-            from lamb.util.debug import debug_stack
-            debug_callback = debug_stack
+    debug_callback = None
+    if debug:
+        assert _debug_callback is not None
+        debug_callback = _debug_callback
 
     while True:
         ex_data = ex_data_or_none(ex_stack)
@@ -276,25 +255,23 @@ def interpret(expression_stack, arguments_stack=None,
                 current_args_shapes = current_shapes(
                     current_cursor._tag.arity(), op_stack)
 
-            if use_jitdriver_with_tracing:
-                jitdriver_t.can_enter_jit( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes, debug=debug, debug_callback=debug_callback)
-            else:
-                jitdriver_n.can_enter_jit( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)
+            jitdriver.can_enter_jit( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)
 
         #here is the merge point
-        if use_jitdriver_with_tracing:
-            jitdriver_t.jit_merge_point( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes, debug=debug, debug_callback=debug_callback)
-        else:
-            jitdriver_n.jit_merge_point( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)
+        jitdriver.jit_merge_point( expr=expr, op_stack=op_stack, ex_stack=ex_stack, current_cursor=current_cursor, current_args_shapes=current_args_shapes)
 
         if ex_stack is None:
             break
 
 
-        if debug: debug_callback(Stack(ex_stack, op_stack))
+        if debug:
+            assert debug_callback is not None
+            debug_callback(Stack(ex_stack, op_stack))
         expr, ex_stack = ex_stack.pop()
         (op_stack, ex_stack) = expr.interpret(op_stack, ex_stack)
 
-    if debug: debug_callback(Stack(ex_stack, op_stack))
+    if debug:
+        assert debug_callback is not None
+        debug_callback(Stack(ex_stack, op_stack))
     res, _ = op_stack.pop()
     return res

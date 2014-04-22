@@ -257,9 +257,10 @@ def debug_stack(stack):
     v = map(list, map(list, map(i_, d.values())))
 
     update_stack_mappings(stack)
-    expr, _ = stack.execution_stack.pop()
-    if isinstance(expr, expression.W_LambdaCursor):
-        _current_lambda = expr._lamb
+    if stack.execution_stack is not None:
+        expr, _ = stack.execution_stack.pop()
+        if isinstance(expr, expression.W_LambdaCursor):
+            _current_lambda = expr._lamb
 
     if _current_lambda is not None:
         print _current_lambda

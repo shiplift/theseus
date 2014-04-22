@@ -34,8 +34,6 @@ from mu.gcbench import (_gc_bench)
 #
 
 def setup_module(module):
-    import lamb.execution
-    lamb.execution.use_jitdriver_with_tracing = False
     from lamb.startup import boot
     boot()
 

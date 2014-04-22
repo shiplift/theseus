@@ -63,7 +63,7 @@ Options:
   Printing:
     -v --verbose     turn on verbose output (is %s)
     -S --statistics  print statistics (is %s)
-    -E               don't print the result expression (is %s)
+    -E               don't print the result expression (is %s print)
   Altering Behavior:
        --jit arg     pass arg to the JIT, may be 'default', 'off', or 'param=value,param=value' list
     -n               ignore nils in substitution (is %s)
@@ -71,7 +71,7 @@ Options:
     -w num           set maximal storage with to consider for substitution to num (is %d)
 
     -R               don't read .lambc statefile (is %s read)
-    -W               don't write .lambc statefile (is %s read)
+    -W               don't write .lambc statefile (is %s write)
 
 Operations:
     file             file to run
@@ -79,7 +79,7 @@ Operations:
     argv[0],
     ('on' if config["Verbose"] else 'off'),
     ('on' if config["Stats"] else 'off'),
-    ('on' if config["Print"] else 'off'),
+    ('do' if config["Print"] else 'do not'),
     ('on' if CompoundShape._config.ignore_nils else 'off'),
     CompoundShape._config.substitution_threshold,
     CompoundShape._config.max_storage_width,
@@ -103,7 +103,7 @@ def parse_options(argv, config):
                 break
             i += 1
             jitarg = argv[i]
-            jit.set_user_param(jitdriver(), jitarg)
+            jit.set_user_param(jitdriver, jitarg)
         elif argv[i] in ["-h", "--help"]:
             # printing done by caller
             ret = 0
@@ -155,7 +155,7 @@ def do_settle(f):
 
 # __________  Entry points  __________
 
-def entry_point(argv, debug=False, debug_callback=None):
+def entry_point(argv, debug=False):
 
     (filename, ret, conf) = parse_options(argv, default_config)
     config = conf
@@ -169,7 +169,7 @@ def entry_point(argv, debug=False, debug_callback=None):
         print_help(argv, config)
         return ret # quit early.
 
-    (result, timing) = run(config, filename, debug, debug_callback)
+    (result, timing) = run(config, filename, debug)
 
     if config["WriteStatefile"]:
         do_settle(filename)
@@ -186,10 +186,10 @@ def entry_point(argv, debug=False, debug_callback=None):
     return 0
 
 def entry_point_normal(argv):
-    return entry_point(argv, False, None)
+    return entry_point(argv, False)
 
 def entry_point_d(argv):
-    return entry_point(argv, True, None)
+    return entry_point(argv, True)
 
 def entry_point_n(argv):
     CompoundShape._config._inhibit_all= True
@@ -201,14 +201,13 @@ def entry_point_i(argv):
     return entry_point(argv)
 
 def entry_point_t(argv):
-    from lamb.util.transformation import \
-        record_predicates, print_transformations
-    ret = entry_point(argv, True, record_predicates)
+    from lamb.util.transformation import print_transformations
+    ret = entry_point(argv, True)
     print_transformations()
     return ret
 
 
-def run(config, filename, debug=False, debug_callback=None):
+def run(config, filename, debug=False):
 
     from lamb.util.construction_helper import interpret, nil
     from lamb.parser import parse_file
@@ -227,7 +226,7 @@ def run(config, filename, debug=False, debug_callback=None):
     for exp in expressions:
         stack_e = ex_push(stack_e, exp)
 
-    result = interpret(stack_e, stack_w, debug, debug_callback)
+    result = interpret(stack_e, stack_w, debug)
     #
     #
     #
@@ -253,14 +252,18 @@ def target(driver, args):
         ep = entry_point_n
     elif "--record-transformations" in args:
         args.remove("--record-transformations")
+        from lamb.util.transformation import record_predicates
         from lamb import execution
-        execution.use_jitdriver_with_tracing = True
+        execution._debug_callback = record_predicates
         driver.exe_name = 'lambt'
         ep = entry_point_t
     elif "--debug-lamb" in args:
         args.remove("--debug-lamb")
         if we_are_translated():
-            assert False, "only for hosted debuggin"
+            assert False, "only for hosted debugging"
+        from lamb import execution
+        from lamb.util.debug import debug_stack
+        execution._debug_callback = debug_stack
         ep = entry_point_d
     else:
         driver.exe_name = 'lamb'

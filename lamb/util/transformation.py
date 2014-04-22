@@ -73,7 +73,8 @@ def print_transformations():
     print "\tgraph [splines=true, concentrate=false];"
     tuples = []
     edges = {}
-    for index, tup in enumerate(l):
+    for index in range(len(l)):
+        tup = l[index]
         if tup not in tuples:
             tuples.append(tup)
 

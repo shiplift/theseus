@@ -289,6 +289,7 @@ class TestInterpret(object):
 
 
     def test_reverse(self):
+        from lamb import execution
 
         a1 = Variable("acc")
         a2 = Variable("acc")
@@ -323,11 +324,13 @@ class TestInterpret(object):
 
             op_stack_max = max(op_stack_max, len(op_stack_list))
             ex_stack_max = max(ex_stack_max, len(ex_stack_list))
+        execution._debug_callback = maxdepth
 
         nums = 10
         list1_w = [integer(x) for x in range(nums)]
         res = interpret(execution_stack(W_LambdaCursor(reverse)),
-                        operand_stack(conslist(list1_w)), True, maxdepth)
+                        operand_stack(conslist(list1_w)),
+                        True)
         list1_w.reverse()
         assert plist(res) == list1_w
 
@@ -339,7 +342,8 @@ class TestInterpret(object):
         nums = 100
         list1_w = [integer(x) for x in range(nums)]
         interpret(execution_stack(W_LambdaCursor(reverse)),
-                  operand_stack(conslist(list1_w)), True, maxdepth)
+                  operand_stack(conslist(list1_w)),
+                  True)
         ex_stack_max2 = ex_stack_max
 
         assert ex_stack_max2  == ex_stack_max1
@@ -350,7 +354,8 @@ class TestInterpret(object):
         nums = 1000
         list1_w = [integer(x) for x in range(nums)]
         interpret(execution_stack(W_LambdaCursor(reverse)),
-                  operand_stack(conslist(list1_w)), True, maxdepth)
+                  operand_stack(conslist(list1_w)),
+                  True)
         ex_stack_max3 = ex_stack_max
 
         assert ex_stack_max3 == ex_stack_max2
