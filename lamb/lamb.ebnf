@@ -67,7 +67,7 @@ application_args : ([","] [NEWLINE]? expression )+
 lambda : [LAMBDA] [NEWLINE]? >rules<
        ;
 
-rules : rule ([NEWLINE] rule)*
+rules : rule ([NEWLINE]+ rule)*
       ;
 
 rule : [INTEGER] ["."] patterns? [MAPSTO] expression

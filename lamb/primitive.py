@@ -139,6 +139,10 @@ def mult(x, y):
 def div(x, y):
     return model.w_integer(x / y)
 
+@expose_primitive("%", unwrap_spec=[int, int])
+def mod(x, y):
+    return model.w_integer(x % y)
+
 
 @expose_primitive(unwrap_spec=[int])
 def print_int(x):

@@ -61,14 +61,20 @@ NumIters ≔ λ. 1. i ↦ μ(/,
                         μ(TreeSize, i))
 
 
-TimeConstruction$cont1 ≔ λ.
+TimeConstruction$cont2 ≔ λ.
                          1. 1,    iNumIters, depth, _ ↦ nil
-                         2. Diff, iNumIters, depth, _ ↦ μ(TimeConstruction$cont1,
+                         2. Diff, iNumIters, depth, _ ↦ μ(TimeConstruction$cont2,
                                                           μ(-, iNumIters, Diff), μ(-, iNumIters, 1), depth,
                                                           μ(MakeTree, depth))
 
+TimeConstruction$cont1 ≔ λ.
+                         1. iNumIters, depth, _, _ ↦ μ(TimeConstruction$cont2, iNumIters, iNumIters, depth, nil)
+
 TimeConstruction$cont0 ≔ λ.
-                         1. iNumIters, depth ↦ μ(TimeConstruction$cont1, iNumIters, iNumIters, depth, nil)
+                         1. iNumIters, depth ↦ μ(TimeConstruction$cont1,
+                                                 iNumIters, depth,
+                                                 μ(print_int, iNumIters),
+                                                 μ(print_int, depth))
 
 TimeConstruction ≔ λ.
                    1. depth ↦ μ(TimeConstruction$cont0,  μ(NumIters, depth), depth)

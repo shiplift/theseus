@@ -664,14 +664,31 @@ class LambToAST(object):
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
+    def visit__plus_symbol2(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit__plus_symbol2(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
     def visit__star_symbol8(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 2:
             children = []
+            expr = self.visit__plus_symbol2(node.children[0])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
             children.extend(self.visit_rule(node.children[1]))
             return [Nonterminal(node.symbol, children)]
         children = []
+        expr = self.visit__plus_symbol2(node.children[0])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
         children.extend(self.visit_rule(node.children[1]))
         expr = self.visit__star_symbol8(node.children[2])
         assert len(expr) == 1
@@ -915,7 +932,8 @@ parser = PackratParser([Rule('lamb_source', [['_star_symbol0', '__lamb_source_re
   Rule('application_args', [['_plus_symbol1']]),
   Rule('_maybe_symbol7', [['NEWLINE']]),
   Rule('lambda', [['LAMBDA', '_maybe_symbol7', 'rules'], ['LAMBDA', 'rules']]),
-  Rule('_star_symbol8', [['NEWLINE', 'rule', '_star_symbol8'], ['NEWLINE', 'rule']]),
+  Rule('_plus_symbol2', [['NEWLINE', '_plus_symbol2'], ['NEWLINE']]),
+  Rule('_star_symbol8', [['_plus_symbol2', 'rule', '_star_symbol8'], ['_plus_symbol2', 'rule']]),
   Rule('rules', [['rule', '_star_symbol8'], ['rule']]),
   Rule('_maybe_symbol9', [['patterns']]),
   Rule('rule', [['INTEGER', '__1_.', '_maybe_symbol9', 'MAPSTO', 'expression'], ['INTEGER', '__1_.', 'MAPSTO', 'expression']]),

@@ -219,3 +219,19 @@ class TestLLtype(LLJitMixin):
             return interpret(stack_e, stack_w)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
+    def test_arbitraty_precision_ints(self):
+        from lamb.util.construction_helper import interpret, nil
+        from lamb.parser import parse_file
+        from lamb.execution import toplevel_bindings
+
+        filename = str(py.path.local(__file__).dirpath().dirpath().dirpath("arbitraty_precision_ints.lamb"))
+        expressions, bindings = parse_file(filename)
+        toplevel_bindings.set_bindings(bindings)
+
+        stack_e = execution_stack(expressions[-1])
+        stack_w = operand_stack(nil())
+        def interp_w():
+            return interpret(stack_e, stack_w)
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)

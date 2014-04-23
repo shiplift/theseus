@@ -223,7 +223,7 @@ def run(config, filename, debug=False):
     #
     stack_w = op_push(None, nil())
     stack_e = None
-    for exp in expressions:
+    for exp in reversed(expressions):
         stack_e = ex_push(stack_e, exp)
 
     result = interpret(stack_e, stack_w, debug)
