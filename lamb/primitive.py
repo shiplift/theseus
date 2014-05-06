@@ -101,9 +101,9 @@ def wrap_primitive(num_args=None, unwrap_spec=None):
                 elif spec is int:
                     assert isinstance(w_arg, model.W_Integer)
                     args += (w_arg.value(), )
-                # elif spec is float:
-                #     assert isinstance(w_arg, model.W_Float)
-                #     args += (interpreter.space.unwrap_float(w_arg), )
+                elif spec is float:
+                    assert isinstance(w_arg, model.W_Float)
+                    args += (w_arg.value(), )
                 elif spec is str:
                     assert isinstance(w_arg, model.W_String)
                     args += (w_arg.value(), )
@@ -234,7 +234,7 @@ def print_int(x):
     print x
     return nil()
 
-@expose_primitive(unwrap_spec=[int])
+@expose_primitive(unwrap_spec=[float])
 def print_result_string(x):
     " A hacky primitive to quickly generate ReBench out format "
     from lamb.util.construction_helper import nil

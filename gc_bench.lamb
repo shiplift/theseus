@@ -2,7 +2,6 @@
 
 currentmilliseconds ≔ ⟪currentmilliseconds⟫
 print_int ≔ ⟪print_int⟫
-p ≔ ⟪print_int⟫
 - ≔ ⟪-⟫
 + ≔ ⟪+⟫
 / ≔ ⟪/⟫
