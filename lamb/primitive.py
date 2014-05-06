@@ -118,36 +118,128 @@ def wrap_primitive(num_args=None, unwrap_spec=None):
         return wrapped
     return decorator
 
+################################################################
 @expose_primitive(unwrap_spec=[])
 def currentmilliseconds():
     import time
     return model.w_integer(int(time.clock()*1000))
 
-@expose_primitive("-", unwrap_spec=[int, int])
-def minus(x, y):
+@expose_primitive(unwrap_spec=[])
+def clock():
+    import time
+    return model.w_float(time.clock())
+
+################################################################
+@expose_primitive("-", unwrap_spec=[generic, generic])
+def minus(w_x, w_y):
+    if isinstance(w_x, model.W_Integer) and isinstance(w_y, model.W_Integer):
+        return minus_int(w_x.value(), w_y.value())
+    elif isinstance(w_x, model.W_Integer) and isinstance(w_y, model.W_Float):
+        return minus_float(float(w_x.value()), w_y.value())
+    elif isinstance(w_x, model.W_Float) and isinstance(w_y, model.W_Integer):
+        return minus_float(w_x.value(), float(w_y.value()))
+    elif isinstance(w_x, model.W_Float) and isinstance(w_y, model.W_Float):
+        return minus_float(w_x.value(), w_y.value())
+    else:
+        assert False
+
+@expose_primitive("+", unwrap_spec=[generic, generic])
+def plus(w_x, w_y):
+    if isinstance(w_x, model.W_Integer) and isinstance(w_y, model.W_Integer):
+        return plus_int(w_x.value(), w_y.value())
+    elif isinstance(w_x, model.W_Integer) and isinstance(w_y, model.W_Float):
+        return plus_float(float(w_x.value()), w_y.value())
+    elif isinstance(w_x, model.W_Float) and isinstance(w_y, model.W_Integer):
+        return plus_float(w_x.value(), float(w_y.value()))
+    elif isinstance(w_x, model.W_Float) and isinstance(w_y, model.W_Float):
+        return plus_float(w_x.value(), w_y.value())
+    else:
+        assert False
+
+@expose_primitive("*", unwrap_spec=[generic, generic])
+def mult(w_x, w_y):
+    if isinstance(w_x, model.W_Integer) and isinstance(w_y, model.W_Integer):
+        return mult_int(w_x.value(), w_y.value())
+    elif isinstance(w_x, model.W_Integer) and isinstance(w_y, model.W_Float):
+        return mult_float(float(w_x.value()), w_y.value())
+    elif isinstance(w_x, model.W_Float) and isinstance(w_y, model.W_Integer):
+        return mult_float(w_x.value(), float(w_y.value()))
+    elif isinstance(w_x, model.W_Float) and isinstance(w_y, model.W_Float):
+        return mult_float(w_x.value(), w_y.value())
+    else:
+        assert False
+
+@expose_primitive("/", unwrap_spec=[generic, generic])
+def div(w_x, w_y):
+    if isinstance(w_x, model.W_Integer) and isinstance(w_y, model.W_Integer):
+        return div_int(w_x.value(), w_y.value())
+    elif isinstance(w_x, model.W_Integer) and isinstance(w_y, model.W_Float):
+        return div_float(float(w_x.value()), w_y.value())
+    elif isinstance(w_x, model.W_Float) and isinstance(w_y, model.W_Integer):
+        return div_float(w_x.value(), float(w_y.value()))
+    elif isinstance(w_x, model.W_Float) and isinstance(w_y, model.W_Float):
+        return div_float(w_x.value(), w_y.value())
+    else:
+        assert False
+    return model.w_integer(w_x / w_y)
+
+@expose_primitive("%", unwrap_spec=[generic, generic])
+def mod(w_x, w_y):
+    if isinstance(w_x, model.W_Integer) and isinstance(w_y, model.W_Integer):
+        return mod_int(w_x.value(), w_y.value())
+    else:
+        assert False
+
+################################################################
+@expose_primitive(unwrap_spec=[int, int])
+def minus_int(x, y):
     return model.w_integer(x - y)
 
-@expose_primitive("+", unwrap_spec=[int, int])
-def plus(x, y):
+@expose_primitive(unwrap_spec=[int, int])
+def plus_int(x, y):
     return model.w_integer(x + y)
 
-@expose_primitive("*", unwrap_spec=[int, int])
-def mult(x, y):
+@expose_primitive(unwrap_spec=[int, int])
+def mult_int(x, y):
     return model.w_integer(x * y)
 
-@expose_primitive("/", unwrap_spec=[int, int])
-def div(x, y):
+@expose_primitive(unwrap_spec=[int, int])
+def div_int(x, y):
     return model.w_integer(x / y)
 
-@expose_primitive("%", unwrap_spec=[int, int])
-def mod(x, y):
+@expose_primitive(unwrap_spec=[int, int])
+def mod_int(x, y):
     return model.w_integer(x % y)
 
+################################################################
+@expose_primitive(unwrap_spec=[float, float])
+def minus_float(x, y):
+    return model.w_float(x - y)
+
+@expose_primitive(unwrap_spec=[float, float])
+def plus_float(x, y):
+    return model.w_float(x + y)
+
+@expose_primitive(unwrap_spec=[float, float])
+def mult_float(x, y):
+    return model.w_float(x * y)
+
+@expose_primitive(unwrap_spec=[float, float])
+def div_float(x, y):
+    return model.w_float(x / y)
 
 @expose_primitive(unwrap_spec=[int])
 def print_int(x):
     from lamb.util.construction_helper import nil
     print x
     return nil()
+
+@expose_primitive(unwrap_spec=[int])
+def print_result_string(x):
+    " A hacky primitive to quickly generate ReBench out format "
+    from lamb.util.construction_helper import nil
+    print "RESULT-cpu: %s\nRESULT-total: %s" % (x, x)
+    return nil()
+
 
 # EOF

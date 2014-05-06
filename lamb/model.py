@@ -83,6 +83,20 @@ def w_integer(value):
     assert isinstance(value, int)
     return W_Integer(value)
 
+class W_Float(W_Object):
+
+    _immutable_fields_ = ['_value']
+
+    def __init__(self, value):
+        self._value = value
+    def value(self):
+        return self._value
+
+
+def w_float(value):
+    assert isinstance(value, float)
+    return W_Float(value)
+
 class W_String(W_Object):
 
     _immutable_fields_ = ['_value']

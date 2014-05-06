@@ -44,8 +44,24 @@ class TestTag(object):
 class TestInteger(object):
 
     def test_futile(self):
-        w_int = integer(1)
+        w_int = w_integer(1)
         assert isinstance(w_int, W_Integer)
+        assert w_int.value() == 1
+
+
+class TestString(object):
+
+    def test_futile(self):
+        w_str = w_string("foo")
+        assert isinstance(w_str, W_String)
+        assert w_str.value() == "foo"
+
+class TestFloat(object):
+
+    def test_futile(self):
+        w_flt = w_float(1.0)
+        assert isinstance(w_flt, W_Float)
+        assert w_flt.value() == 1.0
 
 class TestContstructor(object):
 

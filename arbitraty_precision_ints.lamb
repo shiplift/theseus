@@ -2,11 +2,11 @@
 #Aribtraty precision integers via binary representation. LSB( … ( … ( …  MSB())))
 
 print_int ≔ ⟪print_int⟫
-- ≔ ⟪-⟫
-+ ≔ ⟪+⟫
-/ ≔ ⟪/⟫
-% ≔ ⟪%⟫
-* ≔ ⟪*⟫
+- ≔ ⟪minus_int⟫
++ ≔ ⟪plus_int⟫
+/ ≔ ⟪div_int⟫
+% ≔ ⟪mod_int⟫
+* ≔ ⟪mult_int⟫
 
 # Eon(): end of a number
 
