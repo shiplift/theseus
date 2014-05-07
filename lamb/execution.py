@@ -34,6 +34,11 @@ class __extend__(W_Object):
     def interpret(self, op_stack, ex_stack):
         return (op_push(op_stack, self), ex_stack)
 
+    def interpret_new(self, bindings, cont):
+        from lamb.expression import W_PureExpression
+        assert not isinstance(self, W_PureExpression)
+        return cont.plug_reduce(self)
+
 class __extend__(W_Constructor):
     def evaluate(self):
         return w_constructor(self.get_tag(), [child.evaluate() for child in self.get_children()])
@@ -69,6 +74,17 @@ class __extend__(W_Lambda):
                 resolved = expression.copy(binding)
                 ex_stack = ex_push(ex_stack, resolved)
                 return (op_stack, ex_stack)
+        raise NoMatch()
+
+    def select_rule(self, args_w):
+        for rule in self._rules:
+            try:
+                binding = [None] * rule.maximal_number_of_variables
+                expression = rule.match_all(args_w, binding)
+            except NoMatch:
+                pass
+            else:
+                return expression, binding
         raise NoMatch()
 
 class __extend__(W_Primitive):
@@ -107,6 +123,10 @@ class __extend__(W_VariableExpression):
         # should not happen
         raise VariableUnbound()
 
+    def interpret_new(self, binding, cont):
+        return self.resolve(binding), binding, cont
+
+
 class __extend__(W_Call):
     def evaluate(self):
         args = [argument.evaluate() for argument in self.get_arguments()]
@@ -119,6 +139,12 @@ class __extend__(W_Call):
         assert isinstance(lamb, W_Lambda)
         ex_stack = ex_push(ex_stack, lamb._cursor)
         return (op_stack, ex_stack)
+
+    @jit.unroll_safe
+    def interpret_new(self, bindings, cont):
+        return self.callee, bindings, CallContinuation(self, bindings, cont, [])
+
+
 
 class __extend__(W_NAryCall):
     @jit.unroll_safe
@@ -229,7 +255,7 @@ jitdriver = jit.JitDriver(
 )
 
 _debug_callback = None
-def interpret(expression_stack, arguments_stack=None, debug=False):
+def old_interpret(expression_stack, arguments_stack=None, debug=False):
 
     op_stack = arguments_stack
     ex_stack = expression_stack
@@ -275,3 +301,52 @@ def interpret(expression_stack, arguments_stack=None, debug=False):
         debug_callback(Stack(ex_stack, op_stack))
     res, _ = op_stack.pop()
     return res
+
+class Continuation(object):
+    def plug_reduce(self, w_val):
+        raise NotImplementedError("abstract base class")
+
+class FinishContinuation(Continuation):
+    def plug_reduce(self, w_val):
+        raise Done(w_val)
+
+class CallContinuation(Continuation):
+    def __init__(self, w_expr, bindings, cont, values_w):
+        self.w_expr = w_expr
+        self.bindings = bindings
+        self.cont = cont
+        self.values_w = values_w
+
+    def plug_reduce(self, w_val):
+        values_w = self.values_w + [w_val]
+        bindings = self.bindings
+        if len(values_w) == self.w_expr.get_number_of_arguments() + 1:
+            w_lambda = values_w[0]
+            jit.promote(w_lambda)
+            assert isinstance(w_lambda, W_Lambda)
+            args_w = values_w[1:]
+            expr, bindings = w_lambda.select_rule(args_w)
+            return expr, bindings, self.cont
+        cont = CallContinuation(self.w_expr, bindings, self.cont, values_w)
+        return self.w_expr.get_argument(len(values_w) - 1), bindings, cont
+
+
+class Done(Exception):
+    def __init__(self, w_val):
+        self.w_val = w_val
+
+
+def interpret(expr, bindings=None, cont=None):
+    if isinstance(expr, ExecutionStackElement): # XXX for now
+        assert expr._next is None
+        expr = expr._data
+    if cont is None:
+        cont = FinishContinuation()
+    if bindings is None:
+        bindings = []
+    assert isinstance(bindings, list)
+    try:
+        while True:
+            expr, bindings, cont = expr.interpret_new(bindings, cont)
+    except Done, e:
+        return e.w_val

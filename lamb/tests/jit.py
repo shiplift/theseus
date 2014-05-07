@@ -152,6 +152,15 @@ class TestLLtype(LLJitMixin):
         def interp_w():
             return interpret(stack_e, stack_w)
 
+        #interp_w() # fill the transition maps
+        CompoundShape._config._inhibit_recognition = True
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
+        import pdb; pdb.set_trace()
+        list_w = [peano_num(x) for x in range(30)]
+        clist_w = conslist(list_w)
+        stack_e = execution_stack(W_LambdaCursor(map))
+        stack_w = operand_stack(succ, clist_w)
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_mult(self):
