@@ -43,6 +43,9 @@ class __extend__(W_Constructor):
     def evaluate(self):
         return w_constructor(self.get_tag(), [child.evaluate() for child in self.get_children()])
 
+    def interpret_new(self, bindings, cont):
+        assert 0, "should be unreachable"
+
 class __extend__(W_Lambda):
     def call(self, w_arguments):
         assert len(w_arguments) == self.arity()
@@ -114,6 +117,11 @@ class __extend__(W_ConstructorEvaluator):
             ex_stack = ex_stack.push(child)
         return (op_stack, ex_stack)
 
+    def interpret_new(self, bindings, cont):
+        if len(self._children) == 0:
+            return cont.plug_reduce(w_constructor(self._tag, []))
+        return self._children[0], bindings, ConstrContinuation(self, bindings, cont, [])
+
 class __extend__(W_VariableExpression):
     def evaluate(self): # pragma: no cover
         # should not happen
@@ -124,7 +132,7 @@ class __extend__(W_VariableExpression):
         raise VariableUnbound()
 
     def interpret_new(self, binding, cont):
-        return self.resolve(binding), binding, cont
+        return cont.plug_reduce(self.resolve(binding))
 
 
 class __extend__(W_Call):
@@ -312,6 +320,7 @@ class FinishContinuation(Continuation):
 
 class CallContinuation(Continuation):
     def __init__(self, w_expr, bindings, cont, values_w):
+        assert isinstance(w_expr, W_Call)
         self.w_expr = w_expr
         self.bindings = bindings
         self.cont = cont
@@ -330,6 +339,22 @@ class CallContinuation(Continuation):
         cont = CallContinuation(self.w_expr, bindings, self.cont, values_w)
         return self.w_expr.get_argument(len(values_w) - 1), bindings, cont
 
+class ConstrContinuation(Continuation):
+    def __init__(self, w_expr, bindings, cont, values_w):
+        assert isinstance(w_expr, W_ConstructorEvaluator)
+        self.w_expr = w_expr
+        self.bindings = bindings
+        self.cont = cont
+        self.values_w = values_w
+
+    def plug_reduce(self, w_val):
+        values_w = self.values_w + [w_val]
+        bindings = self.bindings
+        if len(values_w) == len(self.w_expr._children):
+            w_constr = w_constructor(self.w_expr._tag, values_w)
+            return self.cont.plug_reduce(w_constr)
+        cont = ConstrContinuation(self.w_expr, bindings, self.cont, values_w)
+        return self.w_expr._children[len(values_w)], bindings, cont
 
 class Done(Exception):
     def __init__(self, w_val):
@@ -339,14 +364,17 @@ class Done(Exception):
 def interpret(expr, bindings=None, cont=None):
     if isinstance(expr, ExecutionStackElement): # XXX for now
         assert expr._next is None
-        expr = expr._data
+        expr = expr._data._replace_with_constructor_expression()
     if cont is None:
         cont = FinishContinuation()
     if bindings is None:
         bindings = []
     assert isinstance(bindings, list)
+    import pdb; pdb.set_trace()
     try:
         while True:
-            expr, bindings, cont = expr.interpret_new(bindings, cont)
+            expr2, bindings2, cont2 = expr.interpret_new(bindings, cont)
+            assert not isinstance(expr2, W_Constructor)
+            expr, bindings, cont = expr2, bindings2, cont2
     except Done, e:
         return e.w_val

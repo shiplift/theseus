@@ -181,13 +181,6 @@ class TestInterpret(object):
         res = interpret(execution_stack(mu(l, [w_false])))
         assert res == w_true
 
-        res = interpret(execution_stack(W_LambdaCursor(l)),
-                        operand_stack(w_true))
-        assert res == w_false
-
-        res = interpret(execution_stack(W_LambdaCursor(l)),
-                        operand_stack(w_false))
-        assert res == w_true
 
     def test_append(self):
 
@@ -206,8 +199,7 @@ class TestInterpret(object):
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
 
-        res = interpret(execution_stack(W_LambdaCursor(l)),
-                        operand_stack(conslist(list1_w), conslist(list2_w)))
+        res = interpret(execution_stack(mu(l, [conslist(list1_w), conslist(list2_w)])))
         assert plist(res) == list1_w + list2_w
 
     def test_map(self):

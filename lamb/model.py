@@ -34,6 +34,9 @@ class W_Object(Object):
     def shape(self):
         return in_storage_shape
 
+    def _replace_with_constructor_expression(self):
+        return self
+
 
 class W_Tag(W_Object):
     tags = {}
@@ -251,6 +254,9 @@ class W_Lambda(W_Object):
 
     def arity(self):
         return self._rule_arity()
+
+    def _replace_with_constructor_expression(self):
+        return self
 
 class W_Primitive(W_Lambda):
     """
