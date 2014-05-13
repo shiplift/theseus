@@ -465,7 +465,6 @@ class TestShapeMerger(object):
 
     def test_plus(self):
         from mu.peano import peano_num, python_num, startup_peano, _plus
-        py.test.skip("debug not supported yet")
         startup_peano()
 
         n = 10
@@ -476,12 +475,11 @@ class TestShapeMerger(object):
         arg2 = peano_num(n)
         assert python_num(arg2) == n
 
-        stack_e = execution_stack(W_LambdaCursor(_plus()))
-        stack_w = operand_stack(arg1, arg2)
+        stack_e = execution_stack(mu(_plus(), [arg1, arg2]))
         assert python_num(arg2) == n
         assert python_num(arg1) == n
 
-        res = interpret(stack_e, stack_w, True)
+        res = interpret(stack_e)
         assert python_num(arg2) == n
         assert python_num(arg1) == n
         assert python_num(res) == n + n
@@ -490,7 +488,6 @@ class TestShapeMerger(object):
     def test_mult(self):
         from mu.peano import peano_num, python_num, startup_peano, _mult
         startup_peano()
-        py.test.skip("debug not supported yet")
 
         n = 4
         # n = 100
@@ -500,14 +497,13 @@ class TestShapeMerger(object):
         arg2 = peano_num(n)
         assert python_num(arg2) == n
 
-        stack_e = execution_stack(W_LambdaCursor(_mult()))
-        stack_w = operand_stack(arg1, arg2)
+        stack_e = execution_stack(mu(_mult(), [arg1, arg2]))
         assert python_num(arg2) == n
         assert python_num(arg1) == n
 
         print "\n" * 10
 
-        res = interpret(stack_e, stack_w, True)
+        res = interpret(stack_e)
         assert python_num(arg2) == n
         assert python_num(arg1) == n
         assert python_num(res) == n * n
