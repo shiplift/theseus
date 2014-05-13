@@ -61,8 +61,14 @@ class W_PureExpression(W_Object):
     """
     Objects that only ever live on the expression stack
     """
+    should_enter_here = False
+
     def _replace_with_constructor_expression(self):
         return self
+
+class Quote(W_PureExpression):
+    def __init__(self, w_value):
+        self.w_value = w_value
 
 class W_ConstructorEvaluator(W_PureExpression):
 
@@ -96,7 +102,7 @@ class W_VariableExpression(W_PureExpression):
         from lamb.execution import toplevel_bindings
         # var = jit.promote(self.variable)
         var = self.variable
-        w_result = binding[var.binding_index]
+        w_result = binding._get_list(var.binding_index)
 
         if w_result is None:
             w_result = toplevel_bindings.get(var.name)
@@ -266,7 +272,10 @@ class Rule(Object):
             assert isinstance(p, Pattern)
         self._patterns = patterns
         self._arity = len(patterns)
-        self._expression = expression._replace_with_constructor_expression()
+        self._expression = expr = expression._replace_with_constructor_expression()
+        assert isinstance(expr, W_PureExpression)
+        expr.should_enter_here = True
+
         self.maximal_number_of_variables = 0
         for pattern in self._patterns:
             pattern.update_number_of_variables(self)

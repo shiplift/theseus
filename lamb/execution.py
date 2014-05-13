@@ -19,7 +19,9 @@ from lamb.shape import (default_shape, find_shape_tuple,
                         CompoundShape, InStorageShape)
 from lamb.expression import (W_LambdaCursor, W_ConstructorCursor, W_Cursor,
                              W_ConstructorEvaluator, W_VariableExpression,
-                             W_Call, W_NAryCall, VariableUnbound, Rule)
+                             W_Call, W_NAryCall, Quote,
+                             VariableUnbound, Rule)
+from lamb.small_list import inline_small_list
 
 #
 # Execution behavior.
@@ -34,10 +36,10 @@ class __extend__(W_Object):
     def interpret(self, op_stack, ex_stack):
         return (op_push(op_stack, self), ex_stack)
 
+
+class __extend__(Quote):
     def interpret_new(self, bindings, cont):
-        from lamb.expression import W_PureExpression
-        assert not isinstance(self, W_PureExpression)
-        return cont.plug_reduce(self)
+        return cont.plug_reduce(self.w_value)
 
 class __extend__(W_Constructor):
     def evaluate(self):
@@ -79,6 +81,7 @@ class __extend__(W_Lambda):
                 return (op_stack, ex_stack)
         raise NoMatch()
 
+    @jit.unroll_safe
     def select_rule(self, args_w):
         for rule in self._rules:
             try:
@@ -87,7 +90,7 @@ class __extend__(W_Lambda):
             except NoMatch:
                 pass
             else:
-                return expression, binding
+                return expression, Env.make(binding)
         raise NoMatch()
 
 class __extend__(W_Primitive):
@@ -120,7 +123,7 @@ class __extend__(W_ConstructorEvaluator):
     def interpret_new(self, bindings, cont):
         if len(self._children) == 0:
             return cont.plug_reduce(w_constructor(self._tag, []))
-        return self._children[0], bindings, ConstrContinuation(self, bindings, cont, [])
+        return self._children[0], bindings, ConstrContinuation.make([], self, bindings, cont)
 
 class __extend__(W_VariableExpression):
     def evaluate(self): # pragma: no cover
@@ -150,7 +153,7 @@ class __extend__(W_Call):
 
     @jit.unroll_safe
     def interpret_new(self, bindings, cont):
-        return self.callee, bindings, CallContinuation(self, bindings, cont, [])
+        return self.callee, bindings, CallContinuation.make([], self, bindings, cont)
 
 
 
@@ -310,6 +313,12 @@ def old_interpret(expression_stack, arguments_stack=None, debug=False):
     res, _ = op_stack.pop()
     return res
 
+class Env(object):
+    def __init__(self):
+        pass
+
+inline_small_list(Env)
+
 class Continuation(object):
     def plug_reduce(self, w_val):
         raise NotImplementedError("abstract base class")
@@ -319,62 +328,78 @@ class FinishContinuation(Continuation):
         raise Done(w_val)
 
 class CallContinuation(Continuation):
-    def __init__(self, w_expr, bindings, cont, values_w):
+    def __init__(self, w_expr, bindings, cont):
         assert isinstance(w_expr, W_Call)
         self.w_expr = w_expr
         self.bindings = bindings
         self.cont = cont
-        self.values_w = values_w
 
     def plug_reduce(self, w_val):
-        values_w = self.values_w + [w_val]
+        size = jit.promote(self._get_size_list())
+        jit.promote(self.w_expr)
+        values_w = self._get_full_list() + [w_val]
         bindings = self.bindings
-        if len(values_w) == self.w_expr.get_number_of_arguments() + 1:
+        if size == self.w_expr.get_number_of_arguments():
             w_lambda = values_w[0]
             jit.promote(w_lambda)
             assert isinstance(w_lambda, W_Lambda)
             args_w = values_w[1:]
             expr, bindings = w_lambda.select_rule(args_w)
             return expr, bindings, self.cont
-        cont = CallContinuation(self.w_expr, bindings, self.cont, values_w)
-        return self.w_expr.get_argument(len(values_w) - 1), bindings, cont
+        cont = CallContinuation.make(values_w, self.w_expr, bindings, self.cont)
+        return self.w_expr.get_argument(size), bindings, cont
+inline_small_list(CallContinuation)
 
 class ConstrContinuation(Continuation):
-    def __init__(self, w_expr, bindings, cont, values_w):
+    def __init__(self, w_expr, bindings, cont):
         assert isinstance(w_expr, W_ConstructorEvaluator)
         self.w_expr = w_expr
         self.bindings = bindings
         self.cont = cont
-        self.values_w = values_w
 
     def plug_reduce(self, w_val):
-        values_w = self.values_w + [w_val]
+        size = jit.promote(self._get_size_list())
+        jit.promote(self.w_expr)
+        values_w = self._get_full_list() + [w_val]
         bindings = self.bindings
         if len(values_w) == len(self.w_expr._children):
             w_constr = w_constructor(self.w_expr._tag, values_w)
             return self.cont.plug_reduce(w_constr)
-        cont = ConstrContinuation(self.w_expr, bindings, self.cont, values_w)
-        return self.w_expr._children[len(values_w)], bindings, cont
+        elif len(values_w) + 1 == len(self.w_expr._children):
+            bindings = None # don't need bindings, as plug_reduce will be called
+        cont = ConstrContinuation.make(values_w, self.w_expr, bindings, self.cont)
+        return self.w_expr._children[len(values_w)], self.bindings, cont
+inline_small_list(ConstrContinuation)
 
 class Done(Exception):
     def __init__(self, w_val):
         self.w_val = w_val
 
 
+jitdriver2 = jit.JitDriver(
+    greens=["expr"],
+    reds=["bindings", "cont"],
+    #get_printable_location=get_printable_location2,
+)
+
 def interpret(expr, bindings=None, cont=None):
+    from lamb.expression import W_PureExpression
     if isinstance(expr, ExecutionStackElement): # XXX for now
         assert expr._next is None
         expr = expr._data._replace_with_constructor_expression()
     if cont is None:
         cont = FinishContinuation()
     if bindings is None:
-        bindings = []
-    assert isinstance(bindings, list)
-    import pdb; pdb.set_trace()
+        bindings = Env.make([])
+    assert isinstance(bindings, Env)
     try:
         while True:
+            jitdriver2.jit_merge_point(expr=expr, bindings=bindings, cont=cont)
             expr2, bindings2, cont2 = expr.interpret_new(bindings, cont)
             assert not isinstance(expr2, W_Constructor)
             expr, bindings, cont = expr2, bindings2, cont2
+            assert isinstance(expr, W_PureExpression)
+            if expr.should_enter_here:
+                jitdriver2.can_enter_jit(expr=expr, bindings=bindings, cont=cont)
     except Done, e:
         return e.w_val

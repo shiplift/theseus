@@ -35,7 +35,8 @@ class W_Object(Object):
         return in_storage_shape
 
     def _replace_with_constructor_expression(self):
-        return self
+        from lamb.expression import Quote
+        return Quote(self)
 
 
 class W_Tag(W_Object):
@@ -254,9 +255,6 @@ class W_Lambda(W_Object):
 
     def arity(self):
         return self._rule_arity()
-
-    def _replace_with_constructor_expression(self):
-        return self
 
 class W_Primitive(W_Lambda):
     """

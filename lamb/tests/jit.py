@@ -147,13 +147,12 @@ class TestLLtype(LLJitMixin):
 
         succ = lamb( ([x1], cons("p", x1)) )
         succ._name = "succ"
-        stack_e = execution_stack(W_LambdaCursor(map))
-        stack_w = operand_stack(succ, clist_w)
+        stack_e = execution_stack(mu(map, [succ, clist_w]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
 
-        #interp_w() # fill the transition maps
         CompoundShape._config._inhibit_recognition = True
+        interp_w() # fill the transition maps
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
         import pdb; pdb.set_trace()
