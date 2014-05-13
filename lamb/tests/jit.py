@@ -54,10 +54,9 @@ class TestLLtype(LLJitMixin):
         # XXX >= 150 does not work oO
         list1_w = [integer(x) for x in range(nums)]
         clist1_w = conslist(list1_w)
-        stack_w = operand_stack(clist1_w)
-        stack_e = execution_stack(W_LambdaCursor(reverse))
+        stack_e = execution_stack(mu(reverse, [clist1_w]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
         clist1_w.get_tag().default_shape.print_transforms()
