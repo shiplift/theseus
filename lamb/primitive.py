@@ -238,6 +238,7 @@ def print_int(x):
 def print_result_string(x):
     " A hacky primitive to quickly generate ReBench out format "
     from lamb.util.construction_helper import nil
+    x *= 1000.0
     print "RESULT-cpu: %s\nRESULT-total: %s" % (x, x)
     return nil()
 
