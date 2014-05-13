@@ -27,8 +27,10 @@ from lamb.small_list import inline_small_list
 # Execution behavior.
 #
 class __extend__(W_Object):
-    def evaluate_with_binding(self, binding):
-        return self.copy(binding).evaluate()
+    def evaluate_with_binding(self, binding_list):
+        # only used from tests
+        assert isinstance(binding_list, list)
+        return self.evaluate(Env.make(binding_list))
 
     def evaluate(self, binding):
         return self
