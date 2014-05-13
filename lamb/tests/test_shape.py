@@ -15,7 +15,7 @@ from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            ziprules, lamb, mu,
                                            nil, is_nil,
                                            conslist, plist,
-                                           execution_stack, operand_stack)
+                                           execution_stack)
 
 def setup_module(module):
     from lamb import execution

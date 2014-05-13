@@ -15,7 +15,7 @@ from lamb.util.construction_helper import (pattern, cons, integer,
                                            lamb,mu,
                                            nil,
                                            conslist, plist,
-                                           execution_stack, operand_stack)
+                                           execution_stack)
 #
 # Tests
 #
