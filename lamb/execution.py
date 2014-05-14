@@ -379,6 +379,8 @@ class ConstrContinuation(Continuation):
 
     def __init__(self, w_expr, bindings, cont):
         assert isinstance(w_expr, W_ConstructorEvaluator)
+        if self._get_size_list() + 1 == len(w_expr._children):
+            bindings = None # don't need bindings, as plug_reduce will be called
         self.w_expr = w_expr
         self.bindings = bindings
         self.cont = cont
@@ -390,8 +392,6 @@ class ConstrContinuation(Continuation):
             values_w = self._get_full_list() + [w_val]
             bindings = self.bindings
             if len(values_w) < len(self.w_expr._children):
-                if len(values_w) + 1 == len(self.w_expr._children):
-                    bindings = None # don't need bindings, as plug_reduce will be called
                 cont = ConstrContinuation.make(values_w, self.w_expr, bindings, self.cont)
                 return self.w_expr._children[len(values_w)], self.bindings, cont
             w_constr = w_constructor(self.w_expr._tag, values_w)

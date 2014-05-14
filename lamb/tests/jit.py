@@ -184,6 +184,8 @@ class TestLLtype(LLJitMixin):
         def interp_w():
             return interpret(stack_e)
 
+        interp_w()
+
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_pluacc(self):
