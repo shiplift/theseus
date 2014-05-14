@@ -336,9 +336,15 @@ class Continuation(object):
     def plug_reduce(self, w_val):
         raise NotImplementedError("abstract base class")
 
+    def needs_bindings(self):
+        return True
+
 class FinishContinuation(Continuation):
     def plug_reduce(self, w_val):
         raise Done(w_val)
+
+    def needs_bindings(self):
+        return False
 
 class CallContinuation(Continuation):
     def __init__(self, w_expr, bindings, cont):
@@ -363,7 +369,14 @@ class CallContinuation(Continuation):
         return self.w_expr.get_argument(size), bindings, cont
 inline_small_list(CallContinuation)
 
+constrdriver = jit.JitDriver(
+    greens=["expr", "shape"],
+    reds=["self", "w_val"],
+    #get_printable_location=get_printable_location2,
+)
 class ConstrContinuation(Continuation):
+    should_enter_here = True
+
     def __init__(self, w_expr, bindings, cont):
         assert isinstance(w_expr, W_ConstructorEvaluator)
         self.w_expr = w_expr
@@ -371,17 +384,23 @@ class ConstrContinuation(Continuation):
         self.cont = cont
 
     def plug_reduce(self, w_val):
-        size = jit.promote(self._get_size_list())
-        jit.promote(self.w_expr)
-        values_w = self._get_full_list() + [w_val]
-        bindings = self.bindings
-        if len(values_w) == len(self.w_expr._children):
+        while True:
+            size = jit.promote(self._get_size_list())
+            jit.promote(self.w_expr)
+            values_w = self._get_full_list() + [w_val]
+            bindings = self.bindings
+            if len(values_w) < len(self.w_expr._children):
+                if len(values_w) + 1 == len(self.w_expr._children):
+                    bindings = None # don't need bindings, as plug_reduce will be called
+                cont = ConstrContinuation.make(values_w, self.w_expr, bindings, self.cont)
+                return self.w_expr._children[len(values_w)], self.bindings, cont
             w_constr = w_constructor(self.w_expr._tag, values_w)
-            return self.cont.plug_reduce(w_constr)
-        elif len(values_w) + 1 == len(self.w_expr._children):
-            bindings = None # don't need bindings, as plug_reduce will be called
-        cont = ConstrContinuation.make(values_w, self.w_expr, bindings, self.cont)
-        return self.w_expr._children[len(values_w)], self.bindings, cont
+            self = self.cont
+            if not isinstance(self, ConstrContinuation):
+                return self.plug_reduce(w_constr)
+            w_val = w_constr
+            constrdriver.jit_merge_point(expr=self.w_expr, shape=w_val._shape, self=self, w_val=w_val)
+
 inline_small_list(ConstrContinuation)
 
 class Done(Exception):
