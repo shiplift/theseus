@@ -171,7 +171,7 @@ class TestLLtype(LLJitMixin):
     def test_mulacc(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(mu(_mult_acc(), [arg1, args]))
+        stack_e = execution_stack(mu(_mult_acc(), [arg1, arg2]))
         def interp_w():
             return interpret(stack_e)
 
@@ -180,13 +180,14 @@ class TestLLtype(LLJitMixin):
     def test_plus(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(mu(_plus(), [arg1, args2]))
+        stack_e = execution_stack(mu(_plus(), [arg1, arg2]))
         def interp_w():
             return interpret(stack_e)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_pluacc(self):
+        peano_num(100) # find shapes
         arg1 = peano_num(100)
         arg2 = peano_num(100)
         stack_e = execution_stack(mu(_plus_acc(), [arg1, arg2]))

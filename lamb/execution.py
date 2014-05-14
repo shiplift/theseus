@@ -321,6 +321,15 @@ class Env(object):
     def __init__(self):
         pass
 
+    @jit.unroll_safe
+    def shape_tuple(self):
+        shapes = [None] * self._get_size_list()
+        for i in range(self._get_size_list()):
+            w_obj = self._get_list(i)
+            if isinstance(w_obj, W_Constructor):
+                shapes[i] = w_obj._shape
+        return find_shape_tuple(shapes)
+
 inline_small_list(Env)
 
 class Continuation(object):
@@ -381,7 +390,7 @@ class Done(Exception):
 
 
 jitdriver2 = jit.JitDriver(
-    greens=["expr"],
+    greens=["expr", "env_shapes"],
     reds=["bindings", "cont"],
     #get_printable_location=get_printable_location2,
 )
@@ -398,12 +407,14 @@ def interpret(expr, bindings=None, cont=None):
     assert isinstance(bindings, Env)
     try:
         while True:
-            jitdriver2.jit_merge_point(expr=expr, bindings=bindings, cont=cont)
+            env_shapes = bindings.shape_tuple()
+            if expr.should_enter_here:
+                jitdriver2.can_enter_jit(expr=expr, bindings=bindings, cont=cont, env_shapes=env_shapes)
+            jitdriver2.jit_merge_point(expr=expr, bindings=bindings, cont=cont, env_shapes=env_shapes)
             expr2, bindings2, cont2 = expr.interpret_new(bindings, cont)
             assert not isinstance(expr2, W_Constructor)
             expr, bindings, cont = expr2, bindings2, cont2
+            env_shapes = bindings.shape_tuple()
             assert isinstance(expr, W_PureExpression)
-            if expr.should_enter_here:
-                jitdriver2.can_enter_jit(expr=expr, bindings=bindings, cont=cont)
     except Done, e:
         return e.w_val
