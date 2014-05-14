@@ -2,3 +2,10 @@ syntax: glob
 *-c
 .coverage
 *.lambc
+*.o
+*.cmi
+*.cmx
+*.x86-darwin
+
+syntax: regexp
+\.cm/
