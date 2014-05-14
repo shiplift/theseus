@@ -349,6 +349,8 @@ class FinishContinuation(Continuation):
 class CallContinuation(Continuation):
     def __init__(self, w_expr, bindings, cont):
         assert isinstance(w_expr, W_Call)
+        if self._get_size_list() == w_expr.get_number_of_arguments():
+            bindings = None # won't need the old one
         self.w_expr = w_expr
         self.bindings = bindings
         self.cont = cont
@@ -357,7 +359,6 @@ class CallContinuation(Continuation):
         size = jit.promote(self._get_size_list())
         jit.promote(self.w_expr)
         values_w = self._get_full_list() + [w_val]
-        bindings = self.bindings
         if size == self.w_expr.get_number_of_arguments():
             w_lambda = values_w[0]
             jit.promote(w_lambda)
@@ -365,6 +366,8 @@ class CallContinuation(Continuation):
             args_w = values_w[1:]
             expr, bindings = w_lambda.select_rule(args_w)
             return expr, bindings, self.cont
+        bindings = self.bindings
+        assert bindings is not None
         cont = CallContinuation.make(values_w, self.w_expr, bindings, self.cont)
         return self.w_expr.get_argument(size), bindings, cont
 inline_small_list(CallContinuation)
@@ -390,10 +393,10 @@ class ConstrContinuation(Continuation):
             size = jit.promote(self._get_size_list())
             jit.promote(self.w_expr)
             values_w = self._get_full_list() + [w_val]
-            bindings = self.bindings
             if len(values_w) < len(self.w_expr._children):
+                bindings = self.bindings
                 cont = ConstrContinuation.make(values_w, self.w_expr, bindings, self.cont)
-                return self.w_expr._children[len(values_w)], self.bindings, cont
+                return self.w_expr._children[len(values_w)], bindings, cont
             w_constr = w_constructor(self.w_expr._tag, values_w)
             self = self.cont
             if not isinstance(self, ConstrContinuation):
