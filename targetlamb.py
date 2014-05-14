@@ -221,12 +221,12 @@ def run(config, filename, debug=False):
     #
     # Main run stuff.
     #
-    stack_w = op_push(None, nil())
-    stack_e = None
-    for exp in reversed(expressions):
-        stack_e = ex_push(stack_e, exp)
-
-    result = interpret(stack_e, stack_w, debug)
+    if debug:
+        print "debug not supported atm"
+        raise ValueError
+    result = None
+    for exp in expressions:
+        result = interpret(exp._replace_with_constructor_expression())
     #
     #
     #

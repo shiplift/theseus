@@ -364,8 +364,12 @@ class CallContinuation(Continuation):
             jit.promote(w_lambda)
             assert isinstance(w_lambda, W_Lambda)
             args_w = values_w[1:]
-            expr, bindings = w_lambda.select_rule(args_w)
-            return expr, bindings, self.cont
+            if isinstance(w_lambda, W_Primitive):
+                w_res = w_lambda.call(args_w)
+                return self.cont.plug_reduce(w_res)
+            else:
+                expr, bindings = w_lambda.select_rule(args_w)
+                return expr, bindings, self.cont
         bindings = self.bindings
         assert bindings is not None
         cont = CallContinuation.make(values_w, self.w_expr, bindings, self.cont)

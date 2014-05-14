@@ -50,7 +50,7 @@ class TestLLtype(LLJitMixin):
         from mu.lists import make_reverse
         reverse = make_reverse()
 
-        nums = 149
+        nums = 50
         # XXX >= 150 does not work oO
         list1_w = [integer(x) for x in range(nums)]
         clist1_w = conslist(list1_w)
@@ -121,7 +121,8 @@ class TestLLtype(LLJitMixin):
         list1_w = [integer(x) for x in range(nums)]
         stack_e = execution_stack(mu(reverse, [conslist(list1_w)]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
+        interp_w()
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
