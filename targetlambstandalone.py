@@ -18,7 +18,7 @@ take_options = True
 
 import mu.functions
 from lamb.startup import boot
-from lamb.stack import ExecutionStackElement, OperandStackElement
+from lamb.stack import ExecutionStackElement
 from lamb.execution import jitdriver
 from lamb.shape import CompoundShape
 
@@ -311,7 +311,10 @@ def entry_point_t(argv):
 
 def run(config, fun, ops, debug=False):
 
-    from lamb.util.construction_helper import interpret, nil
+    from lamb.util.construction_helper import interpret, nil, mu
+    if debug:
+        print "debug not supported"
+        raise Exception
 
     start_time = time.time()
     start_cpu = time.clock()
@@ -321,11 +324,9 @@ def run(config, fun, ops, debug=False):
     result = nil()
     for _ in range(config["Nums"]):
         stack_w = None
-        for op in ops:
-            stack_w = OperandStackElement(op, stack_w)
-        stack_e = ExecutionStackElement(fun.lamb._cursor, None)
+        stack_e = ExecutionStackElement(mu(fun.lamb, ops))
 
-        result = interpret(stack_e, stack_w, debug)
+        result = interpret(stack_e)
     #
     #
     #

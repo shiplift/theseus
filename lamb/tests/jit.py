@@ -50,14 +50,13 @@ class TestLLtype(LLJitMixin):
         from mu.lists import make_reverse
         reverse = make_reverse()
 
-        nums = 149
+        nums = 50
         # XXX >= 150 does not work oO
         list1_w = [integer(x) for x in range(nums)]
         clist1_w = conslist(list1_w)
-        stack_w = operand_stack(clist1_w)
-        stack_e = execution_stack(W_LambdaCursor(reverse))
+        stack_e = execution_stack(mu(reverse, [clist1_w]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
         clist1_w.get_tag().default_shape.print_transforms()
@@ -120,10 +119,10 @@ class TestLLtype(LLJitMixin):
         nums = 149
         # XXX >= 150 does not work oO
         list1_w = [integer(x) for x in range(nums)]
-        stack_w = operand_stack(conslist(list1_w))
-        stack_e = execution_stack(W_LambdaCursor(reverse))
+        stack_e = execution_stack(mu(reverse, [conslist(list1_w)]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
+        interp_w()
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
@@ -147,60 +146,65 @@ class TestLLtype(LLJitMixin):
 
         succ = lamb( ([x1], cons("p", x1)) )
         succ._name = "succ"
-        stack_e = execution_stack(W_LambdaCursor(map))
-        stack_w = operand_stack(succ, clist_w)
+        stack_e = execution_stack(mu(map, [succ, clist_w]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
 
+        CompoundShape._config._inhibit_recognition = True
+        interp_w() # fill the transition maps
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
+        import pdb; pdb.set_trace()
+        list_w = [peano_num(x) for x in range(30)]
+        clist_w = conslist(list_w)
+        stack_e = execution_stack(mu(map, [succ, clist_w]))
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_mult(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(W_LambdaCursor(_mult()))
-        stack_w = operand_stack(arg1, arg2)
+        stack_e = execution_stack(mu(_mult(), [arg1, arg2]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_mulacc(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(W_LambdaCursor(_mult_acc()))
-        stack_w = operand_stack(arg1, arg2)
+        stack_e = execution_stack(mu(_mult_acc(), [arg1, arg2]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_plus(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(W_LambdaCursor(_plus()))
-        stack_w = operand_stack(arg1, arg2)
+        stack_e = execution_stack(mu(_plus(), [arg1, arg2]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
+
+        interp_w()
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_pluacc(self):
+        peano_num(100) # find shapes
         arg1 = peano_num(100)
         arg2 = peano_num(100)
-        stack_e = execution_stack(W_LambdaCursor(_plus_acc()))
-        stack_w = operand_stack(arg1, arg2)
+        stack_e = execution_stack(mu(_plus_acc(), [arg1, arg2]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_pgcbench(self):
         arg1 = peano_num(100)
         arg2 = peano_num(100)
-        stack_e = execution_stack(W_LambdaCursor(_gc_bench()))
-        stack_w = operand_stack()
+        stack_e = execution_stack(mu(_gc_bench(), [arg1, arg2]))
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(stack_e)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 

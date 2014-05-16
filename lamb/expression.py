@@ -44,11 +44,15 @@ class __extend__(W_Object):
 class __extend__(W_Constructor):
     @jit.unroll_safe
     def copy(self, binding):
-        from lamb.expression import W_ConstructorEvaluator
         num_children = self.get_number_of_children()
         children = [None] * num_children
         for index in range(num_children):
             children[index] = self.get_child(index).copy(binding)
+        return W_ConstructorEvaluator(self.get_tag(), children)
+
+    def _replace_with_constructor_expression(self):
+        children = [self.get_child(i)._replace_with_constructor_expression()
+                        for i in range(self.get_number_of_children())]
         return W_ConstructorEvaluator(self.get_tag(), children)
 
 ###############################################################################
@@ -57,7 +61,14 @@ class W_PureExpression(W_Object):
     """
     Objects that only ever live on the expression stack
     """
-    pass
+    should_enter_here = False
+
+    def _replace_with_constructor_expression(self):
+        return self
+
+class Quote(W_PureExpression):
+    def __init__(self, w_value):
+        self.w_value = w_value
 
 class W_ConstructorEvaluator(W_PureExpression):
 
@@ -74,6 +85,12 @@ class W_ConstructorEvaluator(W_PureExpression):
         return W_ConstructorEvaluator(self._tag, [child.copy(binding) \
                                                   for child in self._children])
 
+    def _replace_with_constructor_expression(self):
+        children = [child._replace_with_constructor_expression()
+                        for child in self._children]
+        return W_ConstructorEvaluator(self._tag, children)
+
+
 class W_VariableExpression(W_PureExpression):
 
     _immutable_fields_ = ['variable']
@@ -85,7 +102,7 @@ class W_VariableExpression(W_PureExpression):
         from lamb.execution import toplevel_bindings
         # var = jit.promote(self.variable)
         var = self.variable
-        w_result = binding[var.binding_index]
+        w_result = binding._get_list(var.binding_index)
 
         if w_result is None:
             w_result = toplevel_bindings.get(var.name)
@@ -125,6 +142,11 @@ class W_Call(W_PureExpression):
             args[i] = argument.copy(binding)
         return w_call(self.callee.copy(binding), args)
 
+    def _replace_with_constructor_expression(self):
+        children = [self.get_argument(i)._replace_with_constructor_expression()
+                        for i in range(self.get_number_of_arguments())]
+        return w_call(self.callee._replace_with_constructor_expression(),
+                children)
 
 class W_NAryCall(W_Call):
 
@@ -250,7 +272,10 @@ class Rule(Object):
             assert isinstance(p, Pattern)
         self._patterns = patterns
         self._arity = len(patterns)
-        self._expression = expression
+        self._expression = expr = expression._replace_with_constructor_expression()
+        assert isinstance(expr, W_PureExpression)
+        expr.should_enter_here = True
+
         self.maximal_number_of_variables = 0
         for pattern in self._patterns:
             pattern.update_number_of_variables(self)

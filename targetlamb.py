@@ -103,7 +103,7 @@ def parse_options(argv, config):
                 break
             i += 1
             jitarg = argv[i]
-            jit.set_user_param(jitdriver, jitarg)
+            jit.set_user_param(None, jitarg)
         elif argv[i] in ["-h", "--help"]:
             # printing done by caller
             ret = 0
@@ -221,12 +221,12 @@ def run(config, filename, debug=False):
     #
     # Main run stuff.
     #
-    stack_w = op_push(None, nil())
-    stack_e = None
-    for exp in reversed(expressions):
-        stack_e = ex_push(stack_e, exp)
-
-    result = interpret(stack_e, stack_w, debug)
+    if debug:
+        print "debug not supported atm"
+        raise ValueError
+    result = None
+    for exp in expressions:
+        result = interpret(exp._replace_with_constructor_expression())
     #
     #
     #

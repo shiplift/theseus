@@ -103,7 +103,6 @@ class TestLambda(object):
             res = l.call([w_cons1])
             assert res == cons("cons", *(list1[1:]))
 
-
     def test_map(self):
         """
         in scheme
@@ -181,13 +180,6 @@ class TestInterpret(object):
         res = interpret(execution_stack(mu(l, [w_false])))
         assert res == w_true
 
-        res = interpret(execution_stack(W_LambdaCursor(l)),
-                        operand_stack(w_true))
-        assert res == w_false
-
-        res = interpret(execution_stack(W_LambdaCursor(l)),
-                        operand_stack(w_false))
-        assert res == w_true
 
     def test_append(self):
 
@@ -206,8 +198,7 @@ class TestInterpret(object):
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
 
-        res = interpret(execution_stack(W_LambdaCursor(l)),
-                        operand_stack(conslist(list1_w), conslist(list2_w)))
+        res = interpret(execution_stack(mu(l, [conslist(list1_w), conslist(list2_w)])))
         assert plist(res) == list1_w + list2_w
 
     def test_map(self):
@@ -245,8 +236,7 @@ class TestInterpret(object):
         list_w = [peano_num(1),peano_num(2),peano_num(3)]
         #list_w = [peano_num(1)]
 
-        res = interpret(execution_stack(W_LambdaCursor(m)),
-                        operand_stack(_succ(), conslist(list_w)))
+        res = interpret(execution_stack(mu(m, [_succ(), conslist(list_w)])))
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
         #assert plist(res) == [peano_num(2)]
 
@@ -261,8 +251,7 @@ class TestInterpret(object):
 
             list1 = [integer(n) for n in range(i)]
             w_cons1 = cons("cons", *list1)
-            res = interpret(execution_stack(W_LambdaCursor(l)),
-                            operand_stack(w_cons1))
+            res = interpret(execution_stack(mu(l, [w_cons1])))
             assert res == cons("cons", *(list1[1:] + list1[:1]))
 
     def test_muffle(self):
@@ -283,12 +272,12 @@ class TestInterpret(object):
 
             list1 = [integer(n) for n in range(i)]
             w_cons1 = cons("cons", *list1)
-            res = interpret(execution_stack(W_LambdaCursor(l)),
-                            operand_stack(w_cons1))
+            res = interpret(execution_stack(mu(l, [w_cons1])))
             assert res == cons("cons", *(list1[1:]))
 
 
     def test_reverse(self):
+        py.test.skip("debug not supported yet")
         from lamb import execution
 
         a1 = Variable("acc")
@@ -367,10 +356,9 @@ class TestInterpret(object):
         a_w = peano_num(4)
         b_w = peano_num(5)
 
-        ex_stack = execution_stack(W_LambdaCursor(_plus()))
-        op_stack = operand_stack(a_w, b_w)
+        ex_stack = execution_stack(mu(_plus(), [a_w, b_w]))
 
-        res = interpret(ex_stack, op_stack)
+        res = interpret(ex_stack)
         assert python_num(res) == 9
 
     def test_plus_acc(self):
@@ -380,10 +368,9 @@ class TestInterpret(object):
         a_w = peano_num(4)
         b_w = peano_num(5)
 
-        ex_stack = execution_stack(W_LambdaCursor(_plus_acc()))
-        op_stack = operand_stack(a_w, b_w)
+        ex_stack = execution_stack(mu(_plus_acc(), [a_w, b_w]))
 
-        res = interpret(ex_stack, op_stack)
+        res = interpret(ex_stack)
         assert python_num(res) == 9
 
     def test_mult(self):
@@ -393,10 +380,9 @@ class TestInterpret(object):
         a_w = peano_num(2)
         b_w = peano_num(3)
 
-        ex_stack = execution_stack(W_LambdaCursor(_mult()))
-        op_stack = operand_stack(a_w, b_w)
+        ex_stack = execution_stack(mu(_mult(), [a_w, b_w]))
 
-        res = interpret(ex_stack, op_stack)
+        res = interpret(ex_stack)
         assert python_num(res) == 6
 
 # EOF

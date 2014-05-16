@@ -15,7 +15,7 @@ from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            ziprules, lamb, mu,
                                            nil, is_nil,
                                            conslist, plist,
-                                           execution_stack, operand_stack)
+                                           execution_stack)
 
 def setup_module(module):
     from lamb import execution
@@ -458,8 +458,8 @@ class TestShapeMerger(object):
         if debug:
             from lamb import execution
             execution._debug_callback = stackinspect
-        res = interpret(execution_stack(W_LambdaCursor(reverse)),
-                        operand_stack(clist1_w), debug)
+            py.test.skip("debug not supported yet")
+        res = interpret(execution_stack(mu(reverse, [clist1_w])))
         list1_w.reverse()
         assert plist(res) == list1_w
 
@@ -475,12 +475,11 @@ class TestShapeMerger(object):
         arg2 = peano_num(n)
         assert python_num(arg2) == n
 
-        stack_e = execution_stack(W_LambdaCursor(_plus()))
-        stack_w = operand_stack(arg1, arg2)
+        stack_e = execution_stack(mu(_plus(), [arg1, arg2]))
         assert python_num(arg2) == n
         assert python_num(arg1) == n
 
-        res = interpret(stack_e, stack_w, True)
+        res = interpret(stack_e)
         assert python_num(arg2) == n
         assert python_num(arg1) == n
         assert python_num(res) == n + n
@@ -498,14 +497,13 @@ class TestShapeMerger(object):
         arg2 = peano_num(n)
         assert python_num(arg2) == n
 
-        stack_e = execution_stack(W_LambdaCursor(_mult()))
-        stack_w = operand_stack(arg1, arg2)
+        stack_e = execution_stack(mu(_mult(), [arg1, arg2]))
         assert python_num(arg2) == n
         assert python_num(arg1) == n
 
         print "\n" * 10
 
-        res = interpret(stack_e, stack_w, True)
+        res = interpret(stack_e)
         assert python_num(arg2) == n
         assert python_num(arg1) == n
         assert python_num(res) == n * n

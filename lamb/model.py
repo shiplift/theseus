@@ -34,6 +34,10 @@ class W_Object(Object):
     def shape(self):
         return in_storage_shape
 
+    def _replace_with_constructor_expression(self):
+        from lamb.expression import Quote
+        return Quote(self)
+
 
 class W_Tag(W_Object):
     tags = {}
