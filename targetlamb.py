@@ -91,7 +91,7 @@ Operations:
 
 def parse_options(argv, config):
     filename = None
-    ops = []
+    args = []
     ret = -1
     i = 1
     to = len(argv)
@@ -139,11 +139,17 @@ def parse_options(argv, config):
             CompoundShape._config.ignore_nils = True
         else:
             filename = argv[i]
-            assert not len(argv) - 1 > i
+            if len(argv) > i:
+                args = argv[i+1:]
             break
         i += 1
 
-    return (filename, ret, config)
+    return (filename, ret, args, config)
+
+def convert_arguments(arguments):
+    from lamb.util.construction_helper import conslist
+    from lamb import model
+    return conslist([model.w_string(arg) for arg in arguments])
 
 def do_come_up(f):
     from lamb.util.serialize import come_up
@@ -157,7 +163,7 @@ def do_settle(f):
 
 def entry_point(argv, debug=False):
 
-    (filename, ret, conf) = parse_options(argv, default_config)
+    (filename, ret, args, conf) = parse_options(argv, default_config)
     config = conf
 
     if config["ReadStatefile"] and filename is not None:
@@ -169,7 +175,7 @@ def entry_point(argv, debug=False):
         print_help(argv, config)
         return ret # quit early.
 
-    (result, timing) = run(config, filename, debug)
+    (result, timing) = run(config, filename, args, debug)
 
     if config["WriteStatefile"]:
         do_settle(filename)
@@ -207,13 +213,14 @@ def entry_point_t(argv):
     return ret
 
 
-def run(config, filename, debug=False):
+def run(config, filename, args, debug=False):
 
     from lamb.util.construction_helper import interpret, nil
     from lamb.parser import parse_file
     from lamb.execution import toplevel_bindings
 
-    expressions, bindings = parse_file(filename)
+    w_argv = convert_arguments(args)
+    expressions, bindings = parse_file(filename, w_argv)
     toplevel_bindings.set_bindings(bindings)
 
     start_time = time.time()

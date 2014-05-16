@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from lamb import model
-from rpython.rlib import jit
+from rpython.rlib import jit, rarithmetic, rstring, rfloat
 
 
 # Primitives
@@ -228,8 +228,29 @@ def mult_float(x, y):
 def div_float(x, y):
     return model.w_float(x / y)
 
+################################################################
+
+# @expose_primitive("Σ*→ℤ", unwrap_spec=[str])
+@expose_primitive("strtol", unwrap_spec=[str])
+def string_to_int(s):
+    return model.w_integer(rarithmetic.string_to_int(
+        rstring.replace(s, "_", ""), base=0))
+
+# @expose_primitive("Σ*→ℝ", unwrap_spec=[str])
+@expose_primitive("strtof", unwrap_spec=[str])
+def string_to_float(s):
+    return model.w_float(rfloat.string_to_float(s))
+
+################################################################
+
 @expose_primitive(unwrap_spec=[int])
 def print_int(x):
+    from lamb.util.construction_helper import nil
+    print x
+    return nil()
+
+@expose_primitive(unwrap_spec=[str])
+def print_string(x):
     from lamb.util.construction_helper import nil
     print x
     return nil()

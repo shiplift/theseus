@@ -109,8 +109,10 @@ class Parser(RPythonVisitor):
         self.rule_effect_tracker = 0
         self.rule_pattern_tracker = 0
 
-    def parse(self, source, is_file=False):
-        self._reset
+    def parse(self, source, w_argv=None, is_file=False):
+        self._reset()
+        if w_argv is not None:
+            self.define("arguments", w_argv)
         self.is_file = is_file
         if self.is_file:
             try:
@@ -385,9 +387,9 @@ class Parser(RPythonVisitor):
     #     return node
 
 
-def parse_file(filename):
+def parse_file(filename, w_argv=None):
      p = Parser()
-     elements = p.parse(filename, is_file=True)
+     elements = p.parse(filename, w_argv, is_file=True)
      result = [element for element in elements if element is not no_result]
      bindings = p.toplevel_bindings()
      return (result, bindings)
