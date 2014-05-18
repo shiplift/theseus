@@ -136,7 +136,7 @@ class __extend__(W_ConstructorEvaluator):
     def interpret_new(self, bindings, cont):
         if len(self._children) == 0:
             return cont.plug_reduce(w_constructor(self._tag, []))
-        return self._children[0], bindings, ConstrContinuation.make([], self, bindings, cont)
+        return self._children[0], bindings, constrcont([], self, bindings, cont)
 
 class __extend__(W_VariableExpression):
     def evaluate(self, binding):
@@ -385,14 +385,32 @@ constrdriver = jit.JitDriver(
     #get_printable_location=get_printable_location2,
     should_unroll_one_iteration=lambda expr, shape: True,
 )
-class ConstrContinuation(Continuation):
 
+def constrcont(values_w, w_expr, bindings, cont):
+    if len(values_w) + 1 == len(w_expr._children):
+        return ConstrContinuation.make(values_w, w_expr, cont)
+    return ConstrEvalArgsContinuation.make(values_w, w_expr, bindings, cont)
+
+class ConstrEvalArgsContinuation(Continuation):
     def __init__(self, w_expr, bindings, cont):
-        assert isinstance(w_expr, W_ConstructorEvaluator)
-        if self._get_size_list() + 1 == len(w_expr._children):
-            bindings = None # don't need bindings, as plug_reduce will be called
         self.w_expr = w_expr
         self.bindings = bindings
+        self.cont = cont
+
+    def plug_reduce(self, w_val):
+        jit.promote(self._get_size_list())
+        jit.promote(self.w_expr)
+        values_w = self._get_full_list() + [w_val]
+        bindings = self.bindings
+        cont = constrcont(values_w, self.w_expr, bindings, self.cont)
+        return self.w_expr._children[len(values_w)], bindings, cont
+inline_small_list(ConstrEvalArgsContinuation)
+
+class ConstrContinuation(Continuation):
+
+    def __init__(self, w_expr, cont):
+        assert isinstance(w_expr, W_ConstructorEvaluator)
+        self.w_expr = w_expr
         self.cont = cont
 
     def plug_reduce(self, w_val):
@@ -400,10 +418,7 @@ class ConstrContinuation(Continuation):
             size = jit.promote(self._get_size_list())
             jit.promote(self.w_expr)
             values_w = self._get_full_list() + [w_val]
-            if len(values_w) < len(self.w_expr._children):
-                bindings = self.bindings
-                cont = ConstrContinuation.make(values_w, self.w_expr, bindings, self.cont)
-                return self.w_expr._children[len(values_w)], bindings, cont
+            assert len(values_w) == len(self.w_expr._children)
             w_constr = w_constructor(self.w_expr._tag, values_w)
             self = self.cont
             if not isinstance(self, ConstrContinuation):
