@@ -53,7 +53,10 @@ class __extend__(W_Constructor):
     def _replace_with_constructor_expression(self):
         children = [self.get_child(i)._replace_with_constructor_expression()
                         for i in range(self.get_number_of_children())]
-        return W_ConstructorEvaluator(self.get_tag(), children)
+        for child in children:
+            if not isinstance(child, Quote):
+                return W_ConstructorEvaluator(self.get_tag(), children)
+        return Quote(self)
 
 ###############################################################################
 
