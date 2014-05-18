@@ -65,6 +65,7 @@ class W_PureExpression(W_Object):
     Objects that only ever live on the expression stack
     """
     should_enter_here = False
+    _immutable_fields_ = ["should_enter_here"]
 
     def _replace_with_constructor_expression(self):
         return self

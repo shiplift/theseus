@@ -383,9 +383,9 @@ constrdriver = jit.JitDriver(
     greens=["expr", "shape"],
     reds=["self", "w_val"],
     #get_printable_location=get_printable_location2,
+    should_unroll_one_iteration=lambda expr, shape: True,
 )
 class ConstrContinuation(Continuation):
-    should_enter_here = True
 
     def __init__(self, w_expr, bindings, cont):
         assert isinstance(w_expr, W_ConstructorEvaluator)
