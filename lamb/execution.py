@@ -98,6 +98,10 @@ class __extend__(W_Lambda):
                 return expression, Env.make(binding)
         raise NoMatch()
 
+    def call_cont(self, args_w, cont):
+        expr, bindings = self.select_rule(args_w)
+        return expr, bindings, cont
+
 class __extend__(W_Primitive):
     def call(self, w_arguments):
         assert len(w_arguments) == self.arity()
@@ -112,6 +116,10 @@ class __extend__(W_Primitive):
             w_arguments[i], op_stack = op_stack.pop()
         ex_stack = ex_push(ex_stack, self._fun(w_arguments))
         return (op_stack, ex_stack)
+
+    def call_cont(self, args_w, cont):
+        w_res = self.call(args_w)
+        return cont.plug_reduce(w_res)
 
 class __extend__(W_ConstructorEvaluator):
     def evaluate(self, binding):
@@ -364,12 +372,7 @@ class CallContinuation(Continuation):
             jit.promote(w_lambda)
             assert isinstance(w_lambda, W_Lambda)
             args_w = values_w[1:]
-            if isinstance(w_lambda, W_Primitive):
-                w_res = w_lambda.call(args_w)
-                return self.cont.plug_reduce(w_res)
-            else:
-                expr, bindings = w_lambda.select_rule(args_w)
-                return expr, bindings, self.cont
+            return w_lambda.call_cont(args_w, self.cont)
         bindings = self.bindings
         assert bindings is not None
         cont = CallContinuation.make(values_w, self.w_expr, bindings, self.cont)
