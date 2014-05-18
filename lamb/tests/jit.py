@@ -152,7 +152,7 @@ class TestLLtype(LLJitMixin):
 
         CompoundShape._config._inhibit_recognition = True
         interp_w() # fill the transition maps
-        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True, inline=True)
 
         import pdb; pdb.set_trace()
         list_w = [peano_num(x) for x in range(30)]
