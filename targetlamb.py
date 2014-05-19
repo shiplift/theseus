@@ -35,13 +35,11 @@ default_config = {
 def print_statistics(timings, fun):
     shapes, transf = stats()
     total, cpu = timings
-    print "Stats{"
     print "B:%s:" % fun
-    print "RESULT-shapes:", shapes
-    print "RESULT-transformationrules:", transf
-    print "RESULT-total:", total
-    print "RESULT-cpu:", cpu
-    print "}Stats"
+    print "0:RESULT-shapes:num:", shapes
+    print "0:RESULT-transformationrules:num:", transf
+    print "0:RESULT-total:ms:", total
+    print "0:RESULT-cpu:ms:", cpu
 
 def stats():
     num_transf = 0
