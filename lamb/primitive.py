@@ -211,6 +211,16 @@ def div_int(x, y):
 def mod_int(x, y):
     return model.w_integer(x % y)
 
+@expose_primitive(unwrap_spec=[int, int])
+def lsl(x, y):
+    return model.w_integer(x << y)
+
+@expose_primitive(unwrap_spec=[int, int])
+def lsr(x, y):
+    return model.w_integer(x >> y)
+
+
+
 ################################################################
 @expose_primitive(unwrap_spec=[float, float])
 def minus_float(x, y):
