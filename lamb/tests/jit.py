@@ -14,6 +14,7 @@ class o:
 conftest.option = o
 from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 
+from lamb import model
 from lamb.model import tag
 from lamb.execution import interpret, W_LambdaCursor
 from lamb.expression import Variable
@@ -229,13 +230,62 @@ class TestLLtype(LLJitMixin):
         from lamb.parser import parse_file
         from lamb.execution import toplevel_bindings
 
-        filename = str(py.path.local(__file__).dirpath().dirpath().dirpath("arbitraty_precision_ints.lamb"))
-        expressions, bindings = parse_file(filename)
+        filename = str(py.path.local(__file__).dirpath().dirpath().dirpath("compare").join("lamb", "arbitraty_precision_ints.lamb"))
+        expressions, bindings = parse_file(filename, nil())
         toplevel_bindings.set_bindings(bindings)
 
-        stack_e = execution_stack(expressions[-1])
-        stack_w = operand_stack(nil())
+        exp = expressions[-1]._replace_with_constructor_expression()
         def interp_w():
-            return interpret(stack_e, stack_w)
+            x = model.w_string("foo") # be happy, annotator
+            return interpret(exp)
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True, inline=True)
 
-        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
+
+    def test_mapf(self):
+        from lamb.util.construction_helper import interpret, nil, convert_arguments
+        from lamb.parser import parse_file
+        from lamb.execution import toplevel_bindings
+
+        filename = str(py.path.local(__file__).dirpath().dirpath().dirpath("compare").join("lamb", "map.lamb"))
+        expressions, bindings = parse_file(filename, convert_arguments(["1000"]))
+        toplevel_bindings.set_bindings(bindings)
+
+        exp = expressions[-1]._replace_with_constructor_expression()
+        def interp_w():
+            x = model.w_string("foo") # be happy, annotator
+            return interpret(exp)
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True, inline=True)
+
+    def test_make_list(self):
+        src = """
+            make_list$aux ≔ λ.
+                            1. acc, 0 ↦ acc
+                            2. acc, n ↦ μ(make_list$aux,
+                                          Cons(E(), acc),
+                                          μ(⟪minus_int⟫, n, 1))
+            make_list ≔ λ. 1. n ↦ μ(make_list$aux, Nil(), n)
+            μ(make_list, 20000000)            
+        """
+        from lamb.util.construction_helper import interpret, nil, convert_arguments
+        from lamb.parser import parse_string
+        from lamb.execution import toplevel_bindings
+
+        CompoundShape._config.substitution_threshold = 0 #immediate
+        CompoundShape._config.max_storage_width = 6
+
+        expressions, bindings = parse_string(src, nil())
+        toplevel_bindings.set_bindings(bindings)
+
+        exp = expressions[-1]._replace_with_constructor_expression()
+        def interp_w():
+            x = model.w_string("foo") # be happy, annotator
+            return interpret(exp)
+
+        # import pdb; pdb.set_trace()
+        model.SHOT=True
+        interp_w()
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True, inline=True)
+        
+        

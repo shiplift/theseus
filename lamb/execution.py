@@ -379,10 +379,25 @@ class CallContinuation(Continuation):
         return self.w_expr.get_argument(size), bindings, cont
 inline_small_list(CallContinuation)
 
+def get_printable_location_constr(expr, shape):
+    res = "C"
+    if expr is None:
+        res += "<None>"
+    else:
+        # if isinstance(expr, W_LambdaCursor):
+        #     res += "Lamb[%s/%s] " % (current_cursor._lamb._name, current_cursor._lamb.arity())
+        # elif isinstance(current_cursor, W_ConstructorCursor):
+        #     res +=  "Cons[%s/%s] " % (current_cursor._tag.name, current_cursor._tag.arity())
+        # else:
+        #     return "<Unknown>"
+        res += "<%s>" % expr.merge_point_string()
+        res += shape.merge_point_string()
+    return res
+
 constrdriver = jit.JitDriver(
     greens=["expr", "shape"],
     reds=["self", "w_val"],
-    #get_printable_location=get_printable_location2,
+    get_printable_location=get_printable_location_constr,
     should_unroll_one_iteration=lambda expr, shape: True,
 )
 
@@ -433,10 +448,25 @@ class Done(Exception):
         self.w_val = w_val
 
 
+def get_printable_location2(expr, env_shapes):
+    res = "E"
+    if expr is None:
+        res += "<None>"
+    else:
+        # if isinstance(expr, W_LambdaCursor):
+        #     res += "Lamb[%s/%s] " % (current_cursor._lamb._name, current_cursor._lamb.arity())
+        # elif isinstance(current_cursor, W_ConstructorCursor):
+        #     res +=  "Cons[%s/%s] " % (current_cursor._tag.name, current_cursor._tag.arity())
+        # else:
+        #     return "<Unknown>"
+        res += "<%s>" % expr.merge_point_string()
+        res += env_shapes.merge_point_string()
+    return res
+
 jitdriver2 = jit.JitDriver(
     greens=["expr", "env_shapes"],
     reds=["bindings", "cont"],
-    #get_printable_location=get_printable_location2,
+    get_printable_location=get_printable_location2,
 )
 
 def interpret(expr, bindings=None, cont=None):

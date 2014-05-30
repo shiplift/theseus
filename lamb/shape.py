@@ -165,21 +165,13 @@ class CompoundShape(Shape):
                 return CompoundShape(self._tag, structure)
             storage_index -= child.storage_width()
 
-    @jit.elidable
-    def may_subsitute(self, constructor):
-        from util.construction_helper import is_nil
-        if self._config.ignore_nils:
-            return not is_nil(constructor)
-        else:
-            return True
-
     @jit.unroll_safe
     def record_shapes(self, storage):
         from model import W_Constructor
 
         for i in range(len(storage)):
             child = storage[i]
-            if isinstance(child, W_Constructor) and self.may_subsitute(child):
+            if isinstance(child, W_Constructor):
                 key = (i, child._shape)
                 count = self._hist[key] if key in self._hist else 0
                 width = child.get_storage_width()
@@ -344,7 +336,7 @@ def default_shape(tag, arity):
 class ShapeTuple(object):
     """
     I am a little bit like the python tuple but I can
-    built up myself consecutively and still retain obejct identity.
+    built up myself consecutively and still retain object identity.
     """
 
     _immutable_fields_ = ["shape", "parent"]

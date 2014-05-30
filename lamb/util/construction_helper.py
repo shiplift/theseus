@@ -119,4 +119,8 @@ def run(lamb, args):
     ex = ExecutionStackElement(mu(lamb, args))
     return interpret(ex)
 
+def convert_arguments(arguments):
+    from lamb import model
+    return conslist([model.w_string(arg) for arg in arguments])
+
 # EOF

@@ -155,6 +155,11 @@ class __extend__(expression.W_VariableExpression):
     def to_repr(self, seen):
         return u"!" + urepr(self.variable, seen)
 
+class __extend__(expression.Quote):
+    @uni
+    def to_repr(self, seen):
+        return u"'" + urepr(self.w_value, seen)
+
 class __extend__(expression.W_Call):
     @uni
     def to_repr(self, seen):

@@ -37,7 +37,8 @@ class W_Object(Object):
     def _replace_with_constructor_expression(self):
         from lamb.expression import Quote
         return Quote(self)
-
+    def merge_point_string(self):
+        return "<unknown: %s>" % self
 
 class W_Tag(W_Object):
     tags = {}
@@ -81,6 +82,8 @@ class W_Integer(W_Object):
         self._value = value
     def value(self):
         return self._value
+    def merge_point_string(self):
+        return "%d" % self._value
 
 
 def w_integer(value):
@@ -95,6 +98,8 @@ class W_Float(W_Object):
         self._value = value
     def value(self):
         return self._value
+    def merge_point_string(self):
+        return "%s" % self._value
 
 
 def w_float(value):
@@ -108,6 +113,8 @@ class W_String(W_Object):
         self._value = value
     def value(self):
         return self._value
+    def merge_point_string(self):
+        return "%s" % self._value
 
 def w_string(value):
     assert isinstance(value, str)
@@ -154,6 +161,8 @@ class W_Constructor(W_Object):
                 return self.get_children() == other.get_children()
         return False
 
+    def merge_point_string(self):
+        return "%s/%s" % (self.get_tag().name, self.get_tag().arity())
 class W_NAryConstructor(W_Constructor):
 
     _immutable_fields_ = ['_storage[*]']
@@ -255,6 +264,8 @@ class W_Lambda(W_Object):
 
     def arity(self):
         return self._rule_arity()
+    def merge_point_string(self):
+        return "%s/%d" % (self._name, self.arity())
 
 class W_Primitive(W_Lambda):
     """

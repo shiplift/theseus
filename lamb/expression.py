@@ -75,6 +75,12 @@ class Quote(W_PureExpression):
     def __init__(self, w_value):
         self.w_value = w_value
 
+    def merge_point_string(self):
+        if self.w_value:
+            return "'%s" % self.w_value.merge_point_string()
+        else:
+            return "?"
+
 class W_ConstructorEvaluator(W_PureExpression):
 
     _immutable_fields_ = ['_tag', '_children[*]']
@@ -95,6 +101,8 @@ class W_ConstructorEvaluator(W_PureExpression):
                         for child in self._children]
         return W_ConstructorEvaluator(self._tag, children)
 
+    def merge_point_string(self):
+        return "C%s/%d" % (self._tag.name, self._tag.arity())
 
 class W_VariableExpression(W_PureExpression):
 
@@ -117,6 +125,9 @@ class W_VariableExpression(W_PureExpression):
 
     def copy(self, binding):
         return self.resolve(binding)
+
+    def merge_point_string(self):
+        return "V[%s@%d]" % (self.variable.name, self.variable.binding_index)
 
 class W_Call(W_PureExpression):
 
@@ -152,6 +163,9 @@ class W_Call(W_PureExpression):
                         for i in range(self.get_number_of_arguments())]
         return w_call(self.callee._replace_with_constructor_expression(),
                 children)
+
+    def merge_point_string(self):
+        return "%s()" % (self.callee.merge_point_string())
 
 class W_NAryCall(W_Call):
 
