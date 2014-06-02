@@ -125,7 +125,12 @@ def parse_options(argv, config):
                 ret = 2
                 break
             i += 1
-            CompoundShape._config.substitution_threshold = int(argv[i])
+            s_t = int(argv[i])
+            if s_t <= 1:
+                print "substitution threshold must be greater than 1"
+                ret = 2
+                break
+            CompoundShape._config.substitution_threshold = s_t
         elif argv[i] == "-w":
             if len(argv) == i + 1:
                 print "missing argument after -w"
@@ -181,10 +186,7 @@ def entry_point(argv, debug=False):
     if config["Print"]:
         print result
     if config["Verbose"]:
-        for shape in CompoundShape._shapes:
-            print shape.merge_point_string()
-            shape.print_hist()
-            shape.print_transforms()
+        CompoundShape.print_verbose()
     if config["Verbose"] or config["Stats"]:
         print_statistics(timing, filename)
     return 0

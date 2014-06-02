@@ -285,6 +285,13 @@ class CompoundShape(Shape):
             print "\t%d: (%d,%s)" % (
                 count, index, src.merge_point_string())
 
+    @staticmethod
+    def print_verbose():
+        for shape in CompoundShape._shapes:
+            print shape.merge_point_string()
+            shape.print_hist()
+            shape.print_transforms()
+
     def __eq__(self, other):
         return self is other or (
             self.__class__  == other.__class__ and
