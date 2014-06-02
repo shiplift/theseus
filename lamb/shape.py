@@ -59,8 +59,14 @@ class Shape(Object):
     def extract_child(self, w_c, index):
         raise NotImplementedError("abstract method")
 
-    def record_shapes(self, storage):
+    def record_shape(self, child, i):
         pass
+
+    def record_shapes(self, storage):
+        """NOT_RPYHON"""
+        # test only
+        for i, child in enumerate(storage):
+            self.record_shape(child, i)
 
     def fusion(self, children):
         return (self, children)
@@ -77,11 +83,10 @@ class Shape(Object):
 
 class ShapeConfig(object):
 
-    def __init__(self, substitution_threshold, max_storage_width, ignore_nils):
+    def __init__(self, substitution_threshold=17, max_storage_width=7):
         self.substitution_threshold = substitution_threshold
         self.max_storage_width = max_storage_width
         self.log_transformations = False
-        self.ignore_nils = ignore_nils
         self._inhibit_recognition = False
         self._inhibit_all = False
 
@@ -89,9 +94,7 @@ class CompoundShape(Shape):
 
     _immutable_fields_ = ['_tag', '_structure[*]']
 
-    _config = ShapeConfig(substitution_threshold=17,
-                          max_storage_width=7,
-                          ignore_nils=False)
+    _config = ShapeConfig()
 
     _shapes = []
 
@@ -166,22 +169,20 @@ class CompoundShape(Shape):
             storage_index -= child.storage_width()
 
     @jit.unroll_safe
-    def record_shapes(self, storage):
+    def record_shape(self, child, i):
         from model import W_Constructor
-
-        for i in range(len(storage)):
-            child = storage[i]
-            if isinstance(child, W_Constructor):
-                key = (i, child._shape)
-                count = self._hist[key] if key in self._hist else 0
-                width = child.get_storage_width()
-                if (key not in self.transformation_rules and
-                    width <= self._config.max_storage_width and
-                    count <= self._config.substitution_threshold):
-                    # self._hist_keys.append(key)
-                    self._hist[key] = count + 1
-                    if self._hist[key] >= self._config.substitution_threshold:
-                        self.recognize_transformation(i, child._shape)
+        if not isinstance(child, W_Constructor):
+            return
+        key = (i, child._shape)
+        count = self._hist[key] if key in self._hist else 0
+        width = child.get_storage_width()
+        if (key not in self.transformation_rules and
+            width <= self._config.max_storage_width and
+            count <= self._config.substitution_threshold):
+            # self._hist_keys.append(key)
+            self._hist[key] = count + 1
+            if self._hist[key] >= self._config.substitution_threshold:
+                self.recognize_transformation(i, child._shape)
 
 
     def recognize_transformation(self, i, shape):
@@ -199,11 +200,6 @@ class CompoundShape(Shape):
         if self._config._inhibit_all:
             return (self, storage)
 
-        if not self._config._inhibit_recognition:
-            # We do not record statistics in jitted code,
-            # it should be stable beforehand
-            if not jit.we_are_jitted():
-                self.record_shapes(storage)
         new_shape, new_storage = self.merge(storage)
         return (new_shape, new_storage)
 
@@ -230,6 +226,12 @@ class CompoundShape(Shape):
         while index < storage_len:
             child = current_storage[index]
             subshape = child.shape()
+
+            if not self._config._inhibit_recognition:
+                # We do not record statistics in jitted code,
+                # it should be stable beforehand
+                if not jit.we_are_jitted():
+                    shape.record_shape(child, index)
 
             new_shape = shape.get_transformation(index, subshape)
             if new_shape is not shape:
@@ -271,7 +273,7 @@ class CompoundShape(Shape):
                 first = False
             else:
                 res += ", "
-            res += subshape.merge_point_string_seen(seen) if not subshape in seen else "."
+            res += subshape.merge_point_string_seen(seen) #if not subshape in seen else "."
         res += "}"
         return res
 
