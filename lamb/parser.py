@@ -331,8 +331,8 @@ class Parser(RPythonVisitor):
         assert len(node.children) == 2
         name = self.get_name(node)
         ch = self.dispatch(node.children[1])
-        w_c = model.w_constructor(model.tag(name, len(ch)), ch)
-        return [w_c._replace_with_constructor_expression()]
+        w_c = expression.W_ConstructorEvaluator(model.tag(name, len(ch)), ch)
+        return [w_c]
 
     # def visit_constructor_args(self, node):
     #     return self.handle_all(node.children)
