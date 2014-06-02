@@ -679,7 +679,7 @@ class TestShapeRecognizer(object):
 
         c.default_shape._config.substitution_threshold = 2
 
-        print ""
+        # print ""
         cons_0 = _cons(w_1, nil())
         assert cons_0.shape() == c.default_shape
         print cons_0.shape()
@@ -730,8 +730,8 @@ class TestShapeRecognizer(object):
         w_1 = integer(1)
         c = clean_tag("cons", 2)
 
-        def _cons(*children):
-            ch = list(children)
+        def _cons(*ch):
+            children = list(ch)
             pre_shape = c.default_shape
             shape, storage = pre_shape.fusion(children)
             constr = W_NAryConstructor(shape)
@@ -759,3 +759,239 @@ class TestShapeRecognizer(object):
             for i in range(num):
                 l = _cons(w_1, l)
             check_width(l, 25)
+
+
+    def test_post_recursive_structures(self):
+
+        c = clean_tag("cons", 2)
+        def _cons(car, cdr):
+            children = [car, cdr]
+            pre_shape = c.default_shape
+            shape, storage = pre_shape.fusion(children)
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+
+        # Be near immediate
+        c.default_shape._config.substitution_threshold = 2
+
+        assert len(c.default_shape.transformation_rules) == 0
+        assert len(c.default_shape._hist) == 0
+
+        cell = _cons(integer(1), nil())
+
+        assert len(c.default_shape.transformation_rules) == 0
+        assert len(c.default_shape._hist) == 1
+
+        cell2 = _cons(integer(1), cell)
+
+        assert len(c.default_shape.transformation_rules) == 0
+        assert len(c.default_shape._hist) == 2
+
+        cell3 = _cons(integer(1), cell2)
+
+        assert len(c.default_shape.transformation_rules) == 1
+        assert len(c.default_shape._hist) == 2
+
+        condition, result_shape = c.default_shape.transformation_rules.items()[0]
+        assert condition[0] == 1 # pos
+        assert condition[1] is c.default_shape # shape
+
+        assert result_shape._tag is c # same tag
+        assert len(result_shape._structure) == 2
+        assert result_shape._structure[0] is in_storage_shape
+        assert result_shape._structure[1] is c.default_shape
+
+        assert cell3._shape is result_shape
+
+    def test_pre_recursive_structures(self):
+
+        c = clean_tag("cons", 2)
+        def _cons(car, cdr):
+            children = [car, cdr]
+            pre_shape = c.default_shape
+            shape, storage = pre_shape.fusion(children)
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+
+        # Be near immediate
+        c.default_shape._config.substitution_threshold = 2
+
+        assert len(c.default_shape.transformation_rules) == 0
+        assert len(c.default_shape._hist) == 0
+
+        cell = _cons(nil(), integer(1))
+
+        assert len(c.default_shape.transformation_rules) == 0
+        assert len(c.default_shape._hist) == 1
+
+        cell2 = _cons(cell, integer(1))
+
+        assert len(c.default_shape.transformation_rules) == 0
+        assert len(c.default_shape._hist) == 2
+
+        cell3 = _cons(cell2, integer(1))
+
+        assert len(c.default_shape.transformation_rules) == 1
+        assert len(c.default_shape._hist) == 2
+
+        condition, result_shape = c.default_shape.transformation_rules.items()[0]
+        assert condition[0] == 0 # pos
+        assert condition[1] is c.default_shape # shape
+
+        assert result_shape._tag is c # same tag
+        assert len(result_shape._structure) == 2
+        assert result_shape._structure[0] is c.default_shape
+        assert result_shape._structure[1] is in_storage_shape
+
+        assert cell3._shape is result_shape
+
+    def test_pre_constr_recursive_structures(self):
+
+        c = clean_tag("cons", 2)
+        e = clean_tag("E", 0)
+        def _cons(car, cdr):
+            children = [car, cdr]
+            pre_shape = c.default_shape
+            shape, storage = pre_shape.fusion(children)
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+        def _e():
+            pre_shape = e.default_shape
+            shape, storage = pre_shape.fusion([])
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+
+        # Be near immediate
+        CompoundShape._config.substitution_threshold = 2
+
+        l = _cons(_cons(_cons(_cons(nil(), _e()), _e()),  _e()),  _e())
+        s = l.shape()
+        assert len(s._structure) == 2
+        assert s._structure[1] == in_storage_shape
+        s2 = s._structure[0]
+        assert len(s2._structure) == 2
+        assert s2._structure[0] == in_storage_shape
+        assert s2._structure[1] == e.default_shape
+
+    def test_post_constr_recursive_structures(self):
+
+        c = clean_tag("cons", 2)
+        e = clean_tag("E", 0)
+        def _cons(car, cdr):
+            children = [car, cdr]
+            pre_shape = c.default_shape
+            shape, storage = pre_shape.fusion(children)
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+        def _e():
+            pre_shape = e.default_shape
+            shape, storage = pre_shape.fusion([])
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+
+        # Be near immediate
+        CompoundShape._config.substitution_threshold = 2
+
+        l = _cons(_e(), _cons(_e(), _cons(_e(), _cons(_e(), nil()))))
+        s = l.shape()
+        assert len(s._structure) == 2
+        assert s._structure[0] == in_storage_shape
+        s2 = s._structure[1]
+        assert len(s2._structure) == 2
+        assert s2._structure[1] == in_storage_shape
+        assert s2._structure[0] == e.default_shape
+
+    def test_multi_recursive_structures(self):
+
+        _1 = integer(1)
+        n = clean_tag("Node", 3)
+        def _node(left, value, right):
+            children = [left, value, right]
+            pre_shape = n.default_shape
+            shape, storage = pre_shape.fusion(children)
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+
+        # Be near immediate
+        CompoundShape._config.substitution_threshold = 2
+
+        tree = _node(
+            _node(_node(nil(), _1, nil()), _1, _node(nil(), _1, nil())),
+            _1,
+            _node(_node(nil(), _1, nil()), _1, _node(nil(), _1, nil())))
+
+        s = tree.shape()
+        assert len(s._structure) == 3
+        assert s._structure[0] == n.default_shape
+        assert s._structure[1] == in_storage_shape
+        assert s._structure[2] == n.default_shape
+
+    def test_multi_constr_recursive_structures(self):
+
+        e = clean_tag("E", 0)
+        def _e():
+            pre_shape = e.default_shape
+            shape, storage = pre_shape.fusion([])
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+
+        n = clean_tag("Node", 3)
+        def _node(left, value, right):
+            children = [left, value, right]
+            pre_shape = n.default_shape
+            shape, storage = pre_shape.fusion(children)
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+
+        # Be near immediate
+        CompoundShape._config.substitution_threshold = 2
+
+        tree = _node(
+            _node(
+                _node(
+                    _node(nil(), _e(), nil()),
+                    _e(),
+                    _node(nil(), _e(), nil())),
+                _e(),
+                _node(
+                    _node(nil(), _e(), nil()),
+                    _e(),
+                    _node(nil(), _e(), nil()))),
+            _e(),
+            _node(
+                _node(
+                    _node(nil(), _e(), nil()),
+                    _e(),
+                    _node(nil(), _e(), nil())),
+                _e(),
+                _node(
+                    _node(nil(), _e(), nil()),
+                    _e(),
+                    _node(nil(), _e(), nil()))))
+
+        s = tree.shape()
+        assert len(s._structure) == 3
+        s0 = s._structure[0]
+        assert s0 is not in_storage_shape
+        assert s0._structure[0] is in_storage_shape
+        assert s0._structure[1] is e.default_shape
+        assert s0._structure[2] is in_storage_shape
+
+        s1 = s._structure[1]
+        assert s1 is in_storage_shape
+        # assert s1 is e.default_shape #??
+
+        s2 = s._structure[2]
+        assert s2 is not in_storage_shape
+        assert s2._structure[0] is in_storage_shape
+        assert s2._structure[1] is e.default_shape
+        assert s2._structure[2] is in_storage_shape
