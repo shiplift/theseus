@@ -83,9 +83,13 @@ class Shape(Object):
 
 class ShapeConfig(object):
 
-    def __init__(self, substitution_threshold=17, max_storage_width=7):
+    def __init__(self,
+                 substitution_threshold=17,
+                 max_storage_width=7,
+                 max_shape_depth=7):
         self.substitution_threshold = substitution_threshold
         self.max_storage_width = max_storage_width
+        self.max_shape_depth = max_shape_depth
         self.log_transformations = False
         self._inhibit_recognition = False
         self._inhibit_all = False
@@ -103,9 +107,6 @@ class CompoundShape(Shape):
         self._tag = tag
         self._hist = {}
         self.transformation_rules = {}
-
-        # self._hist_keys = []
-        # self._transformation_rules_list = []
 
         # dbg
         self._shapes.append(self)
@@ -152,6 +153,13 @@ class CompoundShape(Shape):
             sum += subshape.storage_width()
         return sum
 
+    @jit.unroll_safe
+    def shape_depth(self):
+        depth = 0
+        for subshape in self._structure:
+            depth = max(subshape.shape_depth(), depth)
+        return depth + 1
+
     def build_child(self, new_children):
         from model import W_Constructor, select_constructor_class
         (shape, storage) = self.fusion(new_children)
@@ -176,7 +184,9 @@ class CompoundShape(Shape):
         key = (i, child._shape)
         count = self._hist[key] if key in self._hist else 0
         width = child.get_storage_width()
+        depth = child._shape.shape_depth()
         if (key not in self.transformation_rules and
+            depth < self._config.max_shape_depth and
             width <= self._config.max_storage_width and
             count <= self._config.substitution_threshold):
             # self._hist_keys.append(key)
@@ -311,6 +321,9 @@ class InStorageShape(Shape):
 
     def storage_width(self):
         return 1
+
+    def shape_depth(self):
+        return 0
 
     def build_child(self, new_children):
         raise NotImplementedError()  #should not happen

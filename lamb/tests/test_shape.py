@@ -777,6 +777,33 @@ class TestShapeRecognizer(object):
                     l = _cons(w_1, l)
                 check_width(l, 25)
 
+    def test_bounded_shallow_deep_structures(self):
+        e = clean_tag("E", 0)
+        def _e():
+            pre_shape = e.default_shape
+            shape, storage = pre_shape.fusion([])
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+
+        with SConf(substitution_threshold = 17, max_shape_depth = 7):
+
+            sys.setrecursionlimit(100000)
+            for num in [50, 100, 1000, 10000, 50000]:
+                c = clean_tag("%d_cons" % num, 2)
+
+                def _cons(*ch):
+                    children = list(ch)
+                    pre_shape = c.default_shape
+                    shape, storage = pre_shape.fusion(children)
+                    constr = W_NAryConstructor(shape)
+                    constr._init_storage(storage)
+                    return constr
+
+                l = nil()
+                for i in range(num):
+                    l = _cons(_e(), l)
+                assert l.shape().shape_depth() <= 7
 
     def test_post_recursive_structures(self):
 
