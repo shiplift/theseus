@@ -527,6 +527,8 @@ class LambToAST(object):
     def visit_primary(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
+        if node.children[0].symbol == 'FLOAT':
+            return [node.children[0]]
         if node.children[0].symbol == 'INTEGER':
             return [node.children[0]]
         if node.children[0].symbol == 'QQSTRING':
@@ -927,7 +929,7 @@ parser = PackratParser([Rule('lamb_source', [['_star_symbol0', '__lamb_source_re
   Rule('toplevel_expressions', [['toplevel_expression', '_star_symbol2', '__toplevel_expressions_rest_0_0'], ['toplevel_expression', '__toplevel_expressions_rest_0_0']]),
   Rule('toplevel_expression', [['definition'], ['expression']]),
   Rule('expression', [['constructor'], ['application'], ['lambda'], ['variable'], ['primitive'], ['primary']]),
-  Rule('primary', [['INTEGER'], ['QSTRING'], ['QQSTRING']]),
+  Rule('primary', [['INTEGER'], ['FLOAT'], ['QSTRING'], ['QQSTRING']]),
   Rule('variable', [['NAME']]),
   Rule('definition', [['NAME', 'DEFINEDAS', 'lambda'], ['NAME', 'DEFINEDAS', 'expression']]),
   Rule('constructor', [['NAME', 'constructor_args']]),

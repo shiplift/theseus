@@ -38,7 +38,7 @@ expression : <constructor>
            ;
 
 primary : <INTEGER>
-#        | <FLOAT>
+        | <FLOAT>
         | <QSTRING> | <QQSTRING>
         ;
 
