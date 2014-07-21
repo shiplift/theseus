@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from lamb import model
-from rpython.rlib import jit, rarithmetic, rstring, rfloat
+from rpython.rlib import jit, rarithmetic, rstring, rfloat, rbigint
 
+from lamb.util.construction_helper import conslist, plist, nil
 
 # Primitives
 class UnsupportedPrimitive(Exception):
@@ -104,12 +105,17 @@ def wrap_primitive(num_args=None, unwrap_spec=None):
                 elif spec is float:
                     assert isinstance(w_arg, model.W_Float)
                     args += (w_arg.value(), )
+                elif spec is long:
+                    assert isinstance(w_arg, model.W_Bignumber)
+                    args += (w_arg.value(), )
                 elif spec is str:
                     assert isinstance(w_arg, model.W_String)
                     args += (w_arg.value(), )
-                # elif spec is list:
-                #     assert isinstance(w_arg, model.W_MutableArray)
-                #     args += (interpreter.space.unwrap_array(w_arg), )
+                elif spec is list:
+                    assert isinstance(w_arg, model.W_Constructor)
+                    t = w_arg.get_tag()
+                    assert t.arity() == 2
+                    args += (plist(w_arg), )
                 else:
                     raise NotImplementedError(
                         "unknown unwrap_spec %s" % (spec, ))
@@ -119,6 +125,7 @@ def wrap_primitive(num_args=None, unwrap_spec=None):
     return decorator
 
 ################################################################
+
 @expose_primitive(unwrap_spec=[])
 def currentmilliseconds():
     import time
@@ -129,7 +136,8 @@ def clock():
     import time
     return model.w_float(time.clock())
 
-################################################################
+###############################################################
+
 @expose_primitive("-", unwrap_spec=[generic, generic])
 def minus(w_x, w_y):
     if isinstance(w_x, model.W_Integer) and isinstance(w_y, model.W_Integer):
@@ -219,6 +227,38 @@ def lsl(x, y):
 def lsr(x, y):
     return model.w_integer(x >> y)
 
+################################################################
+@expose_primitive(unwrap_spec=[long, long])
+def minus_bignumber(x, y):
+    return model.w_bignumber(x.sub(y))
+
+@expose_primitive(unwrap_spec=[long, long])
+def plus_bignumber(x, y):
+    return model.w_bignumber(x.add(y))
+
+@expose_primitive(unwrap_spec=[long, long])
+def mult_bignumber(x, y):
+    return model.w_bignumber(x.mul(y))
+
+@expose_primitive(unwrap_spec=[long, long])
+def div_bignumber(x, y):
+    return model.w_bignumber(x.div(y))
+
+@expose_primitive(unwrap_spec=[long, long])
+def mod_bignumber(x, y):
+    return model.w_bignumber(x.mod(y))
+
+# @expose_primitive(unwrap_spec=[int, int])
+# def lsl(x, y):
+#     return model.w_bignumber(x << y)
+
+# @expose_primitive(unwrap_spec=[int, int])
+# def lsr(x, y):
+#     return model.w_bignumber(x >> y)
+
+@expose_primitive(unwrap_spec=[int])
+def int_to_bignumber(x):
+    return model.w_bignumber(rbigint.rbigint.fromint(x))
 
 
 ################################################################
@@ -251,17 +291,31 @@ def string_to_int(s):
 def string_to_float(s):
     return model.w_float(rfloat.string_to_float(s))
 
+# @expose_primitive("Σ*→ℝ", unwrap_spec=[str])
+@expose_primitive("strtob", unwrap_spec=[str])
+def string_to_bignumber(s):
+    return model.w_bignumber(rbigint.rbigint.fromstr(s))
+
+
+# @expose_primitive("Σ*→ℤ", unwrap_spec=[str])
+@expose_primitive("ltostr", unwrap_spec=[int])
+def int_to_string(i):
+    return str(i)
+
 ################################################################
 
 @expose_primitive(unwrap_spec=[int])
 def print_int(x):
-    from lamb.util.construction_helper import nil
     print x
+    return nil()
+
+@expose_primitive(unwrap_spec=[long])
+def print_bignumber(x):
+    print x.str()
     return nil()
 
 @expose_primitive(unwrap_spec=[str])
 def print_string(x):
-    from lamb.util.construction_helper import nil
     print x
     return nil()
 
@@ -273,5 +327,21 @@ def print_result_string(x):
     print "0:RESULT-cpu:ms: %s\n0:RESULT-total:ms: %s" % (x, x)
     return nil()
 
+
+################################################################
+
+@expose_primitive(unwrap_spec=[])
+def inputstring():
+    import sys
+    return model.w_string(sys.stdin.read())
+
+@expose_primitive(unwrap_spec=[str])
+def explode(s):
+    return conslist([model.w_string(c) for c in list(s)])
+
+@expose_primitive(unwrap_spec=[list])
+def implode(l):
+    for w_s in l: assert isinstance(w_s, model.W_String)
+    return model.w_string("".join([w_s.value() for w_s in l]))
 
 # EOF

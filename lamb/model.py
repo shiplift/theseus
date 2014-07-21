@@ -16,7 +16,7 @@
       W_Primitive
 
 """
-from rpython.rlib import jit
+from rpython.rlib import jit, rbigint
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
@@ -99,12 +99,26 @@ class W_Float(W_Object):
     def value(self):
         return self._value
     def merge_point_string(self):
-        return "%s" % self._value
+        return "%f" % self.value()
 
 
 def w_float(value):
     assert isinstance(value, float)
     return W_Float(value)
+
+class W_Bignumber(W_Object):
+    _immutable_fields_ = ["_value"]
+
+    def __init__(self, value):
+        self._value = value
+    def value(self):
+        return self._value
+    def merge_point_string(self):
+        return self._value.str()
+
+def w_bignumber(value):
+    assert isinstance(value, rbigint.rbigint)
+    return W_Bignumber(value)
 
 class W_String(W_Object):
 
