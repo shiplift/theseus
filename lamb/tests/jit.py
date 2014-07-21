@@ -225,7 +225,7 @@ class TestLLtype(LLJitMixin):
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
-    def test_arbitraty_precision_ints(self):
+    def test_arbitrary_precision_ints(self):
         from lamb.util.construction_helper import interpret, nil
         from lamb.parser import parse_file
         from lamb.execution import toplevel_bindings
@@ -287,5 +287,31 @@ class TestLLtype(LLJitMixin):
         interp_w()
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True, inline=True)
-        
-        
+
+    def test_corecursion(self):
+        src = """
+            g ≔ Λ.
+            f ≔ λ.
+                1. 0 ↦ 1
+                2. X ↦ μ(g, X)
+            g ≔ λ. 1. X ↦ μ(f, μ(⟪-⟫, X, 1))
+            μ(f, 10000)
+        """
+        from lamb.util.construction_helper import interpret, nil, convert_arguments
+        from lamb.parser import parse_string
+        from lamb.execution import toplevel_bindings
+
+        expressions, bindings = parse_string(src, nil())
+        toplevel_bindings.set_bindings(bindings)
+
+        exp = expressions[-1]._replace_with_constructor_expression()
+        def interp_w():
+            x = model.w_string("foo") # be happy, annotator
+            y = model.w_float(1.1) # again
+            return interpret(exp)
+
+        # import pdb; pdb.set_trace()
+        #model.SHOT=True
+        interp_w()
+
+        self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True, inline=True)

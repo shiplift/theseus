@@ -20,7 +20,7 @@ from lamb.shape import (default_shape, find_shape_tuple,
 from lamb.expression import (W_LambdaCursor, W_ConstructorCursor, W_Cursor,
                              W_ConstructorEvaluator, W_VariableExpression,
                              W_Call, W_NAryCall, Quote,
-                             VariableUnbound, Rule)
+                             VariableUnbound, LambdaBox, Rule)
 from lamb.small_list import inline_small_list
 
 #
@@ -218,6 +218,7 @@ class Toplevel(Object):
         self.bindings = {}
     def set_bindings(self, bindings):
         self.bindings = bindings
+
     @jit.elidable
     def get(self, name):
         return self.bindings.get(name, None)

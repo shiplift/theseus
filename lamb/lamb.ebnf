@@ -2,6 +2,7 @@
 
 NEWLINE: "[\n\r]";
 LAMBDA: "λ.";
+ULAMBDA: "Λ.";
 MU: "μ";
 MAPSTO: "↦";
 DEFINEDAS: "≔";
@@ -45,9 +46,17 @@ primary : <INTEGER>
 variable : NAME
          ;
 
-definition : NAME [DEFINEDAS] lambda
-           | NAME [DEFINEDAS] expression
+definition : <lambda_definition>
+           | <lambda_forward>
+           | <value_definition>
            ;
+
+lambda_definition : NAME [DEFINEDAS] lambda
+                  ;
+lambda_forward : NAME [DEFINEDAS] [ULAMBDA]
+               ;
+value_definition : NAME [DEFINEDAS] expression
+                 ;
 
 constructor : NAME constructor_args
             ;

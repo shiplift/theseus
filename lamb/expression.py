@@ -14,26 +14,6 @@ from lamb.object import Object
 from lamb.pattern import NoMatch, Pattern
 from lamb.model import W_Object, W_Tag, W_Lambda, W_Constructor, w_constructor
 
-
-
-def pytest_funcarg__parser(request):
-    """
-    Returns a Lamb parser
-    """
-    def build_space():
-        space = lambada.space.Space()
-        space.make_atoms()
-        space.initialize_globals([None] * 16)
-        return space
-
-    space = request.cached_setup(
-            setup=build_space,
-            scope="session",
-    )
-
-    return copy.deepcopy(space)
-
-
 #
 # Resolved copy behavior
 #
@@ -114,7 +94,9 @@ class W_VariableExpression(W_PureExpression):
     def resolve(self, binding):
         from lamb.execution import toplevel_bindings
         # var = jit.promote(self.variable)
-        var = self.variable
+        var = self.variable.value()
+        if not isinstance(var, Variable):
+            return var
         w_result = binding._get_list(var.binding_index)
 
         if w_result is None:
@@ -320,6 +302,37 @@ class Variable(Object):
     def __init__(self, name):
         self.name = name
         self.binding_index = -1
+
+    def value(self):
+        return self
+
+class LambdaBox(Variable):
+
+    _immutable_fields_ = ['info', 'lam']
+    # lam is "effectively" immutable
+
+    def __init__(self, info, name, lam=None):
+        Variable.__init__(self, name)
+        self.info = info
+        self.lam = lam
+
+class __extend__(LambdaBox):
+    def update(self, other):
+        assert isinstance(other, LambdaBox)
+        self.name = other.name
+        self.info = other.info
+        self.lam = other.lam
+
+    def value(self):
+        if self.lam:
+            return self.lam
+        else:
+            reason = "Unfilled lambda %s" % self.name
+            self.info.error(reason)
+
+    def _replace_with_constructor_expression(self):
+        v = self.value()
+        return v._replace_with_constructor_expression()
 
 class VariableUnbound(Exception):
     pass
