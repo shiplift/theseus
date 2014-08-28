@@ -27,7 +27,7 @@ def nil():
 
 @jit.elidable
 def is_nil(constructor):
-    return constructor.get_tag() is tag("nil", 0)
+    return isinstance(constructor, W_Constructor) and constructor.get_tag() is tag("nil", 0)
 
 
 def pattern(obj):
@@ -99,6 +99,7 @@ def plist(c_list):
     result = []
     conses = c_list
     while not is_nil(conses):
+        assert isinstance(conses, W_Constructor)
         result.append(conses.get_child(0))
         conses = conses.get_child(1)
     return result

@@ -131,7 +131,7 @@ class W_String(W_Object):
         return "%s" % self._value
 
 def w_string(value):
-    assert isinstance(value, str)
+    # assert isinstance(value, str)
     return W_String(value)
 
 class W_Constructor(W_Object):

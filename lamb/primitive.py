@@ -300,18 +300,13 @@ def string_to_bignumber(s):
 # @expose_primitive("Σ*→ℤ", unwrap_spec=[str])
 @expose_primitive("ltostr", unwrap_spec=[int])
 def int_to_string(i):
-    return str(i)
+    return model.w_string(str(i))
 
 ################################################################
 
 @expose_primitive(unwrap_spec=[int])
 def print_int(x):
     print x
-    return nil()
-
-@expose_primitive(unwrap_spec=[long])
-def print_bignumber(x):
-    print x.str()
     return nil()
 
 @expose_primitive(unwrap_spec=[str])
@@ -330,18 +325,37 @@ def print_result_string(x):
 
 ################################################################
 
-@expose_primitive(unwrap_spec=[])
-def inputstring():
-    import sys
-    return model.w_string(sys.stdin.read())
-
 @expose_primitive(unwrap_spec=[str])
 def explode(s):
-    return conslist([model.w_string(c) for c in list(s)])
+    l = [model.w_string(s[i]) for i in range(len(s))]
+    return conslist(l)
 
 @expose_primitive(unwrap_spec=[list])
-def implode(l):
-    for w_s in l: assert isinstance(w_s, model.W_String)
-    return model.w_string("".join([w_s.value() for w_s in l]))
+def implode(l_w):
+    s = rstring.StringBuilder()
+    for w_s in l_w:
+        assert isinstance(w_s, model.W_String)
+        s.append(w_s.value())
+    return model.w_string(s.build())
 
+
+################################################################
+
+try:
+    import sys
+    std_fds = [sys.stdin.fileno(),
+               sys.stdout.fileno(),
+               sys.stderr.fileno()]
+except ValueError:
+    std_fds = [0, 1, 2]
+
+@expose_primitive(unwrap_spec=[])
+def inputstring():
+    import os
+    s = rstring.StringBuilder()
+    i = os.read(std_fds[0], 4096)
+    while len(i) != 0:
+        s.append(i)
+        i = os.read(std_fds[0], 4096)
+    return model.w_string(s.build())
 # EOF

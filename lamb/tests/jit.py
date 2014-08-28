@@ -283,7 +283,7 @@ class TestLLtype(LLJitMixin):
             return interpret(exp)
 
         # import pdb; pdb.set_trace()
-        model.SHOT=True
+        #model.SHOT=True
         interp_w()
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True, inline=True)
