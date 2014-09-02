@@ -161,6 +161,12 @@ def do_settle(f):
 # __________  Entry points  __________
 
 def entry_point(argv, debug=False):
+    if we_are_translated():
+        from rpython.rlib import rstack
+        rstack._stack_set_length_fraction(50.0)
+    else:
+        import sys
+        sys.setrecursionlimit(100000)
 
     (filename, ret, args, conf) = parse_options(argv, default_config)
     config = conf
@@ -291,7 +297,12 @@ if __name__ == '__main__':
     except SystemExit:
         pass
     except:
-        import pdb, traceback
-        _type, value, tb = sys.exc_info()
-        traceback.print_exception(_type, value, tb)
-        pdb.post_mortem(tb)
+        if hasattr(sys, 'ps1') or not sys.stderr.isatty():
+            # we are in interactive mode or we don't have a tty-like
+            # device, so we call the default hook
+            sys.__excepthook__(type, value, tb)
+        else:
+            import pdb, traceback
+            _type, value, tb = sys.exc_info()
+            traceback.print_exception(_type, value, tb)
+            pdb.post_mortem(tb)

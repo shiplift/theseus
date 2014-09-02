@@ -21,7 +21,7 @@ import py
 import sys
 import os
 
-sys.setrecursionlimit(10000)
+sys.setrecursionlimit(100000)
 set = py.builtin.set
 
 print_tokens = False
@@ -281,7 +281,7 @@ class Parser(RPythonVisitor):
         l = model.W_Lambda(rules=[], name=name)
         self.define_lambda(expression.LambdaBox(
             LambdaInfo(node),name, l))
-        return [l]
+        return [no_result]
 
     def visit_value_definition(self, node):
         assert len(node.children) == 2

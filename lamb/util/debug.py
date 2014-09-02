@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import py
+import py, sys
 
 from lamb.util.view import _dot, view
 from lamb.util.repr import urepr, who, uni
@@ -10,9 +10,11 @@ _iteration = 0
 _stacks = {}
 _current_lambda = None
 
-from lamb import model, shape, pattern, expression, stack, object as obj
+from lamb import model, shape, pattern, expression, execution, stack, object as obj
 # Monkeypatch debug output
 #
+
+sys.setrecursionlimit(1000000)
 
 hard_debug = False
 
@@ -101,17 +103,30 @@ class __extend__(model.W_String):
 
 class __extend__(model.W_Constructor):
     @uni
-    def to_repr(self, seen):
-        return u"Γ" + u"%s%s" % (urepr(self.get_tag(), seen), self.children_to_repr(seen))
+    def to_repr(self, seen, maxdepth=8):
+        return u"Γ" + u"%s%s" % (urepr(self.get_tag(), seen), self.children_to_repr(seen, maxdepth))
 
-    def children_to_repr(self, seen):
+    def children_to_repr(self, seen, maxdepth=8):
+        if maxdepth <= 0:
+            return u"…"
+
         def mini_urepr(x):
             s = set(seen)
             s.discard(x)
             return urepr(x, s)
 
         if self.get_number_of_children() > 0:
-            return u"(" + u", ".join(map(mini_urepr, self.get_children())) + u")"
+            res = u"("
+            first = True
+            for child in self.get_children():
+                res += u", " if not first else u""
+                first = False
+                if isinstance(child, model.W_Constructor):
+                    ret = child.to_repr(seen, maxdepth - 1)
+                    res += ret if isinstance(ret, unicode) else ret.decode("utf-8")
+                else:
+                    res += mini_urepr(child)
+            return res + u")"
         else:
             return u""
 
@@ -142,6 +157,19 @@ class __extend__(model.W_Primitive):
         return res
 
 ### Expressions ###
+
+#### helper
+def name_if_lam(c, seen):
+    res = u""
+    if isinstance(c, expression.Quote):
+        res += "'"
+        c = c.w_value
+    if isinstance(c, model.W_Lambda):
+        res += u"λ" + unicode(c._name)
+    else:
+        res += urepr(c, seen)
+    return res
+
 class __extend__(expression.W_ConstructorEvaluator):
     @uni
     def to_repr(self, seen):
@@ -161,19 +189,18 @@ class __extend__(expression.Quote):
         return u"'" + urepr(self.w_value, seen)
 
 class __extend__(expression.W_Call):
+
     @uni
     def to_repr(self, seen):
-        res = u"μ"
-        if isinstance(self.callee, model.W_Lambda):
-            res += unicode(self.callee._name)
-        else:
-            res += urepr(self.callee, seen)
+        res = u"μ" + name_if_lam(self.callee, seen)
         res += self.children_to_repr(seen)
         return res
 
     def children_to_repr(self, seen):
+        def rp(o):
+            return name_if_lam(o, seen)
         if self.get_number_of_arguments() > 0:
-            return u"(" + u", ".join(map(lambda x: urepr(x, seen), self.get_arguments())) + u")"
+            return u"(" + u", ".join(map(rp, self.get_arguments())) + u")"
         else:
             return u""
 
@@ -232,6 +259,36 @@ class __extend__(stack.StackElement):
             r += u"⊥"
         if self._data is not None:
             r += urepr(self._data, seen)
+        return r
+
+### Execution ###
+
+class __extend__(execution.Env):
+    @uni
+    def to_repr(self, seen):
+        def rp(o):
+            return name_if_lam(o, seen)
+        return (u"Env[" +
+                u", ".join([rp(x) for x in self._get_full_list()]) +
+                u"]")
+
+class __extend__(execution.Continuation):
+    @uni
+    def to_repr(self, seen):
+        def rp(o):
+            return name_if_lam(o, seen)
+        r = u"C%d" % self._get_size_list()
+        r += (urepr(self.w_expr, seen) + u"/[" +
+              u", ".join([rp(x) for x in self._get_full_list()]) +
+              u"]")
+        if not isinstance(self.cont, execution.FinishContinuation):
+            r += u"\n\t\t --> " + urepr(self.cont, seen)
+        return r
+
+class __extend__(execution.FinishContinuation):
+    @uni
+    def to_repr(self, seen):
+        r = u"C⊥"
         return r
 
 ###############################################################################

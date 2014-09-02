@@ -326,7 +326,8 @@ def old_interpret(expression_stack, arguments_stack=None, debug=False):
     res, _ = op_stack.pop()
     return res
 
-class Env(object):
+##################################################################################
+class Env(Object):
     def __init__(self):
         pass
 
@@ -341,7 +342,7 @@ class Env(object):
 
 inline_small_list(Env)
 
-class Continuation(object):
+class Continuation(Object):
     def plug_reduce(self, w_val):
         raise NotImplementedError("abstract base class")
 

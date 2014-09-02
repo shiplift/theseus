@@ -16,11 +16,11 @@ def urepr(obj, seen=None):
 
 def uni(fun):
     """ support decorator for unicode repr. see urepr() """
-    def fun2(obj, seen):
+    def fun2(obj, seen, *args, **kwargs):
         if obj in seen:
             # assert False
             return u"…"
         else:
             seen.add(obj)
-        return fun(obj, seen).encode("utf-8")
+        return fun(obj, seen, *args, **kwargs).encode("utf-8")
     return fun2
