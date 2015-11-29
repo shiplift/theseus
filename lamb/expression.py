@@ -160,10 +160,10 @@ class W_NAryCall(W_Call):
         return self.arguments
 
     def get_argument(self, index):
-        try:
+        # try:
             return self.arguments[index]
-        except IndexError as e:
-            raise e
+        # except IndexError as e:
+        #     raise e
 
     def get_number_of_arguments(self):
         return len(self.arguments)

@@ -87,7 +87,6 @@ class W_Integer(W_Object):
 
 
 def w_integer(value):
-    assert isinstance(value, int)
     return W_Integer(value)
 
 class W_Float(W_Object):
@@ -103,7 +102,6 @@ class W_Float(W_Object):
 
 
 def w_float(value):
-    assert isinstance(value, float)
     return W_Float(value)
 
 class W_Bignumber(W_Object):
@@ -251,7 +249,10 @@ def prepare_constructor(tag, children):
     shape, storage = pre_shape.fusion(children)
     return (shape, storage)
 
+SHOT=False
 def w_constructor(tag, children):
+    if SHOT:
+        import pdb; pdb.set_trace()
     shape, storage = prepare_constructor(tag, children)
     constr_cls = select_constructor_class(storage)
     constr = constr_cls(shape)

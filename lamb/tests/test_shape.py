@@ -1038,7 +1038,7 @@ class TestShapeRecognizer(object):
             return constr
 
         # Be near immediate
-        with SConf(substitution_threshold = 2):
+        with SConf(substitution_threshold = 2, log_transformations=True):
 
             tree = _node(
                 _node(

@@ -436,6 +436,7 @@ class ConstrContinuation(Continuation):
             jit.promote(self.w_expr)
             values_w = self._get_full_list() + [w_val]
             assert len(values_w) == len(self.w_expr._children)
+            # print "!", self.w_expr, self.cont
             w_constr = w_constructor(self.w_expr._tag, values_w)
             self = self.cont
             if not isinstance(self, ConstrContinuation):
@@ -487,6 +488,7 @@ def interpret(expr, bindings=None, cont=None):
             if expr.should_enter_here:
                 jitdriver2.can_enter_jit(expr=expr, bindings=bindings, cont=cont, env_shapes=env_shapes)
             jitdriver2.jit_merge_point(expr=expr, bindings=bindings, cont=cont, env_shapes=env_shapes)
+            # print expr, "\n\t", bindings, "\n\t", cont
             expr2, bindings2, cont2 = expr.interpret_new(bindings, cont)
             assert not isinstance(expr2, W_Constructor)
             expr, bindings, cont = expr2, bindings2, cont2
