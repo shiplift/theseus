@@ -2,6 +2,7 @@
 
 NEWLINE: "[\n\r]";
 LAMBDA: "λ.";
+ULAMBDA: "Λ.";
 MU: "μ";
 MAPSTO: "↦";
 DEFINEDAS: "≔";
@@ -9,7 +10,8 @@ LEFT_PARENTHESIS: "\(";
 RIGHT_PARENTHESIS: "\)";
 LEFT_DOUBLE_ANGLE: "⟪";
 RIGHT_DOUBLE_ANGLE: "⟫";
-INTEGER: "[0-9]+";
+INTEGER: "[-+]?[0-9]+";
+FLOAT: "[-+]?[0-9]*\.[0-9]+";
 QSTRING: "‘[^’]*’";
 QQSTRING: "“[^”]*”";
 NAME: "[^0-9,\(\)⟪⟫ \n\r\t\f#][^,\(\)⟪⟫ \n\r\t\f#]*";
@@ -37,16 +39,24 @@ expression : <constructor>
            ;
 
 primary : <INTEGER>
-#        | <FLOAT>
+        | <FLOAT>
         | <QSTRING> | <QQSTRING>
         ;
 
 variable : NAME
          ;
 
-definition : NAME [DEFINEDAS] lambda
-           | NAME [DEFINEDAS] expression
+definition : <lambda_definition>
+           | <lambda_forward>
+           | <value_definition>
            ;
+
+lambda_definition : NAME [DEFINEDAS] lambda
+                  ;
+lambda_forward : NAME [DEFINEDAS] [ULAMBDA]
+               ;
+value_definition : NAME [DEFINEDAS] expression
+                 ;
 
 constructor : NAME constructor_args
             ;

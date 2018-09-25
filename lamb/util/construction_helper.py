@@ -27,7 +27,7 @@ def nil():
 
 @jit.elidable
 def is_nil(constructor):
-    return constructor.get_tag() is tag("nil", 0)
+    return isinstance(constructor, W_Constructor) and constructor.get_tag() is tag("nil", 0)
 
 
 def pattern(obj):
@@ -99,6 +99,7 @@ def plist(c_list):
     result = []
     conses = c_list
     while not is_nil(conses):
+        assert isinstance(conses, W_Constructor)
         result.append(conses.get_child(0))
         conses = conses.get_child(1)
     return result
@@ -118,5 +119,9 @@ def execution_stack(*elems):
 def run(lamb, args):
     ex = ExecutionStackElement(mu(lamb, args))
     return interpret(ex)
+
+def convert_arguments(arguments):
+    from lamb import model
+    return conslist([model.w_string(arg) for arg in arguments])
 
 # EOF

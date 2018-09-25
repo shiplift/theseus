@@ -78,7 +78,6 @@ Options:
     -N num           number of repetitions (is %d)
   Altering Behavior:
        --jit arg     pass arg to the JIT, may be 'default', 'off', or 'param=value,param=value' list
-    -n               ignore nils in substitution (is %s)
     -s num           set substitution threshold to num (is %d)
     -w num           set maximal storage with to consider for substitution to num (is %d)
 
@@ -94,7 +93,6 @@ Operations:
     ('on' if config["Stats"] else 'off'),
     ('on' if config["Print"] else 'off'),
     config["Nums"],
-    ('on' if CompoundShape._config.ignore_nils else 'off'),
     CompoundShape._config.substitution_threshold,
     CompoundShape._config.max_storage_width,
     ('do' if config["ReadStatefile"] else 'do not'),
@@ -181,8 +179,6 @@ def parse_options(argv, config):
                 break
             i += 1
             CompoundShape._config.max_storage_width = int(argv[i])
-        elif argv[i] == "-n":
-            CompoundShape._config.ignore_nils = True
         elif argv[i] == "-N":
             if len(argv) == i + 1:
                 print "missing argument after -N"

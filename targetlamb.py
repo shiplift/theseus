@@ -64,7 +64,6 @@ Options:
     -E               don't print the result expression (is %s print)
   Altering Behavior:
        --jit arg     pass arg to the JIT, may be 'default', 'off', or 'param=value,param=value' list
-    -n               ignore nils in substitution (is %s)
     -s num           set substitution threshold to num (is %d)
     -w num           set maximal storage with to consider for substitution to num (is %d)
 
@@ -78,7 +77,6 @@ Operations:
     ('on' if config["Verbose"] else 'off'),
     ('on' if config["Stats"] else 'off'),
     ('do' if config["Print"] else 'do not'),
-    ('on' if CompoundShape._config.ignore_nils else 'off'),
     CompoundShape._config.substitution_threshold,
     CompoundShape._config.max_storage_width,
     ('do' if config["ReadStatefile"] else 'do not'),
@@ -125,7 +123,12 @@ def parse_options(argv, config):
                 ret = 2
                 break
             i += 1
-            CompoundShape._config.substitution_threshold = int(argv[i])
+            s_t = int(argv[i])
+            if s_t <= 1:
+                print "substitution threshold must be greater than 1"
+                ret = 2
+                break
+            CompoundShape._config.substitution_threshold = s_t
         elif argv[i] == "-w":
             if len(argv) == i + 1:
                 print "missing argument after -w"
@@ -133,8 +136,6 @@ def parse_options(argv, config):
                 break
             i += 1
             CompoundShape._config.max_storage_width = int(argv[i])
-        elif argv[i] == "-n":
-            CompoundShape._config.ignore_nils = True
         else:
             filename = argv[i]
             if len(argv) > i:
@@ -160,6 +161,12 @@ def do_settle(f):
 # __________  Entry points  __________
 
 def entry_point(argv, debug=False):
+    if we_are_translated():
+        from rpython.rlib import rstack
+        rstack._stack_set_length_fraction(50.0)
+    else:
+        import sys
+        sys.setrecursionlimit(100000)
 
     (filename, ret, args, conf) = parse_options(argv, default_config)
     config = conf
@@ -181,10 +188,7 @@ def entry_point(argv, debug=False):
     if config["Print"]:
         print result
     if config["Verbose"]:
-        for shape in CompoundShape._shapes:
-            print shape.merge_point_string()
-            shape.print_hist()
-            shape.print_transforms()
+        CompoundShape.print_verbose()
     if config["Verbose"] or config["Stats"]:
         print_statistics(timing, filename)
     return 0
@@ -293,7 +297,12 @@ if __name__ == '__main__':
     except SystemExit:
         pass
     except:
-        import pdb, traceback
-        _type, value, tb = sys.exc_info()
-        traceback.print_exception(_type, value, tb)
-        pdb.post_mortem(tb)
+        if hasattr(sys, 'ps1') or not sys.stderr.isatty():
+            # we are in interactive mode or we don't have a tty-like
+            # device, so we call the default hook
+            sys.__excepthook__(type, value, tb)
+        else:
+            import pdb, traceback
+            _type, value, tb = sys.exc_info()
+            traceback.print_exception(_type, value, tb)
+            pdb.post_mortem(tb)

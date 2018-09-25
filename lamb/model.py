@@ -16,7 +16,7 @@
       W_Primitive
 
 """
-from rpython.rlib import jit
+from rpython.rlib import jit, rbigint
 from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
@@ -37,7 +37,8 @@ class W_Object(Object):
     def _replace_with_constructor_expression(self):
         from lamb.expression import Quote
         return Quote(self)
-
+    def merge_point_string(self):
+        return "<unknown: %s>" % self
 
 class W_Tag(W_Object):
     tags = {}
@@ -81,10 +82,11 @@ class W_Integer(W_Object):
         self._value = value
     def value(self):
         return self._value
+    def merge_point_string(self):
+        return "%d" % self._value
 
 
 def w_integer(value):
-    assert isinstance(value, int)
     return W_Integer(value)
 
 class W_Float(W_Object):
@@ -95,11 +97,26 @@ class W_Float(W_Object):
         self._value = value
     def value(self):
         return self._value
+    def merge_point_string(self):
+        return "%f" % self.value()
 
 
 def w_float(value):
-    assert isinstance(value, float)
     return W_Float(value)
+
+class W_Bignumber(W_Object):
+    _immutable_fields_ = ["_value"]
+
+    def __init__(self, value):
+        self._value = value
+    def value(self):
+        return self._value
+    def merge_point_string(self):
+        return self._value.str()
+
+def w_bignumber(value):
+    assert isinstance(value, rbigint.rbigint)
+    return W_Bignumber(value)
 
 class W_String(W_Object):
 
@@ -108,9 +125,11 @@ class W_String(W_Object):
         self._value = value
     def value(self):
         return self._value
+    def merge_point_string(self):
+        return "%s" % self._value
 
 def w_string(value):
-    assert isinstance(value, str)
+    # assert isinstance(value, str)
     return W_String(value)
 
 class W_Constructor(W_Object):
@@ -154,6 +173,8 @@ class W_Constructor(W_Object):
                 return self.get_children() == other.get_children()
         return False
 
+    def merge_point_string(self):
+        return "%s/%s" % (self.get_tag().name, self.get_tag().arity())
 class W_NAryConstructor(W_Constructor):
 
     _immutable_fields_ = ['_storage[*]']
@@ -228,7 +249,10 @@ def prepare_constructor(tag, children):
     shape, storage = pre_shape.fusion(children)
     return (shape, storage)
 
+SHOT=False
 def w_constructor(tag, children):
+    if SHOT:
+        import pdb; pdb.set_trace()
     shape, storage = prepare_constructor(tag, children)
     constr_cls = select_constructor_class(storage)
     constr = constr_cls(shape)
@@ -255,6 +279,8 @@ class W_Lambda(W_Object):
 
     def arity(self):
         return self._rule_arity()
+    def merge_point_string(self):
+        return "%s/%d" % (self._name, self.arity())
 
 class W_Primitive(W_Lambda):
     """
