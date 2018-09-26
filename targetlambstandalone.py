@@ -13,19 +13,12 @@ import time
 
 from rpython.rlib import jit
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
-
-# from rpython.config.config import OptionDescription, BoolOption, StrOption
-# from rpython.config.config import Config, to_optparse
-
-
 from rpython.rlib.objectmodel import we_are_translated
-
 
 take_options = True
 
 import mu.functions
 from lamb.startup import boot
-from lamb.stack import ExecutionStackElement
 from lamb.execution import jitdriver
 from lamb.shape import CompoundShape
 
@@ -118,27 +111,6 @@ def fun_list_string():
 def lookup_fun(fun):
     from mu.functions import all_functions
     return all_functions.get(fun, None)
-
-
-# TBD
-# cmdline_optiondescr = OptionDescription("lamb", "the options of lamb", [
-#     BoolOption("verbose", "turn on verbose output",
-#                default=False, cmdline="-v --verbose"),
-#     IntOption("substitiution",
-#               "set substitution threshold to num",
-#               default=17, cmdline="-s"),
-#     IntOption("width",
-#               "set maximal storage with to consider for substitution to num",
-#               default=7, cmdline="-w"),
-#     IntOption("repetitions",
-#               "number of repetitionsset substitution threshold to num",
-#                default=1000, cmdline="-s"),
-#     StrOption("jit",
-#               "pass arg to the JIT, may be 'default', 'off', or 'param=value,param=value' list",
-#               default=None, cmdline="--jit"),
-#     ])
-
-
 
 def parse_options(argv, config):
     fun_name = None
@@ -252,7 +224,7 @@ def retrieve_fun_args(fun_name, argv):
 
 # __________  Entry points  __________
 
-def entry_point(argv, debug=False):
+def entry_point(argv):
 
     (fun_name, fun_ops, ret, conf) = parse_options(argv, default_config)
     config = conf
@@ -275,7 +247,7 @@ def entry_point(argv, debug=False):
     if config["Verbose"] and config["Print"]:
         print_ops(ops)
 
-    (result, timing) = run(config, fun, ops, debug)
+    (result, timing) = run(config, fun, ops)
 
     if config["WriteStatefile"]:
         do_settle(fun_name)
@@ -292,7 +264,7 @@ def entry_point(argv, debug=False):
     return 0
 
 def entry_point_normal(argv):
-    return entry_point(argv, False)
+    return entry_point(argv)
 
 def entry_point_n(argv):
     CompoundShape._config._inhibit_all= True
@@ -307,18 +279,15 @@ def entry_point_i(argv):
 
 def entry_point_t(argv):
     from lamb.util.transformation import print_transformations
-    ret = entry_point(argv, True)
+    ret = entry_point(argv)
     print_transformations()
     return ret
 
 
-def run(config, fun, ops, debug=False):
+def run(config, fun, ops):
 
-    from lamb.util.construction_helper import interpret, nil, mu
-    if debug:
-        print "debug not supported"
-        raise Exception
-
+    from lamb.util.construction_helper import (interpret_expression,
+                                               nil, mu)
     start_time = time.time()
     start_cpu = time.clock()
     #
@@ -326,10 +295,7 @@ def run(config, fun, ops, debug=False):
     #
     result = nil()
     for _ in range(config["Nums"]):
-        stack_w = None
-        stack_e = ExecutionStackElement(mu(fun.lamb, ops))
-
-        result = interpret(stack_e)
+        result = interpret_expression(mu(fun.lamb, ops))
     #
     #
     #

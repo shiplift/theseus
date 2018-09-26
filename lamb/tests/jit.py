@@ -17,6 +17,7 @@ from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 from lamb import model
 from lamb.model import tag
 from lamb.expression import Variable
+from lamb.execution import interpret_expression, interpret
 from lamb.shape import in_storage_shape, CompoundShape
 
 from lamb.util.construction_helper import (pattern as p, expression as e,
@@ -54,7 +55,7 @@ class TestLLtype(LLJitMixin):
         clist1_w = conslist(list1_w)
         exp = mu(reverse, [clist1_w])
         def interp_w():
-            return interpret(exp)
+            return interpret_expression(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
         clist1_w.get_tag().default_shape.print_transforms()
@@ -119,7 +120,7 @@ class TestLLtype(LLJitMixin):
         list1_w = [integer(x) for x in range(nums)]
         exp = mu(reverse, [conslist(list1_w)])
         def interp_w():
-            return interpret(exp)
+            return interpret_expression(exp)
         interp_w()
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
@@ -146,7 +147,7 @@ class TestLLtype(LLJitMixin):
         succ._name = "succ"
         exp = mu(map, [succ, clist_w])
         def interp_w():
-            return interpret(exp)
+            return interpret_expression(exp)
 
         CompoundShape._config._inhibit_recognition = True
         interp_w() # fill the transition maps
@@ -163,7 +164,7 @@ class TestLLtype(LLJitMixin):
         arg2 = peano_num(50)
         exp = mu(_mult(), [arg1, arg2])
         def interp_w():
-            return interpret(exp)
+            return interpret_expression(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
@@ -172,7 +173,7 @@ class TestLLtype(LLJitMixin):
         arg2 = peano_num(50)
         exp = mu(_mult_acc(), [arg1, arg2])
         def interp_w():
-            return interpret(exp)
+            return interpret_expression(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
@@ -181,7 +182,7 @@ class TestLLtype(LLJitMixin):
         arg2 = peano_num(50)
         exp = mu(_plus(), [arg1, arg2])
         def interp_w():
-            return interpret(exp)
+            return interpret_expression(exp)
 
         interp_w()
 
@@ -193,7 +194,7 @@ class TestLLtype(LLJitMixin):
         arg2 = peano_num(100)
         exp = mu(_plus_acc(), [arg1, arg2])
         def interp_w():
-            return interpret(exp)
+            return interpret_expression(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
@@ -202,12 +203,12 @@ class TestLLtype(LLJitMixin):
         arg2 = peano_num(100)
         exp = mu(_gc_bench(), [arg1, arg2])
         def interp_w():
-            return interpret(exp)
+            return interpret_expression(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_gc_bench(self):
-        from lamb.util.construction_helper import interpret, nil
+        from lamb.util.construction_helper import interpret_expression, nil
         from lamb.parser import parse_file
         from lamb.execution import toplevel_bindings
 
@@ -215,10 +216,9 @@ class TestLLtype(LLJitMixin):
         expressions, bindings = parse_file(filename)
         toplevel_bindings.set_bindings(bindings)
 
-        exp = execution_stack(expressions[-1])
-        stack_w = operand_stack(nil())
+        exp = expressions[-1]
         def interp_w():
-            return interpret(exp, stack_w)
+            return interpret_expression(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 

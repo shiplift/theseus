@@ -213,7 +213,7 @@ def entry_point_t(argv):
 
 def run(config, filename, args):
 
-    from lamb.util.construction_helper import interpret, nil
+    from lamb.util.construction_helper import interpret_expression, nil
     from lamb.parser import parse_file
     from lamb.execution import toplevel_bindings
 
