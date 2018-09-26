@@ -14,12 +14,15 @@ from lamb.util.construction_helper import (pattern, cons, integer,
                                            expression, ziprules,
                                            lamb,mu,
                                            nil,
-                                           conslist, plist,
-                                           execution_stack, operand_stack)
+                                           conslist, plist)
 #
 # Tests
 #
 
+
+class __extend__(W_Lambda):
+    def call(self, args_w):
+        return interpret_expression(w_call(self, args_w))
 
 class TestLambda(object):
 
@@ -147,7 +150,7 @@ class TestInterpret(object):
     def test_simple_lambda(self):
         w_int = integer(1)
         l = lamb( ([], w_int) )
-        res = interpret(execution_stack(mu(l, [])))
+        res = interpret_expression(mu(l, []))
         assert res is w_int
 
     def test_fail_lambda(self):
@@ -156,13 +159,13 @@ class TestInterpret(object):
         l = lamb( ([w_int1], w_int2) )
 
         with py.test.raises(NoMatch) as e:
-            res = interpret(execution_stack(mu(l, [w_int2])))
+            res = interpret_expression(mu(l, [w_int2]))
 
     def test_lambda_id(self):
         x = Variable("x")
         l = lamb( ([x], x) )
         w_int = integer(1)
-        res = interpret(execution_stack(mu(l, [w_int])))
+        res = interpret_expression(mu(l, [w_int]))
         assert res is w_int
 
     def test_lambda_not(self):
@@ -174,10 +177,10 @@ class TestInterpret(object):
             ([w_true], w_false),
             ([w_false], w_true))
 
-        res = interpret(execution_stack(mu(l, [w_true])))
+        res = interpret_expression(mu(l, [w_true]))
         assert res == w_false
 
-        res = interpret(execution_stack(mu(l, [w_false])))
+        res = interpret_expression(mu(l, [w_false]))
         assert res == w_true
 
 
@@ -198,7 +201,7 @@ class TestInterpret(object):
         list1_w = [integer(1),integer(2),integer(3)]
         list2_w = [integer(4),integer(5),integer(6)]
 
-        res = interpret(execution_stack(mu(l, [conslist(list1_w), conslist(list2_w)])))
+        res = interpret_expression(mu(l, [conslist(list1_w), conslist(list2_w)]))
         assert plist(res) == list1_w + list2_w
 
     def test_map(self):
@@ -236,7 +239,7 @@ class TestInterpret(object):
         list_w = [peano_num(1),peano_num(2),peano_num(3)]
         #list_w = [peano_num(1)]
 
-        res = interpret(execution_stack(mu(m, [_succ(), conslist(list_w)])))
+        res = interpret_expression(mu(m, [_succ(), conslist(list_w)]))
         assert plist(res) == [peano_num(2), peano_num(3), peano_num(4)]
         #assert plist(res) == [peano_num(2)]
 
@@ -251,7 +254,7 @@ class TestInterpret(object):
 
             list1 = [integer(n) for n in range(i)]
             w_cons1 = cons("cons", *list1)
-            res = interpret(execution_stack(mu(l, [w_cons1])))
+            res = interpret_expression(mu(l, [w_cons1]))
             assert res == cons("cons", *(list1[1:] + list1[:1]))
 
     def test_muffle(self):
@@ -272,82 +275,9 @@ class TestInterpret(object):
 
             list1 = [integer(n) for n in range(i)]
             w_cons1 = cons("cons", *list1)
-            res = interpret(execution_stack(mu(l, [w_cons1])))
+            res = interpret_expression(mu(l, [w_cons1]))
             assert res == cons("cons", *(list1[1:]))
 
-
-    def test_reverse(self):
-        py.test.skip("debug not supported yet")
-        from lamb import execution
-
-        a1 = Variable("acc")
-        a2 = Variable("acc")
-        h = Variable("head")
-        t = Variable("tail")
-        reverse_acc = lamb()
-        reverse_acc._name = "r_acc"
-
-        reverse_acc._rules = ziprules(
-            ([nil(),              a1], a1),
-            ([cons("cons", h, t), a2],
-                  mu(reverse_acc, [t, cons("cons", h, a2)])))
-
-        l = Variable("list")
-        reverse = lamb(([l], mu(reverse_acc, [l, nil()])))
-        reverse._name = "reverse"
-
-        global op_stack_max
-        global ex_stack_max
-
-        op_stack_max = 0
-        ex_stack_max = 0
-
-        def maxdepth(stack):
-            op_stack = stack.operand_stack
-            ex_stack = stack.execution_stack
-
-            global op_stack_max
-            global ex_stack_max
-            op_stack_list = [] if op_stack is None else op_stack.linearize()
-            ex_stack_list = [] if ex_stack is None else ex_stack.linearize()
-
-            op_stack_max = max(op_stack_max, len(op_stack_list))
-            ex_stack_max = max(ex_stack_max, len(ex_stack_list))
-        execution._debug_callback = maxdepth
-
-        nums = 10
-        list1_w = [integer(x) for x in range(nums)]
-        res = interpret(execution_stack(W_LambdaCursor(reverse)),
-                        operand_stack(conslist(list1_w)),
-                        True)
-        list1_w.reverse()
-        assert plist(res) == list1_w
-
-        ex_stack_max1 = ex_stack_max
-
-        op_stack_max = 0
-        ex_stack_max = 0
-
-        nums = 100
-        list1_w = [integer(x) for x in range(nums)]
-        interpret(execution_stack(W_LambdaCursor(reverse)),
-                  operand_stack(conslist(list1_w)),
-                  True)
-        ex_stack_max2 = ex_stack_max
-
-        assert ex_stack_max2  == ex_stack_max1
-
-        op_stack_max = 0
-        ex_stack_max = 0
-
-        nums = 1000
-        list1_w = [integer(x) for x in range(nums)]
-        interpret(execution_stack(W_LambdaCursor(reverse)),
-                  operand_stack(conslist(list1_w)),
-                  True)
-        ex_stack_max3 = ex_stack_max
-
-        assert ex_stack_max3 == ex_stack_max2
 
     def test_plus(self):
         from mu.peano import startup_peano, _plus
@@ -356,9 +286,7 @@ class TestInterpret(object):
         a_w = peano_num(4)
         b_w = peano_num(5)
 
-        ex_stack = execution_stack(mu(_plus(), [a_w, b_w]))
-
-        res = interpret(ex_stack)
+        res = interpret_expression(mu(_plus(), [a_w, b_w]))
         assert python_num(res) == 9
 
     def test_plus_acc(self):
@@ -368,9 +296,7 @@ class TestInterpret(object):
         a_w = peano_num(4)
         b_w = peano_num(5)
 
-        ex_stack = execution_stack(mu(_plus_acc(), [a_w, b_w]))
-
-        res = interpret(ex_stack)
+        res = interpret_expression(mu(_plus_acc(), [a_w, b_w]))
         assert python_num(res) == 9
 
     def test_mult(self):
@@ -380,9 +306,7 @@ class TestInterpret(object):
         a_w = peano_num(2)
         b_w = peano_num(3)
 
-        ex_stack = execution_stack(mu(_mult(), [a_w, b_w]))
-
-        res = interpret(ex_stack)
+        res = interpret_expression(mu(_mult(), [a_w, b_w]))
         assert python_num(res) == 6
 
 # EOF

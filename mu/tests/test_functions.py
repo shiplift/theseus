@@ -12,8 +12,8 @@ import mu.functions
 from mu.peano import python_num, peano_num
 from mu.functions import *
 from lamb.util.construction_helper import (cons, integer,
-                                           conslist, plist,
-                                           execution_stack, operand_stack)
+                                           conslist, plist)
+                                           
 
 def setup_module(module):
     from lamb.startup import boot

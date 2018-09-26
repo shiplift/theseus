@@ -154,4 +154,16 @@ class TestParser(object):
             1. X ↦ μ(f, μ(⟪-⟫, X, 1))
         μ(f, 10)""")
 
+    def test_corecursion_file(self, parser, tmpdir):
+        f = tmpdir.join('corec.lamb')
+        f.write_text(u"""
+        g ≔ Λ.
+        f ≔ λ.
+            1. 0 ↦ 1
+            2. X ↦ μ(g, X)
+        g ≔ λ.
+            1. X ↦ μ(f, μ(⟪-⟫, X, 1))
+        μ(f, 10)""",encoding='utf-8')
+        t = parser.parse(str(f), is_file=True)
+
 # EOF

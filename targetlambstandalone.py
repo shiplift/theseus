@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+Had been used for direct op invocation.
+does not translate anymore... 
+let it rest :/
+
+"""
+
 import sys
 import time
 

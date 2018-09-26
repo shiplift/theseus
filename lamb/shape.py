@@ -4,7 +4,7 @@
 # Test.
 #
 
-from rpython.rlib import jit
+from rpython.rlib import jit, objectmodel
 
 from lamb.object import Object
 
@@ -62,8 +62,8 @@ class Shape(Object):
     def record_shape(self, child, i):
         pass
 
+    @objectmodel.not_rpython
     def record_shapes(self, storage):
-        """NOT_RPYHON"""
         # test only
         for i, child in enumerate(storage):
             self.record_shape(child, i)
@@ -233,6 +233,14 @@ class CompoundShape(Shape):
             # nothing to do
             return (self, storage)
 
+        # for i in range(storage_len):
+        #     child = current_storage[i]
+        #     if not self._config._inhibit_recognition:
+        #         # We do not record statistics in jitted code,
+        #         # it should be stable beforehand
+        #         if not jit.we_are_jitted():
+        #             shape.record_shape(child, i)
+            
         while index < storage_len:
             child = current_storage[index]
             subshape = child.shape()
@@ -245,7 +253,6 @@ class CompoundShape(Shape):
 
             new_shape = shape.get_transformation(index, subshape)
             if new_shape is not shape:
-
                 if isinstance(child, W_Constructor):
                     child_storage = child.get_storage()
                 else:
@@ -344,10 +351,6 @@ class InStorageShape(Shape):
         return "|"
 
 in_storage_shape = InStorageShape()
-
-
-def in_storage_shape_instance():
-    return in_storage_shape
 
 
 @jit.unroll_safe

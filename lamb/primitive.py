@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from lamb import model
-from rpython.rlib import jit, rarithmetic, rstring, rfloat, rbigint
+from rpython.rlib import (jit, rarithmetic, rstring, rfloat, rbigint,
+                          objectmodel)
 
+                          
 from lamb.util.construction_helper import conslist, plist, nil
 
 # Primitives
@@ -65,9 +67,8 @@ def expose_primitive(name=None, num_args=None, unwrap_spec=None):
         return func
     return decorator
 
-
+@objectmodel.not_rpython
 def wrap_primitive(num_args=None, unwrap_spec=None):
-    "NOT_RPYTHON"
     # some serious magic, don't look
     import inspect
     from rpython.rlib.unroll import unrolling_iterable
@@ -118,6 +119,7 @@ def wrap_primitive(num_args=None, unwrap_spec=None):
                     args += (plist(w_arg), )
                 else:
                     raise NotImplementedError(
+
                         "unknown unwrap_spec %s" % (spec, ))
             w_result = func(*args)
             return w_result

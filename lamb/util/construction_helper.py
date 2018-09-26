@@ -6,20 +6,17 @@
 # Construction Helper
 #
 from rpython.rlib import jit
-from rpython.rlib.objectmodel import we_are_translated
+from rpython.rlib.objectmodel import we_are_translated, not_rpython
 from rpython.rlib.unroll import unrolling_iterable
 from lamb.expression import (Variable, Rule,
                              W_VariableExpression,
-                             W_LambdaCursor,
-
                              w_call)
 from lamb.object import Object
 from lamb.pattern import (Pattern,
                           VariablePattern, ConstructorPattern, IntegerPattern)
 from lamb.model import (W_Object, W_Integer, W_Constructor, W_Lambda,
                         tag, w_constructor)
-from lamb.stack import ExecutionStackElement, OperandStackElement
-from lamb.execution import interpret
+from lamb.execution import interpret, interpret_expression
 
 def nil():
     return w_constructor(tag("nil", 0), [])
@@ -74,8 +71,8 @@ def expression(obj):
 def rules(tuples):
     return [Rule(item[0], item[1]) for item in tuples]
 
+@not_rpython
 def ziprules(*tuples):
-    "NOT_RPYTHON"
     return [Rule([pattern(p) for p in item[0]], expression(item[1])) \
             for item in tuples]
 
@@ -104,21 +101,8 @@ def plist(c_list):
         conses = conses.get_child(1)
     return result
 
-def operand_stack(*elems):
-    stack = None
-    for elem in reversed(elems):
-        stack = OperandStackElement(elem, stack)
-    return stack
-
-def execution_stack(*elems):
-    stack = None
-    for elem in reversed(elems):
-        stack = ExecutionStackElement(elem, stack)
-    return stack
-
 def run(lamb, args):
-    ex = ExecutionStackElement(mu(lamb, args))
-    return interpret(ex)
+    return interpret_expression(mu(lamb, args))
 
 def convert_arguments(arguments):
     from lamb import model

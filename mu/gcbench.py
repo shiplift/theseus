@@ -58,7 +58,7 @@ from lamb.shape import CompoundShape, in_storage_shape
 from lamb.util.construction_helper import (pattern as p, expression as e,
                                            lamb, mu, cons, integer,
                                            plist, conslist, rules,
-                                           operand_stack, execution_stack, nil)
+                                           nil)
 
 java = """
 class Node {

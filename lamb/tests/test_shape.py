@@ -14,13 +14,7 @@ from lamb.expression import *
 from lamb.util.construction_helper import (pattern, cons, integer, expression,
                                            ziprules, lamb, mu,
                                            nil, is_nil,
-                                           conslist, plist,
-                                           execution_stack)
-
-def setup_module(module):
-    from lamb import execution
-    from lamb.util.debug import debug_stack
-    execution._debug_callback = debug_stack
+                                           conslist, plist)
 
 def clean_tag(name, arity):
     return W_Tag(name, arity)
@@ -447,34 +441,13 @@ class TestShapeMerger(object):
             reverse = lamb(([l], mu(reverse_acc, [l, nil()])))
             reverse._name = "reverse"
 
-            def stackinspect(d):
-
-                from lamb.util.debug import storagewalker
-
-                op_stack = d['op_stack']
-                ex_stack = d['ex_stack']
-
-                if op_stack:
-                    if isinstance(op_stack._data, W_Constructor):
-                        print "[W]", op_stack._data._shape,
-                        print " storage: ",
-                        print storagewalker(op_stack._data.get_storage())
-                    else:
-                        print "[W]", op_stack._data
-                else:
-                    print "[w] none"
-
 
             nums = 50
             list1_w = [integer(x) for x in range(nums)]
             clist1_w = _conslist(list1_w)
             assert clist1_w.get_tag() is c
 
-            if debug:
-                from lamb import execution
-                execution._debug_callback = stackinspect
-                py.test.skip("debug not supported yet")
-            res = interpret(execution_stack(mu(reverse, [clist1_w])))
+            res = interpret_expression(mu(reverse, [clist1_w]))
             list1_w.reverse()
             assert plist(res) == list1_w
 
@@ -490,11 +463,11 @@ class TestShapeMerger(object):
         arg2 = peano_num(n)
         assert python_num(arg2) == n
 
-        stack_e = execution_stack(mu(_plus(), [arg1, arg2]))
+        exp = mu(_plus(), [arg1, arg2])
         assert python_num(arg2) == n
         assert python_num(arg1) == n
 
-        res = interpret(stack_e)
+        res = interpret_expression(exp)
         assert python_num(arg2) == n
         assert python_num(arg1) == n
         assert python_num(res) == n + n
@@ -512,13 +485,13 @@ class TestShapeMerger(object):
         arg2 = peano_num(n)
         assert python_num(arg2) == n
 
-        stack_e = execution_stack(mu(_mult(), [arg1, arg2]))
+        exp = mu(_mult(), [arg1, arg2])
         assert python_num(arg2) == n
         assert python_num(arg1) == n
 
         print "\n" * 10
 
-        res = interpret(stack_e)
+        res = interpret_expression(exp)
         assert python_num(arg2) == n
         assert python_num(arg1) == n
         assert python_num(res) == n * n
@@ -742,8 +715,9 @@ class TestShapeRecognizer(object):
                 (1, cons_2.shape()): cons_5.shape(),
             }
 
-
-    def test_bounded_deep_structures(self):
+    # This blows due to recursion limit
+    #@py.test.marker.no_cover
+    def test_bounded_deep_structures(self, no_cover):
         w_1 = integer(1)
         c = clean_tag("cons", 2)
 
@@ -960,7 +934,8 @@ class TestShapeRecognizer(object):
             constr = W_NAryConstructor(shape)
             constr._init_storage(storage)
             return constr
-        def _e(): return integer(1)
+        def _e():
+            return integer(1)
 
         # Be near immediate
         with SConf(substitution_threshold = 2):
@@ -1020,6 +995,8 @@ class TestShapeRecognizer(object):
 
     def test_multi_constr_recursive_structures(self):
 
+        py.test.skip("Can't do that, yet :(")
+
         e = clean_tag("E", 0)
         def _e():
             pre_shape = e.default_shape
@@ -1040,28 +1017,26 @@ class TestShapeRecognizer(object):
         # Be near immediate
         with SConf(substitution_threshold = 2, log_transformations=True):
 
-            tree = _node(
-                _node(
-                    _node(
-                        _node(nil(), _e(), nil()),
-                        _e(),
-                        _node(nil(), _e(), nil())),
-                    _e(),
-                    _node(
-                        _node(nil(), _e(), nil()),
-                        _e(),
-                        _node(nil(), _e(), nil()))),
-                _e(),
-                _node(
-                    _node(
-                        _node(nil(), _e(), nil()),
-                        _e(),
-                        _node(nil(), _e(), nil())),
-                    _e(),
-                    _node(
-                        _node(nil(), _e(), nil()),
-                        _e(),
-                        _node(nil(), _e(), nil()))))
+            n1 = _node(nil(), _e(), nil())
+            n2 = _node(nil(), _e(), nil())
+            n3 = _node(n1, _e(), n2)
+            n4 = _node(nil(), _e(), nil())
+            n5 = _node(nil(), _e(), nil())
+            n6 = _node(n4, _e(), n5)
+
+            n7 = _node(n3, _e(), n6)
+
+            n8 = _node(nil(), _e(), nil())
+            n9 = _node(nil(), _e(), nil())
+            nA = _node(n8, _e(), n9)
+            nB = _node(nil(), _e(), nil())
+            nC = _node(nil(), _e(), nil())
+            nD = _node(nB, _e(), nC)
+
+            nE = _node(nA, _e(), nD)
+
+            tree = _node(n7, _e(), nE)
+            
 
         s = tree.shape()
         assert len(s._structure) == 3
@@ -1072,11 +1047,61 @@ class TestShapeRecognizer(object):
         assert s0._structure[2] is in_storage_shape
 
         s1 = s._structure[1]
-        assert s1 is in_storage_shape
         # assert s1 is e.default_shape #??
+        assert s1 is in_storage_shape
+        
 
         s2 = s._structure[2]
         assert s2 is not in_storage_shape
         assert s2._structure[0] is in_storage_shape
         assert s2._structure[1] is e.default_shape
         assert s2._structure[2] is in_storage_shape
+
+    def test_eventual_convergence(self):
+
+        e = clean_tag("E", 0)
+        def _e():
+            pre_shape = e.default_shape
+            shape, storage = pre_shape.fusion([])
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+
+        n = clean_tag("Node", 3)
+        def _node(left, value, right):
+            children = [left, value, right]
+            pre_shape = n.default_shape
+            shape, storage = pre_shape.fusion(children)
+            constr = W_NAryConstructor(shape)
+            constr._init_storage(storage)
+            return constr
+
+        # Be near immediate
+        with SConf(substitution_threshold = 2, log_transformations=True):
+
+            # Warm the rules as to eventually have all E and nil elided.
+            for _ in range(25):
+                n1 = _node(nil(), _e(), nil())
+                n2 = _node(nil(), _e(), nil())
+                n3 = _node(n1, _e(), n2)
+                n4 = _node(nil(), _e(), nil())
+                n5 = _node(nil(), _e(), nil())
+                n6 = _node(n4, _e(), n5)
+
+                n7 = _node(n3, _e(), n6)
+
+                n8 = _node(nil(), _e(), nil())
+                n9 = _node(nil(), _e(), nil())
+                nA = _node(n8, _e(), n9)
+                nB = _node(nil(), _e(), nil())
+                nC = _node(nil(), _e(), nil())
+                nD = _node(nB, _e(), nC)
+
+                nE = _node(nA, _e(), nD)
+
+                tree = _node(n7, _e(), nE)
+
+        # everything elided...
+        assert len(tree._storage) == 0
+        # ...but still reifyable
+        assert tree.get_number_of_children() == 3

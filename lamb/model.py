@@ -25,7 +25,6 @@ from lamb.object import Object
 
 from lamb.shape import CompoundShape, in_storage_shape, default_shape
 from lamb.pattern import NoMatch
-from lamb.stack import ExecutionStackElement, OperandStackElement
 
 class W_Object(Object):
 
@@ -33,7 +32,7 @@ class W_Object(Object):
 
     def shape(self):
         return in_storage_shape
-
+    
     def _replace_with_constructor_expression(self):
         from lamb.expression import Quote
         return Quote(self)
@@ -43,14 +42,12 @@ class W_Object(Object):
 class W_Tag(W_Object):
     tags = {}
 
-    _immutable_fields_ = ['name', '_arity', '_cursor', 'default_shape']
+    _immutable_fields_ = ['name', '_arity', 'default_shape']
 
     def __init__(self, name, arity):
-        from lamb.expression import W_ConstructorCursor
         self.name = name
         assert arity >= 0
         self._arity = arity
-        self._cursor = W_ConstructorCursor(self)
         self.default_shape = default_shape(self, arity)
 
     def arity(self):
@@ -264,13 +261,11 @@ class W_Lambda(W_Object):
     λ arity is the number of patterns in the first rule, or zero
     """
 
-    _immutable_fields_ = ['_rules[*]', '_cursor']
+    _immutable_fields_ = ['_rules[*]']
 
     def __init__(self, rules=[], name=""):
-        from lamb.expression import W_LambdaCursor
         self._rules = rules
         self._name = name
-        self._cursor = W_LambdaCursor(self)
 
     @jit.elidable
     def _rule_arity(self):

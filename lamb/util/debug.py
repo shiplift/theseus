@@ -6,17 +6,15 @@ import py, sys
 from lamb.util.view import _dot, view
 from lamb.util.repr import urepr, who, uni
 
-_iteration = 0
-_stacks = {}
-_current_lambda = None
 
-from lamb import model, shape, pattern, expression, execution, stack, object as obj
+from lamb import model, shape, pattern, expression, execution, object as obj
 # Monkeypatch debug output
 #
 
 sys.setrecursionlimit(1000000)
 
 hard_debug = False
+
 
 ### General ###
 
@@ -38,7 +36,9 @@ class __extend__(shape.Shape):
     @uni
     def to_repr(self, seen):
         res = u"σ"
-        res += u"%d" % self.get_number_of_direct_children()
+        children = self.get_number_of_direct_children()
+        if children > 0:
+            res += u"%d" % children
         return res
 
 class __extend__(shape.CompoundShape):
@@ -49,11 +49,11 @@ class __extend__(shape.CompoundShape):
             s.discard(x)
             return urepr(x, s)
 
-        res = u"σ"
-        res += urepr(self._tag, seen)
-        res += u"["
-        res += ", ".join(map(mini_urepr, self._structure))
-        res += u"]"
+        res = u"σ%s" % self._tag.name
+        if len(self._structure) > 0:
+            res += u"["
+            res += ", ".join(map(mini_urepr, self._structure))
+            res += u"]"
         return res
 
 class __extend__(shape.InStorageShape):
@@ -86,7 +86,10 @@ class __extend__(pattern.ConstructorPattern):
 class __extend__(model.W_Tag):
     @uni
     def to_repr(self, seen):
-        return u"%s/%d" % (self.name, self.arity())
+        if self.arity() > 0:
+            return u"%s/%d" % (self.name, self.arity())
+        else:
+            return u"%s" % self.name
 
 class __extend__(model.W_Integer):
     @uni
@@ -104,7 +107,11 @@ class __extend__(model.W_String):
 class __extend__(model.W_Constructor):
     @uni
     def to_repr(self, seen, maxdepth=8):
-        return u"Γ" + u"%s%s" % (urepr(self.get_tag(), seen), self.children_to_repr(seen, maxdepth))
+        def mini_urepr(x):
+            s = set(seen)
+            s.discard(x)
+            return urepr(x, s)
+        return u"Γ" + u"%s%s" % (mini_urepr(self.get_tag()), self.children_to_repr(seen, maxdepth))
 
     def children_to_repr(self, seen, maxdepth=8):
         if maxdepth <= 0:
@@ -204,17 +211,6 @@ class __extend__(expression.W_Call):
         else:
             return u""
 
-
-class __extend__(expression.W_ConstructorCursor):
-    @uni
-    def to_repr(self, seen):
-        return u"%" + urepr(self._tag, seen)
-
-class __extend__(expression.W_LambdaCursor):
-    @uni
-    def to_repr(self, seen):
-        return u"%" + urepr(self._lamb, seen)
-
 class __extend__(expression.Rule):
     @uni
     def to_repr(self, seen):
@@ -232,34 +228,6 @@ class __extend__(expression.Variable):
     def to_repr(self, seen):
         i = ("@%s" % self.binding_index if self.binding_index != -1 else "")
         return self.name + u"_" + who(self) + i
-
-
-class __extend__(stack.StackElement):
-    #
-    # useful when inspecing the stack
-    #
-    def linearize(self): # pragma: no cover
-        element = self
-        ret = []
-        while element is not None:
-            ret.insert(0, element)
-            try:
-                element = element._next
-            except AttributeError:
-                element = None
-        return ret
-
-    #
-    # Testing and Debug
-    #
-    @uni
-    def to_repr(self, seen):
-        r = u""
-        if self._next is None:
-            r += u"⊥"
-        if self._data is not None:
-            r += urepr(self._data, seen)
-        return r
 
 ### Execution ###
 
@@ -292,72 +260,6 @@ class __extend__(execution.FinishContinuation):
         return r
 
 ###############################################################################
-
-def debug_stack(stack):
-    """
-    print dictionary of stacks.
-    """
-    global _current_lambda
-    print
-    #print "%: Cursor, !: Expression, μ: Call, #: Value, λ: Lambda, &: Pattern, {}: Rule, _ Variable"
-
-    d = { 'ex_stack': stack.execution_stack, 'op_stack': stack.operand_stack }
-
-    length = 60
-
-    def i_(o):
-        if hasattr(o, 'linearize'):
-            return o.linearize()
-        try: [ e for e in o ]
-        except TypeError: return [o]
-        else: return o
-    def t_(o):
-        return o[:length] if len(o) > length else o
-
-    from itertools import izip_longest
-    k = d.keys()
-    v = map(list, map(list, map(i_, d.values())))
-
-    update_stack_mappings(stack)
-    if stack.execution_stack is not None:
-        expr, _ = stack.execution_stack.pop()
-        if isinstance(expr, expression.W_LambdaCursor):
-            _current_lambda = expr._lamb
-
-    if _current_lambda is not None:
-        print _current_lambda
-    stacklists = map(list, map(reversed, zip(*list(izip_longest(*v, fillvalue="")))))
-    stackreprs = map(lambda x: map(lambda y: t_(urepr(y)) if y else u"", x), stacklists)
-    stacks = map(lambda x: map(lambda y: (u"[%%-%ds]" % length) % y, x), stackreprs)
-
-    tops = map(lambda x: [(u"%%-%ds" % (length + 3)) % x], k)
-    stat = map(lambda x: x[0] + x[1], list(zip(tops,stacks)))
-    lines = map(lambda x: u" ".join(x), map(list, zip(*stat)))
-    print "\n".join(map(lambda x: x.encode("utf-8"), lines))
-
-def update_stack_mappings(stack):
-    """
-    update the global stack mapping to be viewed with view_stacks()
-    """
-    import copy
-    global _stacks
-    global _iteration
-
-    d = { 'ex_stack': stack.execution_stack, 'op_stack': stack.operand_stack }
-    k = d.keys()
-    for i in range(len(k)):
-        localkey = "_%03d%s" % (_iteration, k[i])
-        _stacks[localkey] = copy.copy(d[k[i]])
-    _iteration += 1
-
-
-
-def view_stacks():
-    """
-    view all stacks using dot/pygame as captured with update_stack_mappings()
-    """
-    view(**_stacks)
-
 
 def storagewalker(l):
     def sw(l, seen):

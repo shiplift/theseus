@@ -10,7 +10,7 @@ from lamb.shape import CompoundShape, in_storage_shape
 from lamb.util.construction_helper import (pattern as p, expression as e,
                                            lamb, mu, cons,
                                            plist, conslist, rules,
-                                           operand_stack, execution_stack, nil)
+                                           nil)
 
 
 def _setup_shapes():

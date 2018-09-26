@@ -8,8 +8,6 @@ from rpython.rlib.unroll import unrolling_iterable
 
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
-from lamb.stack import ExecutionStackElement, OperandStackElement
-
 from lamb.object import Object
 from lamb.pattern import NoMatch, Pattern
 from lamb.model import W_Object, W_Tag, W_Lambda, W_Constructor, w_constructor
@@ -42,7 +40,7 @@ class __extend__(W_Constructor):
 
 class W_PureExpression(W_Object):
     """
-    Objects that only ever live on the expression stack
+    Objects that only ever live during execution
     """
     should_enter_here = False
     _immutable_fields_ = ["should_enter_here"]
@@ -101,7 +99,7 @@ class W_VariableExpression(W_PureExpression):
 
         if w_result is None:
             w_result = toplevel_bindings.get(var.name)
-            if w_result is None:
+            if w_result is toplevel_bindings.NoneFound:
                 raise VariableUnbound()
         return w_result
 
@@ -199,19 +197,6 @@ def generate_call_class(n_arguments):
         def get_number_of_arguments(self):
             return n_arguments
 
-        #
-        # >> Expression behavior
-        # Note: this is done here and not in execution because of the
-        #       arguments_iter
-        #
-        def interpret(self, op_stack, ex_stack):
-            # super
-            (op_stack, ex_stack) = W_Call.interpret(self, op_stack, ex_stack)
-            for x in arguments_iter:
-                argument = getattr(self, ARG_ATTR_TEMPLATE % x)
-                ex_stack = ExecutionStackElement(argument, ex_stack)
-            return (op_stack, ex_stack)
-
     call_class.__name__ = call_class_name(n_arguments)
     return call_class
 
@@ -233,34 +218,6 @@ def w_call(callee, arguments):
     constr._init_arguments(arguments)
     return constr
 
-class W_Cursor(W_PureExpression):
-    """
-    Cursors are no actual expressions but act as such on the expression stack.
-    """
-    pass
-
-class W_ConstructorCursor(W_Cursor):
-
-    _immutable_fields_ = ['_tag']
-
-    def __init__(self, tag):
-        assert isinstance(tag, W_Tag)
-        self._tag = tag
-
-class W_LambdaCursor(W_Cursor):
-
-    _immutable_fields_ = ['_lamb']
-
-    def __init__(self, lamb):
-        assert isinstance(lamb, W_Lambda)
-        self._lamb = lamb
-
-    #
-    # to avoid recursion in _lamb._cursor
-    # only ever used by the type annotator
-    #
-    def __eq__(self, other): #pragma: no cover
-        return self.__class__ == other.__class__ and  self._lamb is other._lamb
 
 
 class Rule(Object):

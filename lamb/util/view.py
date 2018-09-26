@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from lamb.util.repr import urepr
+from rpython.rlib import objectmodel
 #
 # Graphviz
 #
+@objectmodel.not_rpython
 def _dot(self, seen):
-    "NOT_RPYTHON"
     if self in seen:
         return
     seen.add(self)

@@ -17,7 +17,6 @@ from rpython.rlib.objectmodel import we_are_translated
 take_options = True
 
 from lamb.startup import boot
-from lamb.stack import op_push, ex_push
 from lamb.execution import jitdriver, toplevel_bindings
 from lamb.shape import CompoundShape
 
@@ -160,7 +159,7 @@ def do_settle(f):
 
 # __________  Entry points  __________
 
-def entry_point(argv, debug=False):
+def entry_point(argv):
     if we_are_translated():
         from rpython.rlib import rstack
         rstack._stack_set_length_fraction(50.0)
@@ -180,7 +179,7 @@ def entry_point(argv, debug=False):
         print_help(argv, config)
         return ret # quit early.
 
-    (result, timing) = run(config, filename, args, debug)
+    (result, timing) = run(config, filename, args)
 
     if config["WriteStatefile"]:
         do_settle(filename)
@@ -194,10 +193,7 @@ def entry_point(argv, debug=False):
     return 0
 
 def entry_point_normal(argv):
-    return entry_point(argv, False)
-
-def entry_point_d(argv):
-    return entry_point(argv, True)
+    return entry_point(argv)
 
 def entry_point_n(argv):
     CompoundShape._config._inhibit_all= True
@@ -210,12 +206,12 @@ def entry_point_i(argv):
 
 def entry_point_t(argv):
     from lamb.util.transformation import print_transformations
-    ret = entry_point(argv, True)
+    ret = entry_point(argv)
     print_transformations()
     return ret
 
 
-def run(config, filename, args, debug=False):
+def run(config, filename, args):
 
     from lamb.util.construction_helper import interpret, nil
     from lamb.parser import parse_file
@@ -230,12 +226,9 @@ def run(config, filename, args, debug=False):
     #
     # Main run stuff.
     #
-    if debug:
-        print "debug not supported atm"
-        raise ValueError
     result = None
     for exp in expressions:
-        result = interpret(exp._replace_with_constructor_expression())
+        result = interpret_expression(exp)
     #
     #
     #
@@ -266,14 +259,6 @@ def target(driver, args):
         execution._debug_callback = record_predicates
         driver.exe_name = 'lambt'
         ep = entry_point_t
-    elif "--debug-lamb" in args:
-        args.remove("--debug-lamb")
-        if we_are_translated():
-            assert False, "only for hosted debugging"
-        from lamb import execution
-        from lamb.util.debug import debug_stack
-        execution._debug_callback = debug_stack
-        ep = entry_point_d
     else:
         driver.exe_name = 'lamb'
         ep = entry_point_normal

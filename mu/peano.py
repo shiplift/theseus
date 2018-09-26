@@ -13,7 +13,6 @@ from lamb.expression import Variable
 from lamb.util.construction_helper import (pattern as pp, expression as e,
                                            lamb, mu, cons,
                                            plist, conslist, rules,
-                                           operand_stack, execution_stack,
                                            nil, is_nil)
 
 def _setup_shapes():

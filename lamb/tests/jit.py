@@ -16,15 +16,12 @@ from rpython.jit.metainterp.test.test_ajit import LLJitMixin
 
 from lamb import model
 from lamb.model import tag
-from lamb.execution import interpret, W_LambdaCursor
 from lamb.expression import Variable
-from lamb.stack import OperandStackElement
 from lamb.shape import in_storage_shape, CompoundShape
 
 from lamb.util.construction_helper import (pattern as p, expression as e,
                                            lamb, ziprules, mu, cons, nil,
-                                           conslist, integer, operand_stack,
-                                           execution_stack, rules)
+                                           conslist, integer, rules)
 from mu.peano import (peano_num, python_num,
                       _plus, _plus_acc, _mult, _mult_acc,
                   )
@@ -55,9 +52,9 @@ class TestLLtype(LLJitMixin):
         # XXX >= 150 does not work oO
         list1_w = [integer(x) for x in range(nums)]
         clist1_w = conslist(list1_w)
-        stack_e = execution_stack(mu(reverse, [clist1_w]))
+        exp = mu(reverse, [clist1_w])
         def interp_w():
-            return interpret(stack_e)
+            return interpret(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
         clist1_w.get_tag().default_shape.print_transforms()
@@ -120,9 +117,9 @@ class TestLLtype(LLJitMixin):
         nums = 149
         # XXX >= 150 does not work oO
         list1_w = [integer(x) for x in range(nums)]
-        stack_e = execution_stack(mu(reverse, [conslist(list1_w)]))
+        exp = mu(reverse, [conslist(list1_w)])
         def interp_w():
-            return interpret(stack_e)
+            return interpret(exp)
         interp_w()
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
@@ -147,9 +144,9 @@ class TestLLtype(LLJitMixin):
 
         succ = lamb( ([x1], cons("p", x1)) )
         succ._name = "succ"
-        stack_e = execution_stack(mu(map, [succ, clist_w]))
+        exp = mu(map, [succ, clist_w])
         def interp_w():
-            return interpret(stack_e)
+            return interpret(exp)
 
         CompoundShape._config._inhibit_recognition = True
         interp_w() # fill the transition maps
@@ -158,33 +155,33 @@ class TestLLtype(LLJitMixin):
         import pdb; pdb.set_trace()
         list_w = [peano_num(x) for x in range(30)]
         clist_w = conslist(list_w)
-        stack_e = execution_stack(mu(map, [succ, clist_w]))
+        exp = mu(map, [succ, clist_w])
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_mult(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(mu(_mult(), [arg1, arg2]))
+        exp = mu(_mult(), [arg1, arg2])
         def interp_w():
-            return interpret(stack_e)
+            return interpret(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_mulacc(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(mu(_mult_acc(), [arg1, arg2]))
+        exp = mu(_mult_acc(), [arg1, arg2])
         def interp_w():
-            return interpret(stack_e)
+            return interpret(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_plus(self):
         arg1 = peano_num(50)
         arg2 = peano_num(50)
-        stack_e = execution_stack(mu(_plus(), [arg1, arg2]))
+        exp = mu(_plus(), [arg1, arg2])
         def interp_w():
-            return interpret(stack_e)
+            return interpret(exp)
 
         interp_w()
 
@@ -194,18 +191,18 @@ class TestLLtype(LLJitMixin):
         peano_num(100) # find shapes
         arg1 = peano_num(100)
         arg2 = peano_num(100)
-        stack_e = execution_stack(mu(_plus_acc(), [arg1, arg2]))
+        exp = mu(_plus_acc(), [arg1, arg2])
         def interp_w():
-            return interpret(stack_e)
+            return interpret(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
     def test_pgcbench(self):
         arg1 = peano_num(100)
         arg2 = peano_num(100)
-        stack_e = execution_stack(mu(_gc_bench(), [arg1, arg2]))
+        exp = mu(_gc_bench(), [arg1, arg2])
         def interp_w():
-            return interpret(stack_e)
+            return interpret(exp)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 
@@ -218,10 +215,10 @@ class TestLLtype(LLJitMixin):
         expressions, bindings = parse_file(filename)
         toplevel_bindings.set_bindings(bindings)
 
-        stack_e = execution_stack(expressions[-1])
+        exp = execution_stack(expressions[-1])
         stack_w = operand_stack(nil())
         def interp_w():
-            return interpret(stack_e, stack_w)
+            return interpret(exp, stack_w)
 
         self.meta_interp(interp_w, [], listcomp=True, listops=True, backendopt=True)
 

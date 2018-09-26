@@ -2,9 +2,12 @@
 # .coveragerc to control coverage.py
 [run]
 branch = True
+include =
+    lamb/*
+    mu/*
 omit =
-     lamb/util/*
-     lamb/tests/jit.py
+    lamb/util/*
+    lamb/tests/jit.py
 
 [report]
 # Regexes for lines to exclude from consideration
@@ -13,9 +16,13 @@ exclude_lines =
     pragma: no cover
 
     # Don't complain about missing debug-only code:
+    def print_
     def to_repr
     def children_to_repr
     if debug
 
     # Don't complain if tests don't hit defensive assertion code:
     raise NotImplementedError
+[html]
+# we're pretending here. but I don't want to ack(1) through this dir
+directory = cover_db
