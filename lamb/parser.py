@@ -66,12 +66,11 @@ class ParseError(Exception):
 class Scope(object):
     def __init__(self, parser):
         self.parser = parser
-        self.bindings = {}
     def __enter__(self):
-        self.parser.bindings_stack.append(self.bindings)
+        self.parser.bindings_stack.append({})
     def __exit__(self, type, value, traceback):
         self.parser.bindings_stack.pop()
-
+        
 class RulePatterns(object):
     def __init__(self, parser):
         self.parser = parser
@@ -97,7 +96,7 @@ class LambdaInfo(object):
 
 # A small token
 no_result = model.W_Object()
-
+#   
 # #
 # Parser/Transformator to Lamb
 #
@@ -111,7 +110,6 @@ class Parser(RPythonVisitor):
 
     def _reset(self):
         self.bindings_stack = [{}]
-        self.lamb_stack = []
         self.rule_effect_tracker = 0
         self.rule_pattern_tracker = 0
 
@@ -143,7 +141,7 @@ class Parser(RPythonVisitor):
                 pprint(tokens)
             parsed = self.parser.parse(tokens)
             pre_ast = self.transformer().transform(parsed)
-            actual_ast = self.dispatch(pre_ast)
+            actual_ast = self.dispatch(expanded_ast)
         except ParseError, e:
             print e.nice_error_message(filename=self.source.filename,
                                        source=self.source.contents())
@@ -163,6 +161,9 @@ class Parser(RPythonVisitor):
     def toplevel_bindings(self):
         return self.bindings_stack[0]
 
+    def innermost_bindings(self):
+        return self.bindings_stack[-1]
+
     # helper
 
     def handle_all(self, nodes):
@@ -177,17 +178,19 @@ class Parser(RPythonVisitor):
                 return val
         raise KeyError(key)
 
-    def define(self, key, value):
-        innermost_scope = self.bindings_stack[-1]
-        innermost_scope[key] = value
+    def define(self, key, value, bindings=None):
+        if bindings is None:
+            bindings = self.innermost_bindings()
+        bindings[key] = value
 
     def define_lambda(self, inbox):
-        innermost_scope = self.bindings_stack[-1]
-        box = innermost_scope.get(inbox.name, None)
+        "Named lambdas only makes sense in the toplevel currently"
+        bindings = self.toplevel_bindings()
+        box = bindings.get(inbox.name, None)
         if box is not None:
             box.update(inbox)
         else:
-            innermost_scope[inbox.name] = inbox
+            bindings[inbox.name] = inbox
 
     def to_pattern(self, w_object):
         if isinstance(w_object, model.W_Integer):
@@ -199,13 +202,12 @@ class Parser(RPythonVisitor):
         else:
             ret = w_object
         return ret
-
+   
     def pattern_from_constructor(self, w_constructor):
         _tag = w_constructor.get_tag()
         _children = [self.to_pattern(w_constructor.get_child(i)) \
                     for i in range(w_constructor.get_number_of_children())]
         return pattern.ConstructorPattern(_tag, _children)
-
 
     def make_string(self, node, strip=True):
         string = node.additional_info
@@ -218,20 +220,18 @@ class Parser(RPythonVisitor):
             s = model.w_string(string)
         return s
 
-    def make_lambda(self, node, name=""):
-        l = model.W_Lambda(rules=[], name=name)
-        with Scope(self):
-            if name != "":
-                self.define_lambda(expression.LambdaBox(
-                    LambdaInfo(node), name, l))
-            rules = self.handle_all(node.children)
-            assert isinstance(rules, list)
-            # lets show the annotator that these all are indeed rules
-            l._rules = [None] * len(rules)
-            for i, r in enumerate(rules):
-                assert isinstance(r, expression.Rule)
-                l._rules[i] = r
-            return l
+    def make_lambda(self, name=""):
+        return model.W_Lambda(rules=[], name=name)
+
+    def fill_lambda(self, node, w_lambda):
+        rules = self.handle_all(node.children)
+        assert isinstance(rules, list)
+        # lets show the annotator that these all are indeed rules
+        w_lambda._rules = [None] * len(rules)
+        for i, r in enumerate(rules):
+            assert isinstance(r, expression.Rule)
+            w_lambda._rules[i] = r
+        return w_lambda
 
     def get_name(self, node):
         assert len(node.children) >= 1
@@ -263,10 +263,18 @@ class Parser(RPythonVisitor):
 
     # productions
 
+    def visit_value_definition(self, node):
+        assert len(node.children) == 2
+        name = self.get_name(node)
+        definee = self.dispatch(node.children[1])[0]
+        self.define(name, definee, self.toplevel_bindings())
+        return [no_result]
+
     def visit_lambda_definition(self, node):
         assert len(node.children) == 2
         name = self.get_name(node)
-        definee = self.make_lambda(node.children[1], name)
+        definee = self.fill_lambda(node.children[1],
+                                   self.make_lambda(name))
         self.define_lambda(expression.LambdaBox(
             LambdaInfo(node), name, definee))
         return [no_result]
@@ -275,20 +283,13 @@ class Parser(RPythonVisitor):
         "Forward-define a lambda, for co-recursion"
         assert len(node.children) >= 1
         name = self.get_name(node)
-        l = model.W_Lambda(rules=[], name=name)
+        w_lambda = self.make_lambda(name)
         self.define_lambda(expression.LambdaBox(
-            LambdaInfo(node),name, l))
-        return [no_result]
-
-    def visit_value_definition(self, node):
-        assert len(node.children) == 2
-        name = self.get_name(node)
-        definee = self.dispatch(node.children[1])[0]
-        self.define(name, definee)
+            LambdaInfo(node),name, w_lambda))
         return [no_result]
 
     def visit_lambda(self, node):
-        return [self.make_lambda(node)]
+        return [self.fill_lambda(node, self.make_lambda())]
 
     def visit_rule(self, node):
         if len(node.children) == 1:
@@ -300,12 +301,15 @@ class Parser(RPythonVisitor):
 
         with Scope(self):
             with RulePatterns(self):
-                patterns = self.dispatch(patterns_) if patterns_ else []
+                current_patterns = self.dispatch(patterns_) if patterns_ else []
             with RuleEffects(self):
-                effect = self.dispatch(effect_)[0]
+                current_effect = self.dispatch(effect_)[0]
 
-        return [expression.Rule(patterns, effect)]
+        return [expression.Rule(current_patterns, current_effect)]
 
+    def visit_continuation(self, node):
+        assert False, "Continuation sohuld not reach here"
+    
     # def visit_patterns(self, node):
     #     return self.handle_all(node.children)
 
@@ -333,7 +337,7 @@ class Parser(RPythonVisitor):
                 reason = "Variable already defined: %s " % name
                 raise ParseError(node.getsourcepos(), reason)
             else:
-                reason = "Unknown value bound to %s" % name
+                reason = "Value bound to %s in pattern" % name
                 raise ParseError(node.getsourcepos(), reason)
             ret = found
         except KeyError:
@@ -400,6 +404,7 @@ class Parser(RPythonVisitor):
     # general visiting
     # catching all unimplemented with same behavior
     def general_nonterminal_visit(self, node):
+        # print node              
         return self.handle_all(node.children)
 
     # @not_rpython
@@ -643,6 +648,14 @@ class LambToAST(object):
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
+    def visit__maybe_symbol6(self, node):
+        #auto-generated code, don't edit
+        children = []
+        return [Nonterminal(node.symbol, children)]
+    def visit__maybe_symbol7(self, node):
+        #auto-generated code, don't edit
+        children = []
+        return [Nonterminal(node.symbol, children)]
     def visit_application(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
@@ -650,11 +663,26 @@ class LambToAST(object):
             children = []
             children.extend(self.visit_expression(node.children[2]))
             return [Nonterminal(node.symbol, children)]
+        if length == 5:
+            if node.children[2].symbol == '_maybe_symbol7':
+                children = []
+                expr = self.visit__maybe_symbol7(node.children[2])
+                assert len(expr) == 1
+                children.extend(expr[0].children)
+                children.extend(self.visit_expression(node.children[3]))
+                return [Nonterminal(node.symbol, children)]
+            children = []
+            children.extend(self.visit_expression(node.children[2]))
+            children.extend(self.visit_application_args(node.children[3]))
+            return [Nonterminal(node.symbol, children)]
         children = []
-        children.extend(self.visit_expression(node.children[2]))
-        children.extend(self.visit_application_args(node.children[3]))
+        expr = self.visit__maybe_symbol6(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        children.extend(self.visit_expression(node.children[3]))
+        children.extend(self.visit_application_args(node.children[4]))
         return [Nonterminal(node.symbol, children)]
-    def visit__maybe_symbol6(self, node):
+    def visit__maybe_symbol8(self, node):
         #auto-generated code, don't edit
         children = []
         return [Nonterminal(node.symbol, children)]
@@ -666,9 +694,9 @@ class LambToAST(object):
             children.extend(self.visit_expression(node.children[1]))
             return [Nonterminal(node.symbol, children)]
         if length == 3:
-            if node.children[1].symbol == '_maybe_symbol6':
+            if node.children[1].symbol == '_maybe_symbol8':
                 children = []
-                expr = self.visit__maybe_symbol6(node.children[1])
+                expr = self.visit__maybe_symbol8(node.children[1])
                 assert len(expr) == 1
                 children.extend(expr[0].children)
                 children.extend(self.visit_expression(node.children[2]))
@@ -680,7 +708,7 @@ class LambToAST(object):
             children.extend(expr[0].children)
             return [Nonterminal(node.symbol, children)]
         children = []
-        expr = self.visit__maybe_symbol6(node.children[1])
+        expr = self.visit__maybe_symbol8(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         children.extend(self.visit_expression(node.children[2]))
@@ -695,7 +723,7 @@ class LambToAST(object):
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
-    def visit__maybe_symbol7(self, node):
+    def visit__maybe_symbol9(self, node):
         #auto-generated code, don't edit
         children = []
         return [Nonterminal(node.symbol, children)]
@@ -703,13 +731,17 @@ class LambToAST(object):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 2:
+            if node.children[1].symbol == 'rule':
+                children = []
+                children.extend(self.visit_rule(node.children[1]))
+                return [Nonterminal(node.symbol, children)]
             children = []
             expr = self.visit_rules(node.children[1])
             assert len(expr) == 1
             children.extend(expr[0].children)
             return [Nonterminal(node.symbol, children)]
         children = []
-        expr = self.visit__maybe_symbol7(node.children[1])
+        expr = self.visit__maybe_symbol9(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         expr = self.visit_rules(node.children[2])
@@ -727,39 +759,30 @@ class LambToAST(object):
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
-    def visit__star_symbol8(self, node):
+    def visit__maybe_symbol10(self, node):
         #auto-generated code, don't edit
-        length = len(node.children)
-        if length == 2:
-            children = []
-            expr = self.visit__plus_symbol2(node.children[0])
-            assert len(expr) == 1
-            children.extend(expr[0].children)
-            children.extend(self.visit_rule(node.children[1]))
-            return [Nonterminal(node.symbol, children)]
         children = []
         expr = self.visit__plus_symbol2(node.children[0])
         assert len(expr) == 1
         children.extend(expr[0].children)
-        children.extend(self.visit_rule(node.children[1]))
-        expr = self.visit__star_symbol8(node.children[2])
+        expr = self.visit_rules(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
     def visit_rules(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
-        if length == 1:
+        if length == 3:
             children = []
-            children.extend(self.visit_rule(node.children[0]))
+            children.extend(self.visit_rule(node.children[2]))
             return [Nonterminal(node.symbol, children)]
         children = []
-        children.extend(self.visit_rule(node.children[0]))
-        expr = self.visit__star_symbol8(node.children[1])
+        children.extend(self.visit_rule(node.children[2]))
+        expr = self.visit__maybe_symbol10(node.children[3])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
-    def visit__maybe_symbol9(self, node):
+    def visit__maybe_symbol11(self, node):
         #auto-generated code, don't edit
         children = []
         children.extend(self.visit_patterns(node.children[0]))
@@ -767,34 +790,34 @@ class LambToAST(object):
     def visit_rule(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
-        if length == 4:
+        if length == 2:
             children = []
-            children.extend(self.visit_expression(node.children[3]))
+            children.extend(self.visit_expression(node.children[1]))
             return [Nonterminal(node.symbol, children)]
         children = []
-        expr = self.visit__maybe_symbol9(node.children[2])
+        expr = self.visit__maybe_symbol11(node.children[0])
         assert len(expr) == 1
         children.extend(expr[0].children)
-        children.extend(self.visit_expression(node.children[4]))
+        children.extend(self.visit_expression(node.children[2]))
         return [Nonterminal(node.symbol, children)]
-    def visit__maybe_symbol10(self, node):
+    def visit__maybe_symbol12(self, node):
         #auto-generated code, don't edit
         children = []
         return [Nonterminal(node.symbol, children)]
-    def visit__star_symbol11(self, node):
+    def visit__star_symbol13(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 2:
             children = []
-            expr = self.visit____star_symbol11_rest_0_0(node.children[1])
+            expr = self.visit____star_symbol13_rest_0_0(node.children[1])
             assert len(expr) == 1
             children.extend(expr[0].children)
             return [Nonterminal(node.symbol, children)]
         children = []
-        expr = self.visit__maybe_symbol10(node.children[1])
+        expr = self.visit__maybe_symbol12(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
-        expr = self.visit____star_symbol11_rest_0_0(node.children[2])
+        expr = self.visit____star_symbol13_rest_0_0(node.children[2])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -807,7 +830,7 @@ class LambToAST(object):
             return [Nonterminal(node.symbol, children)]
         children = []
         children.extend(self.visit_pattern(node.children[0]))
-        expr = self.visit__star_symbol11(node.children[1])
+        expr = self.visit__star_symbol13(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -848,24 +871,24 @@ class LambToAST(object):
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
-    def visit__maybe_symbol12(self, node):
+    def visit__maybe_symbol14(self, node):
         #auto-generated code, don't edit
         children = []
         return [Nonterminal(node.symbol, children)]
-    def visit__star_symbol13(self, node):
+    def visit__star_symbol15(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 2:
             children = []
-            expr = self.visit____star_symbol13_rest_0_0(node.children[1])
+            expr = self.visit____star_symbol15_rest_0_0(node.children[1])
             assert len(expr) == 1
             children.extend(expr[0].children)
             return [Nonterminal(node.symbol, children)]
         children = []
-        expr = self.visit__maybe_symbol12(node.children[1])
+        expr = self.visit__maybe_symbol14(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
-        expr = self.visit____star_symbol13_rest_0_0(node.children[2])
+        expr = self.visit____star_symbol15_rest_0_0(node.children[2])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -878,7 +901,7 @@ class LambToAST(object):
             return [Nonterminal(node.symbol, children)]
         children = []
         children.extend(self.visit_pattern(node.children[0]))
-        expr = self.visit__star_symbol13(node.children[1])
+        expr = self.visit__star_symbol15(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -922,19 +945,6 @@ class LambToAST(object):
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
-    def visit____star_symbol11_rest_0_0(self, node):
-        #auto-generated code, don't edit
-        length = len(node.children)
-        if length == 1:
-            children = []
-            children.extend(self.visit_pattern(node.children[0]))
-            return [Nonterminal(node.symbol, children)]
-        children = []
-        children.extend(self.visit_pattern(node.children[0]))
-        expr = self.visit__star_symbol11(node.children[1])
-        assert len(expr) == 1
-        children.extend(expr[0].children)
-        return [Nonterminal(node.symbol, children)]
     def visit____star_symbol13_rest_0_0(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
@@ -945,6 +955,19 @@ class LambToAST(object):
         children = []
         children.extend(self.visit_pattern(node.children[0]))
         expr = self.visit__star_symbol13(node.children[1])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit____star_symbol15_rest_0_0(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 1:
+            children = []
+            children.extend(self.visit_pattern(node.children[0]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_pattern(node.children[0]))
+        expr = self.visit__star_symbol15(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -981,34 +1004,36 @@ parser = PackratParser([Rule('lamb_source', [['_star_symbol0', '__lamb_source_re
   Rule('_maybe_symbol4', [['NEWLINE']]),
   Rule('_star_symbol5', [['__0_,', '_maybe_symbol4', '___star_symbol5_rest_0_0'], ['__0_,', '___star_symbol5_rest_0_0']]),
   Rule('arglist', [['expression', '_star_symbol5'], ['expression']]),
-  Rule('application', [['MU', 'LEFT_PARENTHESIS', 'expression', 'application_args', 'RIGHT_PARENTHESIS'], ['MU', 'LEFT_PARENTHESIS', 'expression', 'RIGHT_PARENTHESIS']]),
   Rule('_maybe_symbol6', [['NEWLINE']]),
-  Rule('_plus_symbol1', [['__0_,', '_maybe_symbol6', 'expression', '_plus_symbol1'], ['__0_,', 'expression', '_plus_symbol1'], ['__0_,', '_maybe_symbol6', 'expression'], ['__0_,', 'expression']]),
-  Rule('application_args', [['_plus_symbol1']]),
   Rule('_maybe_symbol7', [['NEWLINE']]),
-  Rule('lambda', [['LAMBDA', '_maybe_symbol7', 'rules'], ['LAMBDA', 'rules']]),
+  Rule('application', [['MU', 'LEFT_PARENTHESIS', '_maybe_symbol6', 'expression', 'application_args', 'RIGHT_PARENTHESIS'], ['MU', 'LEFT_PARENTHESIS', 'expression', 'application_args', 'RIGHT_PARENTHESIS'], ['MU', 'LEFT_PARENTHESIS', '_maybe_symbol7', 'expression', 'RIGHT_PARENTHESIS'], ['MU', 'LEFT_PARENTHESIS', 'expression', 'RIGHT_PARENTHESIS']]),
+  Rule('_maybe_symbol8', [['NEWLINE']]),
+  Rule('_plus_symbol1', [['__0_,', '_maybe_symbol8', 'expression', '_plus_symbol1'], ['__0_,', 'expression', '_plus_symbol1'], ['__0_,', '_maybe_symbol8', 'expression'], ['__0_,', 'expression']]),
+  Rule('application_args', [['_plus_symbol1']]),
+  Rule('_maybe_symbol9', [['NEWLINE']]),
+  Rule('lambda', [['LAMBDA', '_maybe_symbol9', 'rules'], ['LAMBDA', 'rules'], ['LAMBDA', 'rule']]),
   Rule('_plus_symbol2', [['NEWLINE', '_plus_symbol2'], ['NEWLINE']]),
-  Rule('_star_symbol8', [['_plus_symbol2', 'rule', '_star_symbol8'], ['_plus_symbol2', 'rule']]),
-  Rule('rules', [['rule', '_star_symbol8'], ['rule']]),
-  Rule('_maybe_symbol9', [['patterns']]),
-  Rule('rule', [['INTEGER', '__1_.', '_maybe_symbol9', 'MAPSTO', 'expression'], ['INTEGER', '__1_.', 'MAPSTO', 'expression']]),
-  Rule('_maybe_symbol10', [['NEWLINE']]),
-  Rule('_star_symbol11', [['__0_,', '_maybe_symbol10', '___star_symbol11_rest_0_0'], ['__0_,', '___star_symbol11_rest_0_0']]),
-  Rule('patterns', [['pattern', '_star_symbol11'], ['pattern']]),
+  Rule('_maybe_symbol10', [['_plus_symbol2', 'rules']]),
+  Rule('rules', [['INTEGER', '__1_.', 'rule', '_maybe_symbol10'], ['INTEGER', '__1_.', 'rule']]),
+  Rule('_maybe_symbol11', [['patterns']]),
+  Rule('rule', [['_maybe_symbol11', 'MAPSTO', 'expression'], ['MAPSTO', 'expression']]),
+  Rule('_maybe_symbol12', [['NEWLINE']]),
+  Rule('_star_symbol13', [['__0_,', '_maybe_symbol12', '___star_symbol13_rest_0_0'], ['__0_,', '___star_symbol13_rest_0_0']]),
+  Rule('patterns', [['pattern', '_star_symbol13'], ['pattern']]),
   Rule('pattern', [['constructor_pattern'], ['variable_pattern'], ['primary_pattern']]),
   Rule('variable_pattern', [['variable']]),
   Rule('primary_pattern', [['primary']]),
   Rule('constructor_pattern', [['NAME', 'constructor_pattern_args']]),
   Rule('constructor_pattern_args', [['LEFT_PARENTHESIS', 'pattern_arglist', 'RIGHT_PARENTHESIS'], ['LEFT_PARENTHESIS', 'RIGHT_PARENTHESIS']]),
-  Rule('_maybe_symbol12', [['NEWLINE']]),
-  Rule('_star_symbol13', [['__0_,', '_maybe_symbol12', '___star_symbol13_rest_0_0'], ['__0_,', '___star_symbol13_rest_0_0']]),
-  Rule('pattern_arglist', [['pattern', '_star_symbol13'], ['pattern']]),
+  Rule('_maybe_symbol14', [['NEWLINE']]),
+  Rule('_star_symbol15', [['__0_,', '_maybe_symbol14', '___star_symbol15_rest_0_0'], ['__0_,', '___star_symbol15_rest_0_0']]),
+  Rule('pattern_arglist', [['pattern', '_star_symbol15'], ['pattern']]),
   Rule('primitive', [['LEFT_DOUBLE_ANGLE', 'NAME', 'RIGHT_DOUBLE_ANGLE']]),
   Rule('__lamb_source_rest_0_0', [['_maybe_symbol1', 'EOF'], ['EOF']]),
   Rule('__toplevel_expressions_rest_0_0', [['_star_symbol3'], []]),
   Rule('___star_symbol5_rest_0_0', [['expression', '_star_symbol5'], ['expression']]),
-  Rule('___star_symbol11_rest_0_0', [['pattern', '_star_symbol11'], ['pattern']]),
-  Rule('___star_symbol13_rest_0_0', [['pattern', '_star_symbol13'], ['pattern']])],
+  Rule('___star_symbol13_rest_0_0', [['pattern', '_star_symbol13'], ['pattern']]),
+  Rule('___star_symbol15_rest_0_0', [['pattern', '_star_symbol15'], ['pattern']])],
  'lamb_source')
 def recognize(runner, i):
     #auto-generated code, don't edit

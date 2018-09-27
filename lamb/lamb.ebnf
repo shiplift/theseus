@@ -5,6 +5,7 @@ LAMBDA: "λ.";
 ULAMBDA: "Λ.";
 MU: "μ";
 MAPSTO: "↦";
+RIGHTWARDS_DOUBLE_ARROW: "⇒";
 DEFINEDAS: "≔";
 LEFT_PARENTHESIS: "\(";
 RIGHT_PARENTHESIS: "\)";
@@ -67,21 +68,31 @@ constructor_args : [LEFT_PARENTHESIS] >arglist< [RIGHT_PARENTHESIS]
 arglist : expression ([","] [NEWLINE]? expression)*
         ;
 
-application : [MU] [LEFT_PARENTHESIS] expression application_args [RIGHT_PARENTHESIS]
-            | [MU] [LEFT_PARENTHESIS] expression [RIGHT_PARENTHESIS]
+application : [MU] [LEFT_PARENTHESIS] [NEWLINE]? expression application_args [RIGHT_PARENTHESIS]
+            | [MU] [LEFT_PARENTHESIS] [NEWLINE]? expression [RIGHT_PARENTHESIS]
             ;
 
 application_args : ([","] [NEWLINE]? expression )+
                  ;
 
-lambda : [LAMBDA] [NEWLINE]? >rules<
-       ;
+lambda : [LAMBDA] [NEWLINE]? >lambda_content<;
 
-rules : rule ([NEWLINE]+ rule)*
+lambda_content : >rules<
+               | rule
+               ;
+
+rules : [INTEGER] ["."] rule ([NEWLINE]+ >rules<)?
       ;
 
-rule : [INTEGER] ["."] patterns? [MAPSTO] expression
+rule : patterns? [MAPSTO] >body<
      ;
+
+body : continuation
+     | expression
+     ;
+
+continuation : expression [RIGHTWARDS_DOUBLE_ARROW] [NEWLINE]? lambda_content
+             ;
 
 patterns : pattern ([","] [NEWLINE]? pattern)*
          ;

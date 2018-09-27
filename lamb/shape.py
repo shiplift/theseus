@@ -233,12 +233,12 @@ class CompoundShape(Shape):
             # nothing to do
             return (self, storage)
 
-        # for i in range(storage_len):
-        #     child = current_storage[i]
-        #     if not self._config._inhibit_recognition:
-        #         # We do not record statistics in jitted code,
-        #         # it should be stable beforehand
-        #         if not jit.we_are_jitted():
+        # if not self._config._inhibit_recognition:
+        #     # We do not record statistics in jitted code,
+        #     # it should be stable beforehand
+        #     if not jit.we_are_jitted():
+        #         for i in range(storage_len):
+        #             child = current_storage[i]
         #             shape.record_shape(child, i)
             
         while index < storage_len:

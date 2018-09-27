@@ -6,11 +6,6 @@ import time
 
 from rpython.rlib import jit
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
-
-# from rpython.config.config import OptionDescription, BoolOption, StrOption
-# from rpython.config.config import Config, to_optparse
-
-
 from rpython.rlib.objectmodel import we_are_translated
 
 
