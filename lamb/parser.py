@@ -141,7 +141,7 @@ class Parser(RPythonVisitor):
                 pprint(tokens)
             parsed = self.parser.parse(tokens)
             pre_ast = self.transformer().transform(parsed)
-            actual_ast = self.dispatch(expanded_ast)
+            actual_ast = self.dispatch(pre_ast)
         except ParseError, e:
             print e.nice_error_message(filename=self.source.filename,
                                        source=self.source.contents())
