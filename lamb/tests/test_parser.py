@@ -169,6 +169,13 @@ class TestParser(object):
         assert t[0]._rules[0]._patterns[0].variable is not \
                t[0]._rules[1]._patterns[0].variable
 
+    def test_recursion_string(self, parser):
+        t = parser.parse("""
+        f ≔ λ.
+            1. 0 ↦ 1
+            2. X ↦ μ(f,  μ(⟪-⟫, X, 1))
+        μ(f, 10)""")
+
     def test_corecursion_string(self, parser):
         t = parser.parse("""
         g ≔ Λ.

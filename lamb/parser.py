@@ -273,8 +273,10 @@ class Parser(RPythonVisitor):
     def visit_lambda_definition(self, node):
         assert len(node.children) == 2
         name = self.get_name(node)
-        definee = self.fill_lambda(node.children[1],
-                                   self.make_lambda(name))
+        w_lambda = self.make_lambda(name)
+        self.define_lambda(expression.LambdaBox(
+            LambdaInfo(node), name, w_lambda))
+        definee = self.fill_lambda(node.children[1],  w_lambda)
         self.define_lambda(expression.LambdaBox(
             LambdaInfo(node), name, definee))
         return [no_result]
@@ -731,12 +733,8 @@ class LambToAST(object):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 2:
-            if node.children[1].symbol == 'rule':
-                children = []
-                children.extend(self.visit_rule(node.children[1]))
-                return [Nonterminal(node.symbol, children)]
             children = []
-            expr = self.visit_rules(node.children[1])
+            expr = self.visit_lambda_content(node.children[1])
             assert len(expr) == 1
             children.extend(expr[0].children)
             return [Nonterminal(node.symbol, children)]
@@ -744,7 +742,19 @@ class LambToAST(object):
         expr = self.visit__maybe_symbol9(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
-        expr = self.visit_rules(node.children[2])
+        expr = self.visit_lambda_content(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_lambda_content(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if node.children[0].symbol == 'rule':
+            children = []
+            children.extend(self.visit_rule(node.children[0]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        expr = self.visit_rules(node.children[0])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -792,32 +802,65 @@ class LambToAST(object):
         length = len(node.children)
         if length == 2:
             children = []
-            children.extend(self.visit_expression(node.children[1]))
+            expr = self.visit_body(node.children[1])
+            assert len(expr) == 1
+            children.extend(expr[0].children)
             return [Nonterminal(node.symbol, children)]
         children = []
         expr = self.visit__maybe_symbol11(node.children[0])
         assert len(expr) == 1
         children.extend(expr[0].children)
-        children.extend(self.visit_expression(node.children[2]))
+        expr = self.visit_body(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        return [Nonterminal(node.symbol, children)]
+    def visit_body(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if node.children[0].symbol == 'continuation':
+            children = []
+            children.extend(self.visit_continuation(node.children[0]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_expression(node.children[0]))
         return [Nonterminal(node.symbol, children)]
     def visit__maybe_symbol12(self, node):
         #auto-generated code, don't edit
         children = []
         return [Nonterminal(node.symbol, children)]
-    def visit__star_symbol13(self, node):
+    def visit_continuation(self, node):
+        #auto-generated code, don't edit
+        length = len(node.children)
+        if length == 3:
+            children = []
+            children.extend(self.visit_expression(node.children[0]))
+            children.extend(self.visit_lambda_content(node.children[2]))
+            return [Nonterminal(node.symbol, children)]
+        children = []
+        children.extend(self.visit_expression(node.children[0]))
+        expr = self.visit__maybe_symbol12(node.children[2])
+        assert len(expr) == 1
+        children.extend(expr[0].children)
+        children.extend(self.visit_lambda_content(node.children[3]))
+        return [Nonterminal(node.symbol, children)]
+    def visit__maybe_symbol13(self, node):
+        #auto-generated code, don't edit
+        children = []
+        return [Nonterminal(node.symbol, children)]
+    def visit__star_symbol14(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 2:
             children = []
-            expr = self.visit____star_symbol13_rest_0_0(node.children[1])
+            expr = self.visit____star_symbol14_rest_0_0(node.children[1])
             assert len(expr) == 1
             children.extend(expr[0].children)
             return [Nonterminal(node.symbol, children)]
         children = []
-        expr = self.visit__maybe_symbol12(node.children[1])
+        expr = self.visit__maybe_symbol13(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
-        expr = self.visit____star_symbol13_rest_0_0(node.children[2])
+        expr = self.visit____star_symbol14_rest_0_0(node.children[2])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -830,7 +873,7 @@ class LambToAST(object):
             return [Nonterminal(node.symbol, children)]
         children = []
         children.extend(self.visit_pattern(node.children[0]))
-        expr = self.visit__star_symbol13(node.children[1])
+        expr = self.visit__star_symbol14(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -871,24 +914,24 @@ class LambToAST(object):
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
-    def visit__maybe_symbol14(self, node):
+    def visit__maybe_symbol15(self, node):
         #auto-generated code, don't edit
         children = []
         return [Nonterminal(node.symbol, children)]
-    def visit__star_symbol15(self, node):
+    def visit__star_symbol16(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 2:
             children = []
-            expr = self.visit____star_symbol15_rest_0_0(node.children[1])
+            expr = self.visit____star_symbol16_rest_0_0(node.children[1])
             assert len(expr) == 1
             children.extend(expr[0].children)
             return [Nonterminal(node.symbol, children)]
         children = []
-        expr = self.visit__maybe_symbol14(node.children[1])
+        expr = self.visit__maybe_symbol15(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
-        expr = self.visit____star_symbol15_rest_0_0(node.children[2])
+        expr = self.visit____star_symbol16_rest_0_0(node.children[2])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -901,7 +944,7 @@ class LambToAST(object):
             return [Nonterminal(node.symbol, children)]
         children = []
         children.extend(self.visit_pattern(node.children[0]))
-        expr = self.visit__star_symbol15(node.children[1])
+        expr = self.visit__star_symbol16(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -945,7 +988,7 @@ class LambToAST(object):
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
-    def visit____star_symbol13_rest_0_0(self, node):
+    def visit____star_symbol14_rest_0_0(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 1:
@@ -954,11 +997,11 @@ class LambToAST(object):
             return [Nonterminal(node.symbol, children)]
         children = []
         children.extend(self.visit_pattern(node.children[0]))
-        expr = self.visit__star_symbol13(node.children[1])
+        expr = self.visit__star_symbol14(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
-    def visit____star_symbol15_rest_0_0(self, node):
+    def visit____star_symbol16_rest_0_0(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 1:
@@ -967,7 +1010,7 @@ class LambToAST(object):
             return [Nonterminal(node.symbol, children)]
         children = []
         children.extend(self.visit_pattern(node.children[0]))
-        expr = self.visit__star_symbol15(node.children[1])
+        expr = self.visit__star_symbol16(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -1011,29 +1054,33 @@ parser = PackratParser([Rule('lamb_source', [['_star_symbol0', '__lamb_source_re
   Rule('_plus_symbol1', [['__0_,', '_maybe_symbol8', 'expression', '_plus_symbol1'], ['__0_,', 'expression', '_plus_symbol1'], ['__0_,', '_maybe_symbol8', 'expression'], ['__0_,', 'expression']]),
   Rule('application_args', [['_plus_symbol1']]),
   Rule('_maybe_symbol9', [['NEWLINE']]),
-  Rule('lambda', [['LAMBDA', '_maybe_symbol9', 'rules'], ['LAMBDA', 'rules'], ['LAMBDA', 'rule']]),
+  Rule('lambda', [['LAMBDA', '_maybe_symbol9', 'lambda_content'], ['LAMBDA', 'lambda_content']]),
+  Rule('lambda_content', [['rules'], ['rule']]),
   Rule('_plus_symbol2', [['NEWLINE', '_plus_symbol2'], ['NEWLINE']]),
   Rule('_maybe_symbol10', [['_plus_symbol2', 'rules']]),
   Rule('rules', [['INTEGER', '__1_.', 'rule', '_maybe_symbol10'], ['INTEGER', '__1_.', 'rule']]),
   Rule('_maybe_symbol11', [['patterns']]),
-  Rule('rule', [['_maybe_symbol11', 'MAPSTO', 'expression'], ['MAPSTO', 'expression']]),
+  Rule('rule', [['_maybe_symbol11', 'MAPSTO', 'body'], ['MAPSTO', 'body']]),
+  Rule('body', [['continuation'], ['expression']]),
   Rule('_maybe_symbol12', [['NEWLINE']]),
-  Rule('_star_symbol13', [['__0_,', '_maybe_symbol12', '___star_symbol13_rest_0_0'], ['__0_,', '___star_symbol13_rest_0_0']]),
-  Rule('patterns', [['pattern', '_star_symbol13'], ['pattern']]),
+  Rule('continuation', [['expression', 'RIGHTWARDS_DOUBLE_ARROW', '_maybe_symbol12', 'lambda_content'], ['expression', 'RIGHTWARDS_DOUBLE_ARROW', 'lambda_content']]),
+  Rule('_maybe_symbol13', [['NEWLINE']]),
+  Rule('_star_symbol14', [['__0_,', '_maybe_symbol13', '___star_symbol14_rest_0_0'], ['__0_,', '___star_symbol14_rest_0_0']]),
+  Rule('patterns', [['pattern', '_star_symbol14'], ['pattern']]),
   Rule('pattern', [['constructor_pattern'], ['variable_pattern'], ['primary_pattern']]),
   Rule('variable_pattern', [['variable']]),
   Rule('primary_pattern', [['primary']]),
   Rule('constructor_pattern', [['NAME', 'constructor_pattern_args']]),
   Rule('constructor_pattern_args', [['LEFT_PARENTHESIS', 'pattern_arglist', 'RIGHT_PARENTHESIS'], ['LEFT_PARENTHESIS', 'RIGHT_PARENTHESIS']]),
-  Rule('_maybe_symbol14', [['NEWLINE']]),
-  Rule('_star_symbol15', [['__0_,', '_maybe_symbol14', '___star_symbol15_rest_0_0'], ['__0_,', '___star_symbol15_rest_0_0']]),
-  Rule('pattern_arglist', [['pattern', '_star_symbol15'], ['pattern']]),
+  Rule('_maybe_symbol15', [['NEWLINE']]),
+  Rule('_star_symbol16', [['__0_,', '_maybe_symbol15', '___star_symbol16_rest_0_0'], ['__0_,', '___star_symbol16_rest_0_0']]),
+  Rule('pattern_arglist', [['pattern', '_star_symbol16'], ['pattern']]),
   Rule('primitive', [['LEFT_DOUBLE_ANGLE', 'NAME', 'RIGHT_DOUBLE_ANGLE']]),
   Rule('__lamb_source_rest_0_0', [['_maybe_symbol1', 'EOF'], ['EOF']]),
   Rule('__toplevel_expressions_rest_0_0', [['_star_symbol3'], []]),
   Rule('___star_symbol5_rest_0_0', [['expression', '_star_symbol5'], ['expression']]),
-  Rule('___star_symbol13_rest_0_0', [['pattern', '_star_symbol13'], ['pattern']]),
-  Rule('___star_symbol15_rest_0_0', [['pattern', '_star_symbol15'], ['pattern']])],
+  Rule('___star_symbol14_rest_0_0', [['pattern', '_star_symbol14'], ['pattern']]),
+  Rule('___star_symbol16_rest_0_0', [['pattern', '_star_symbol16'], ['pattern']])],
  'lamb_source')
 def recognize(runner, i):
     #auto-generated code, don't edit
@@ -1157,11 +1204,11 @@ def recognize(runner, i):
                 runner.state = 4
                 return i
             if char == '\xbb':
-                state = 34
-            elif char == '\x9b':
-                state = 35
-            elif char == '\xbc':
                 state = 36
+            elif char == '\x9b':
+                state = 37
+            elif char == '\xbc':
+                state = 38
             elif '-' <= char <= '\x9a':
                 state = 10
             elif '\xbd' <= char <= '\xe1':
@@ -1201,12 +1248,14 @@ def recognize(runner, i):
                 return ~i
             if char == '\x86':
                 state = 18
-            elif char == '\x89':
+            elif char == '\x87':
                 state = 19
-            elif char == '\x9f':
+            elif char == '\x89':
                 state = 20
-            elif char == '\x80':
+            elif char == '\x9f':
                 state = 21
+            elif char == '\x80':
+                state = 22
             else:
                 break
         if state == 8:
@@ -1548,7 +1597,7 @@ def recognize(runner, i):
                 runner.state = 18
                 return ~i
             if char == '\xa6':
-                state = 33
+                state = 35
             else:
                 break
         if state == 19:
@@ -1558,8 +1607,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 19
                 return ~i
-            if char == '\x94':
-                state = 32
+            if char == '\x92':
+                state = 34
             else:
                 break
         if state == 20:
@@ -1569,10 +1618,8 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 20
                 return ~i
-            if char == '\xaa':
-                state = 30
-            elif char == '\xab':
-                state = 31
+            if char == '\x94':
+                state = 33
             else:
                 break
         if state == 21:
@@ -1582,10 +1629,10 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 21
                 return ~i
-            if char == '\x98':
-                state = 22
-            elif char == '\x9c':
-                state = 23
+            if char == '\xaa':
+                state = 31
+            elif char == '\xab':
+                state = 32
             else:
                 break
         if state == 22:
@@ -1595,20 +1642,10 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 22
                 return ~i
-            if char == '\xe2':
-                state = 27
-            elif '\x00' <= char <= '\x7f':
-                state = 22
-                continue
-            elif '\x9a' <= char <= '\xe1':
-                state = 22
-                continue
-            elif '\xe3' <= char <= '\xff':
-                state = 22
-                continue
-            elif '\x81' <= char <= '\x98':
-                state = 22
-                continue
+            if char == '\x98':
+                state = 23
+            elif char == '\x9c':
+                state = 24
             else:
                 break
         if state == 23:
@@ -1619,17 +1656,17 @@ def recognize(runner, i):
                 runner.state = 23
                 return ~i
             if char == '\xe2':
-                state = 24
+                state = 28
             elif '\x00' <= char <= '\x7f':
                 state = 23
                 continue
-            elif '\x9e' <= char <= '\xe1':
+            elif '\x9a' <= char <= '\xe1':
                 state = 23
                 continue
             elif '\xe3' <= char <= '\xff':
                 state = 23
                 continue
-            elif '\x81' <= char <= '\x9c':
+            elif '\x81' <= char <= '\x98':
                 state = 23
                 continue
             else:
@@ -1641,8 +1678,20 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 24
                 return ~i
-            if char == '\x80':
+            if char == '\xe2':
                 state = 25
+            elif '\x00' <= char <= '\x7f':
+                state = 24
+                continue
+            elif '\x9e' <= char <= '\xe1':
+                state = 24
+                continue
+            elif '\xe3' <= char <= '\xff':
+                state = 24
+                continue
+            elif '\x81' <= char <= '\x9c':
+                state = 24
+                continue
             else:
                 break
         if state == 25:
@@ -1652,19 +1701,19 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 25
                 return ~i
-            if char == '\x9d':
+            if char == '\x80':
                 state = 26
             else:
                 break
-        if state == 27:
+        if state == 26:
             try:
                 char = input[i]
                 i += 1
             except IndexError:
-                runner.state = 27
+                runner.state = 26
                 return ~i
-            if char == '\x80':
-                state = 28
+            if char == '\x9d':
+                state = 27
             else:
                 break
         if state == 28:
@@ -1674,130 +1723,19 @@ def recognize(runner, i):
             except IndexError:
                 runner.state = 28
                 return ~i
-            if char == '\x99':
+            if char == '\x80':
                 state = 29
             else:
                 break
-        if state == 34:
-            runner.last_matched_index = i - 1
-            runner.last_matched_state = state
+        if state == 29:
             try:
                 char = input[i]
                 i += 1
             except IndexError:
-                runner.state = 34
-                return i
-            if '-' <= char <= '\x9e':
-                state = 39
-            elif '\xac' <= char <= '\xe1':
-                state = 39
-            elif '\xe3' <= char <= '\xff':
-                state = 39
-            elif '\x0e' <= char <= '\x1f':
-                state = 39
-            elif '\xa0' <= char <= '\xa9':
-                state = 39
-            elif '\x00' <= char <= '\x08':
-                state = 39
-            elif '$' <= char <= "'":
-                state = 39
-            elif char == '!':
-                state = 39
-            elif char == '"':
-                state = 39
-            elif char == '*':
-                state = 39
-            elif char == '+':
-                state = 39
-            elif char == '\x0b':
-                state = 39
-            elif char == '\t':
-                state = 40
-            elif char == '\n':
-                state = 40
-            elif char == '\x0c':
-                state = 40
-            elif char == '\r':
-                state = 40
-            elif char == '(':
-                state = 40
-            elif char == ')':
-                state = 40
-            elif char == '\xaa':
-                state = 40
-            elif char == '\xab':
-                state = 40
-            elif char == ' ':
-                state = 40
-            elif char == '#':
-                state = 40
-            elif char == ',':
-                state = 40
-            elif char == '\x9f':
-                state = 40
-            elif char == '\xe2':
-                state = 40
-            else:
-                break
-        if state == 35:
-            runner.last_matched_index = i - 1
-            runner.last_matched_state = state
-            try:
-                char = input[i]
-                i += 1
-            except IndexError:
-                runner.state = 35
-                return i
-            if '-' <= char <= '\x9e':
-                state = 37
-            elif '\xac' <= char <= '\xe1':
-                state = 37
-            elif '\xe3' <= char <= '\xff':
-                state = 37
-            elif '\x0e' <= char <= '\x1f':
-                state = 37
-            elif '\xa0' <= char <= '\xa9':
-                state = 37
-            elif '\x00' <= char <= '\x08':
-                state = 37
-            elif '$' <= char <= "'":
-                state = 37
-            elif char == '!':
-                state = 37
-            elif char == '"':
-                state = 37
-            elif char == '*':
-                state = 37
-            elif char == '+':
-                state = 37
-            elif char == '\x0b':
-                state = 37
-            elif char == '\t':
-                state = 38
-            elif char == '\n':
-                state = 38
-            elif char == '\x0c':
-                state = 38
-            elif char == '\r':
-                state = 38
-            elif char == '(':
-                state = 38
-            elif char == ')':
-                state = 38
-            elif char == '\xaa':
-                state = 38
-            elif char == '\xab':
-                state = 38
-            elif char == ' ':
-                state = 38
-            elif char == '#':
-                state = 38
-            elif char == ',':
-                state = 38
-            elif char == '\x9f':
-                state = 38
-            elif char == '\xe2':
-                state = 38
+                runner.state = 29
+                return ~i
+            if char == '\x99':
+                state = 30
             else:
                 break
         if state == 36:
@@ -1810,41 +1748,55 @@ def recognize(runner, i):
                 runner.state = 36
                 return i
             if '-' <= char <= '\x9e':
-                state = 10
-                continue
+                state = 41
             elif '\xac' <= char <= '\xe1':
-                state = 10
-                continue
+                state = 41
             elif '\xe3' <= char <= '\xff':
-                state = 10
-                continue
+                state = 41
             elif '\x0e' <= char <= '\x1f':
-                state = 10
-                continue
+                state = 41
             elif '\xa0' <= char <= '\xa9':
-                state = 10
-                continue
+                state = 41
             elif '\x00' <= char <= '\x08':
-                state = 10
-                continue
+                state = 41
             elif '$' <= char <= "'":
-                state = 10
-                continue
+                state = 41
             elif char == '!':
-                state = 10
-                continue
+                state = 41
             elif char == '"':
-                state = 10
-                continue
+                state = 41
             elif char == '*':
-                state = 10
-                continue
+                state = 41
             elif char == '+':
-                state = 10
-                continue
+                state = 41
             elif char == '\x0b':
-                state = 10
-                continue
+                state = 41
+            elif char == '\t':
+                state = 42
+            elif char == '\n':
+                state = 42
+            elif char == '\x0c':
+                state = 42
+            elif char == '\r':
+                state = 42
+            elif char == '(':
+                state = 42
+            elif char == ')':
+                state = 42
+            elif char == '\xaa':
+                state = 42
+            elif char == '\xab':
+                state = 42
+            elif char == ' ':
+                state = 42
+            elif char == '#':
+                state = 42
+            elif char == ',':
+                state = 42
+            elif char == '\x9f':
+                state = 42
+            elif char == '\xe2':
+                state = 42
             else:
                 break
         if state == 37:
@@ -1855,6 +1807,67 @@ def recognize(runner, i):
                 i += 1
             except IndexError:
                 runner.state = 37
+                return i
+            if '-' <= char <= '\x9e':
+                state = 39
+            elif '\xac' <= char <= '\xe1':
+                state = 39
+            elif '\xe3' <= char <= '\xff':
+                state = 39
+            elif '\x0e' <= char <= '\x1f':
+                state = 39
+            elif '\xa0' <= char <= '\xa9':
+                state = 39
+            elif '\x00' <= char <= '\x08':
+                state = 39
+            elif '$' <= char <= "'":
+                state = 39
+            elif char == '!':
+                state = 39
+            elif char == '"':
+                state = 39
+            elif char == '*':
+                state = 39
+            elif char == '+':
+                state = 39
+            elif char == '\x0b':
+                state = 39
+            elif char == '\t':
+                state = 40
+            elif char == '\n':
+                state = 40
+            elif char == '\x0c':
+                state = 40
+            elif char == '\r':
+                state = 40
+            elif char == '(':
+                state = 40
+            elif char == ')':
+                state = 40
+            elif char == '\xaa':
+                state = 40
+            elif char == '\xab':
+                state = 40
+            elif char == ' ':
+                state = 40
+            elif char == '#':
+                state = 40
+            elif char == ',':
+                state = 40
+            elif char == '\x9f':
+                state = 40
+            elif char == '\xe2':
+                state = 40
+            else:
+                break
+        if state == 38:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 38
                 return i
             if '-' <= char <= '\x9e':
                 state = 10
@@ -1941,6 +1954,53 @@ def recognize(runner, i):
                 continue
             else:
                 break
+        if state == 41:
+            runner.last_matched_index = i - 1
+            runner.last_matched_state = state
+            try:
+                char = input[i]
+                i += 1
+            except IndexError:
+                runner.state = 41
+                return i
+            if '-' <= char <= '\x9e':
+                state = 10
+                continue
+            elif '\xac' <= char <= '\xe1':
+                state = 10
+                continue
+            elif '\xe3' <= char <= '\xff':
+                state = 10
+                continue
+            elif '\x0e' <= char <= '\x1f':
+                state = 10
+                continue
+            elif '\xa0' <= char <= '\xa9':
+                state = 10
+                continue
+            elif '\x00' <= char <= '\x08':
+                state = 10
+                continue
+            elif '$' <= char <= "'":
+                state = 10
+                continue
+            elif char == '!':
+                state = 10
+                continue
+            elif char == '"':
+                state = 10
+                continue
+            elif char == '*':
+                state = 10
+                continue
+            elif char == '+':
+                state = 10
+                continue
+            elif char == '\x0b':
+                state = 10
+                continue
+            else:
+                break
         runner.last_matched_state = state
         runner.last_matched_index = i - 1
         runner.state = state
@@ -1951,7 +2011,7 @@ def recognize(runner, i):
         break
     runner.state = state
     return ~i
-lexer = DummyLexer(recognize, DFA(41,
+lexer = DummyLexer(recognize, DFA(43,
  {(0, '\x00'): 10,
   (0, '\x01'): 10,
   (0, '\x02'): 10,
@@ -2594,7 +2654,7 @@ lexer = DummyLexer(recognize, DFA(41,
   (4, '\x98'): 10,
   (4, '\x99'): 10,
   (4, '\x9a'): 10,
-  (4, '\x9b'): 35,
+  (4, '\x9b'): 37,
   (4, '\x9c'): 10,
   (4, '\x9d'): 10,
   (4, '\x9e'): 10,
@@ -2623,8 +2683,8 @@ lexer = DummyLexer(recognize, DFA(41,
   (4, '\xb8'): 10,
   (4, '\xb9'): 10,
   (4, '\xba'): 10,
-  (4, '\xbb'): 34,
-  (4, '\xbc'): 36,
+  (4, '\xbb'): 36,
+  (4, '\xbc'): 38,
   (4, '\xbd'): 10,
   (4, '\xbe'): 10,
   (4, '\xbf'): 10,
@@ -2691,10 +2751,11 @@ lexer = DummyLexer(recognize, DFA(41,
   (4, '\xfd'): 10,
   (4, '\xfe'): 10,
   (4, '\xff'): 10,
-  (5, '\x80'): 21,
+  (5, '\x80'): 22,
   (5, '\x86'): 18,
-  (5, '\x89'): 19,
-  (5, '\x9f'): 20,
+  (5, '\x87'): 19,
+  (5, '\x89'): 20,
+  (5, '\x9f'): 21,
   (8, '\x00'): 10,
   (8, '\x01'): 10,
   (8, '\x02'): 10,
@@ -4199,266 +4260,13 @@ lexer = DummyLexer(recognize, DFA(41,
   (17, '\xfd'): 10,
   (17, '\xfe'): 10,
   (17, '\xff'): 10,
-  (18, '\xa6'): 33,
-  (19, '\x94'): 32,
-  (20, '\xaa'): 30,
-  (20, '\xab'): 31,
-  (21, '\x98'): 22,
-  (21, '\x9c'): 23,
-  (22, '\x00'): 22,
-  (22, '\x01'): 22,
-  (22, '\x02'): 22,
-  (22, '\x03'): 22,
-  (22, '\x04'): 22,
-  (22, '\x05'): 22,
-  (22, '\x06'): 22,
-  (22, '\x07'): 22,
-  (22, '\x08'): 22,
-  (22, '\t'): 22,
-  (22, '\n'): 22,
-  (22, '\x0b'): 22,
-  (22, '\x0c'): 22,
-  (22, '\r'): 22,
-  (22, '\x0e'): 22,
-  (22, '\x0f'): 22,
-  (22, '\x10'): 22,
-  (22, '\x11'): 22,
-  (22, '\x12'): 22,
-  (22, '\x13'): 22,
-  (22, '\x14'): 22,
-  (22, '\x15'): 22,
-  (22, '\x16'): 22,
-  (22, '\x17'): 22,
-  (22, '\x18'): 22,
-  (22, '\x19'): 22,
-  (22, '\x1a'): 22,
-  (22, '\x1b'): 22,
-  (22, '\x1c'): 22,
-  (22, '\x1d'): 22,
-  (22, '\x1e'): 22,
-  (22, '\x1f'): 22,
-  (22, ' '): 22,
-  (22, '!'): 22,
-  (22, '"'): 22,
-  (22, '#'): 22,
-  (22, '$'): 22,
-  (22, '%'): 22,
-  (22, '&'): 22,
-  (22, "'"): 22,
-  (22, '('): 22,
-  (22, ')'): 22,
-  (22, '*'): 22,
-  (22, '+'): 22,
-  (22, ','): 22,
-  (22, '-'): 22,
-  (22, '.'): 22,
-  (22, '/'): 22,
-  (22, '0'): 22,
-  (22, '1'): 22,
-  (22, '2'): 22,
-  (22, '3'): 22,
-  (22, '4'): 22,
-  (22, '5'): 22,
-  (22, '6'): 22,
-  (22, '7'): 22,
-  (22, '8'): 22,
-  (22, '9'): 22,
-  (22, ':'): 22,
-  (22, ';'): 22,
-  (22, '<'): 22,
-  (22, '='): 22,
-  (22, '>'): 22,
-  (22, '?'): 22,
-  (22, '@'): 22,
-  (22, 'A'): 22,
-  (22, 'B'): 22,
-  (22, 'C'): 22,
-  (22, 'D'): 22,
-  (22, 'E'): 22,
-  (22, 'F'): 22,
-  (22, 'G'): 22,
-  (22, 'H'): 22,
-  (22, 'I'): 22,
-  (22, 'J'): 22,
-  (22, 'K'): 22,
-  (22, 'L'): 22,
-  (22, 'M'): 22,
-  (22, 'N'): 22,
-  (22, 'O'): 22,
-  (22, 'P'): 22,
-  (22, 'Q'): 22,
-  (22, 'R'): 22,
-  (22, 'S'): 22,
-  (22, 'T'): 22,
-  (22, 'U'): 22,
-  (22, 'V'): 22,
-  (22, 'W'): 22,
-  (22, 'X'): 22,
-  (22, 'Y'): 22,
-  (22, 'Z'): 22,
-  (22, '['): 22,
-  (22, '\\'): 22,
-  (22, ']'): 22,
-  (22, '^'): 22,
-  (22, '_'): 22,
-  (22, '`'): 22,
-  (22, 'a'): 22,
-  (22, 'b'): 22,
-  (22, 'c'): 22,
-  (22, 'd'): 22,
-  (22, 'e'): 22,
-  (22, 'f'): 22,
-  (22, 'g'): 22,
-  (22, 'h'): 22,
-  (22, 'i'): 22,
-  (22, 'j'): 22,
-  (22, 'k'): 22,
-  (22, 'l'): 22,
-  (22, 'm'): 22,
-  (22, 'n'): 22,
-  (22, 'o'): 22,
-  (22, 'p'): 22,
-  (22, 'q'): 22,
-  (22, 'r'): 22,
-  (22, 's'): 22,
-  (22, 't'): 22,
-  (22, 'u'): 22,
-  (22, 'v'): 22,
-  (22, 'w'): 22,
-  (22, 'x'): 22,
-  (22, 'y'): 22,
-  (22, 'z'): 22,
-  (22, '{'): 22,
-  (22, '|'): 22,
-  (22, '}'): 22,
-  (22, '~'): 22,
-  (22, '\x7f'): 22,
-  (22, '\x81'): 22,
-  (22, '\x82'): 22,
-  (22, '\x83'): 22,
-  (22, '\x84'): 22,
-  (22, '\x85'): 22,
-  (22, '\x86'): 22,
-  (22, '\x87'): 22,
-  (22, '\x88'): 22,
-  (22, '\x89'): 22,
-  (22, '\x8a'): 22,
-  (22, '\x8b'): 22,
-  (22, '\x8c'): 22,
-  (22, '\x8d'): 22,
-  (22, '\x8e'): 22,
-  (22, '\x8f'): 22,
-  (22, '\x90'): 22,
-  (22, '\x91'): 22,
-  (22, '\x92'): 22,
-  (22, '\x93'): 22,
-  (22, '\x94'): 22,
-  (22, '\x95'): 22,
-  (22, '\x96'): 22,
-  (22, '\x97'): 22,
-  (22, '\x98'): 22,
-  (22, '\x9a'): 22,
-  (22, '\x9b'): 22,
-  (22, '\x9c'): 22,
-  (22, '\x9d'): 22,
-  (22, '\x9e'): 22,
-  (22, '\x9f'): 22,
-  (22, '\xa0'): 22,
-  (22, '\xa1'): 22,
-  (22, '\xa2'): 22,
-  (22, '\xa3'): 22,
-  (22, '\xa4'): 22,
-  (22, '\xa5'): 22,
-  (22, '\xa6'): 22,
-  (22, '\xa7'): 22,
-  (22, '\xa8'): 22,
-  (22, '\xa9'): 22,
-  (22, '\xaa'): 22,
-  (22, '\xab'): 22,
-  (22, '\xac'): 22,
-  (22, '\xad'): 22,
-  (22, '\xae'): 22,
-  (22, '\xaf'): 22,
-  (22, '\xb0'): 22,
-  (22, '\xb1'): 22,
-  (22, '\xb2'): 22,
-  (22, '\xb3'): 22,
-  (22, '\xb4'): 22,
-  (22, '\xb5'): 22,
-  (22, '\xb6'): 22,
-  (22, '\xb7'): 22,
-  (22, '\xb8'): 22,
-  (22, '\xb9'): 22,
-  (22, '\xba'): 22,
-  (22, '\xbb'): 22,
-  (22, '\xbc'): 22,
-  (22, '\xbd'): 22,
-  (22, '\xbe'): 22,
-  (22, '\xbf'): 22,
-  (22, '\xc0'): 22,
-  (22, '\xc1'): 22,
-  (22, '\xc2'): 22,
-  (22, '\xc3'): 22,
-  (22, '\xc4'): 22,
-  (22, '\xc5'): 22,
-  (22, '\xc6'): 22,
-  (22, '\xc7'): 22,
-  (22, '\xc8'): 22,
-  (22, '\xc9'): 22,
-  (22, '\xca'): 22,
-  (22, '\xcb'): 22,
-  (22, '\xcc'): 22,
-  (22, '\xcd'): 22,
-  (22, '\xce'): 22,
-  (22, '\xcf'): 22,
-  (22, '\xd0'): 22,
-  (22, '\xd1'): 22,
-  (22, '\xd2'): 22,
-  (22, '\xd3'): 22,
-  (22, '\xd4'): 22,
-  (22, '\xd5'): 22,
-  (22, '\xd6'): 22,
-  (22, '\xd7'): 22,
-  (22, '\xd8'): 22,
-  (22, '\xd9'): 22,
-  (22, '\xda'): 22,
-  (22, '\xdb'): 22,
-  (22, '\xdc'): 22,
-  (22, '\xdd'): 22,
-  (22, '\xde'): 22,
-  (22, '\xdf'): 22,
-  (22, '\xe0'): 22,
-  (22, '\xe1'): 22,
-  (22, '\xe2'): 27,
-  (22, '\xe3'): 22,
-  (22, '\xe4'): 22,
-  (22, '\xe5'): 22,
-  (22, '\xe6'): 22,
-  (22, '\xe7'): 22,
-  (22, '\xe8'): 22,
-  (22, '\xe9'): 22,
-  (22, '\xea'): 22,
-  (22, '\xeb'): 22,
-  (22, '\xec'): 22,
-  (22, '\xed'): 22,
-  (22, '\xee'): 22,
-  (22, '\xef'): 22,
-  (22, '\xf0'): 22,
-  (22, '\xf1'): 22,
-  (22, '\xf2'): 22,
-  (22, '\xf3'): 22,
-  (22, '\xf4'): 22,
-  (22, '\xf5'): 22,
-  (22, '\xf6'): 22,
-  (22, '\xf7'): 22,
-  (22, '\xf8'): 22,
-  (22, '\xf9'): 22,
-  (22, '\xfa'): 22,
-  (22, '\xfb'): 22,
-  (22, '\xfc'): 22,
-  (22, '\xfd'): 22,
-  (22, '\xfe'): 22,
-  (22, '\xff'): 22,
+  (18, '\xa6'): 35,
+  (19, '\x92'): 34,
+  (20, '\x94'): 33,
+  (21, '\xaa'): 31,
+  (21, '\xab'): 32,
+  (22, '\x98'): 23,
+  (22, '\x9c'): 24,
   (23, '\x00'): 23,
   (23, '\x01'): 23,
   (23, '\x02'): 23,
@@ -4611,10 +4419,10 @@ lexer = DummyLexer(recognize, DFA(41,
   (23, '\x96'): 23,
   (23, '\x97'): 23,
   (23, '\x98'): 23,
-  (23, '\x99'): 23,
   (23, '\x9a'): 23,
   (23, '\x9b'): 23,
   (23, '\x9c'): 23,
+  (23, '\x9d'): 23,
   (23, '\x9e'): 23,
   (23, '\x9f'): 23,
   (23, '\xa0'): 23,
@@ -4683,7 +4491,7 @@ lexer = DummyLexer(recognize, DFA(41,
   (23, '\xdf'): 23,
   (23, '\xe0'): 23,
   (23, '\xe1'): 23,
-  (23, '\xe2'): 24,
+  (23, '\xe2'): 28,
   (23, '\xe3'): 23,
   (23, '\xe4'): 23,
   (23, '\xe5'): 23,
@@ -4713,1008 +4521,1019 @@ lexer = DummyLexer(recognize, DFA(41,
   (23, '\xfd'): 23,
   (23, '\xfe'): 23,
   (23, '\xff'): 23,
-  (24, '\x80'): 25,
-  (25, '\x9d'): 26,
-  (27, '\x80'): 28,
-  (28, '\x99'): 29,
-  (34, '\x00'): 39,
-  (34, '\x01'): 39,
-  (34, '\x02'): 39,
-  (34, '\x03'): 39,
-  (34, '\x04'): 39,
-  (34, '\x05'): 39,
-  (34, '\x06'): 39,
-  (34, '\x07'): 39,
-  (34, '\x08'): 39,
-  (34, '\t'): 40,
-  (34, '\n'): 40,
-  (34, '\x0b'): 39,
-  (34, '\x0c'): 40,
-  (34, '\r'): 40,
-  (34, '\x0e'): 39,
-  (34, '\x0f'): 39,
-  (34, '\x10'): 39,
-  (34, '\x11'): 39,
-  (34, '\x12'): 39,
-  (34, '\x13'): 39,
-  (34, '\x14'): 39,
-  (34, '\x15'): 39,
-  (34, '\x16'): 39,
-  (34, '\x17'): 39,
-  (34, '\x18'): 39,
-  (34, '\x19'): 39,
-  (34, '\x1a'): 39,
-  (34, '\x1b'): 39,
-  (34, '\x1c'): 39,
-  (34, '\x1d'): 39,
-  (34, '\x1e'): 39,
-  (34, '\x1f'): 39,
-  (34, ' '): 40,
-  (34, '!'): 39,
-  (34, '"'): 39,
-  (34, '#'): 40,
-  (34, '$'): 39,
-  (34, '%'): 39,
-  (34, '&'): 39,
-  (34, "'"): 39,
-  (34, '('): 40,
-  (34, ')'): 40,
-  (34, '*'): 39,
-  (34, '+'): 39,
-  (34, ','): 40,
-  (34, '-'): 39,
-  (34, '.'): 39,
-  (34, '/'): 39,
-  (34, '0'): 39,
-  (34, '1'): 39,
-  (34, '2'): 39,
-  (34, '3'): 39,
-  (34, '4'): 39,
-  (34, '5'): 39,
-  (34, '6'): 39,
-  (34, '7'): 39,
-  (34, '8'): 39,
-  (34, '9'): 39,
-  (34, ':'): 39,
-  (34, ';'): 39,
-  (34, '<'): 39,
-  (34, '='): 39,
-  (34, '>'): 39,
-  (34, '?'): 39,
-  (34, '@'): 39,
-  (34, 'A'): 39,
-  (34, 'B'): 39,
-  (34, 'C'): 39,
-  (34, 'D'): 39,
-  (34, 'E'): 39,
-  (34, 'F'): 39,
-  (34, 'G'): 39,
-  (34, 'H'): 39,
-  (34, 'I'): 39,
-  (34, 'J'): 39,
-  (34, 'K'): 39,
-  (34, 'L'): 39,
-  (34, 'M'): 39,
-  (34, 'N'): 39,
-  (34, 'O'): 39,
-  (34, 'P'): 39,
-  (34, 'Q'): 39,
-  (34, 'R'): 39,
-  (34, 'S'): 39,
-  (34, 'T'): 39,
-  (34, 'U'): 39,
-  (34, 'V'): 39,
-  (34, 'W'): 39,
-  (34, 'X'): 39,
-  (34, 'Y'): 39,
-  (34, 'Z'): 39,
-  (34, '['): 39,
-  (34, '\\'): 39,
-  (34, ']'): 39,
-  (34, '^'): 39,
-  (34, '_'): 39,
-  (34, '`'): 39,
-  (34, 'a'): 39,
-  (34, 'b'): 39,
-  (34, 'c'): 39,
-  (34, 'd'): 39,
-  (34, 'e'): 39,
-  (34, 'f'): 39,
-  (34, 'g'): 39,
-  (34, 'h'): 39,
-  (34, 'i'): 39,
-  (34, 'j'): 39,
-  (34, 'k'): 39,
-  (34, 'l'): 39,
-  (34, 'm'): 39,
-  (34, 'n'): 39,
-  (34, 'o'): 39,
-  (34, 'p'): 39,
-  (34, 'q'): 39,
-  (34, 'r'): 39,
-  (34, 's'): 39,
-  (34, 't'): 39,
-  (34, 'u'): 39,
-  (34, 'v'): 39,
-  (34, 'w'): 39,
-  (34, 'x'): 39,
-  (34, 'y'): 39,
-  (34, 'z'): 39,
-  (34, '{'): 39,
-  (34, '|'): 39,
-  (34, '}'): 39,
-  (34, '~'): 39,
-  (34, '\x7f'): 39,
-  (34, '\x80'): 39,
-  (34, '\x81'): 39,
-  (34, '\x82'): 39,
-  (34, '\x83'): 39,
-  (34, '\x84'): 39,
-  (34, '\x85'): 39,
-  (34, '\x86'): 39,
-  (34, '\x87'): 39,
-  (34, '\x88'): 39,
-  (34, '\x89'): 39,
-  (34, '\x8a'): 39,
-  (34, '\x8b'): 39,
-  (34, '\x8c'): 39,
-  (34, '\x8d'): 39,
-  (34, '\x8e'): 39,
-  (34, '\x8f'): 39,
-  (34, '\x90'): 39,
-  (34, '\x91'): 39,
-  (34, '\x92'): 39,
-  (34, '\x93'): 39,
-  (34, '\x94'): 39,
-  (34, '\x95'): 39,
-  (34, '\x96'): 39,
-  (34, '\x97'): 39,
-  (34, '\x98'): 39,
-  (34, '\x99'): 39,
-  (34, '\x9a'): 39,
-  (34, '\x9b'): 39,
-  (34, '\x9c'): 39,
-  (34, '\x9d'): 39,
-  (34, '\x9e'): 39,
-  (34, '\x9f'): 40,
-  (34, '\xa0'): 39,
-  (34, '\xa1'): 39,
-  (34, '\xa2'): 39,
-  (34, '\xa3'): 39,
-  (34, '\xa4'): 39,
-  (34, '\xa5'): 39,
-  (34, '\xa6'): 39,
-  (34, '\xa7'): 39,
-  (34, '\xa8'): 39,
-  (34, '\xa9'): 39,
-  (34, '\xaa'): 40,
-  (34, '\xab'): 40,
-  (34, '\xac'): 39,
-  (34, '\xad'): 39,
-  (34, '\xae'): 39,
-  (34, '\xaf'): 39,
-  (34, '\xb0'): 39,
-  (34, '\xb1'): 39,
-  (34, '\xb2'): 39,
-  (34, '\xb3'): 39,
-  (34, '\xb4'): 39,
-  (34, '\xb5'): 39,
-  (34, '\xb6'): 39,
-  (34, '\xb7'): 39,
-  (34, '\xb8'): 39,
-  (34, '\xb9'): 39,
-  (34, '\xba'): 39,
-  (34, '\xbb'): 39,
-  (34, '\xbc'): 39,
-  (34, '\xbd'): 39,
-  (34, '\xbe'): 39,
-  (34, '\xbf'): 39,
-  (34, '\xc0'): 39,
-  (34, '\xc1'): 39,
-  (34, '\xc2'): 39,
-  (34, '\xc3'): 39,
-  (34, '\xc4'): 39,
-  (34, '\xc5'): 39,
-  (34, '\xc6'): 39,
-  (34, '\xc7'): 39,
-  (34, '\xc8'): 39,
-  (34, '\xc9'): 39,
-  (34, '\xca'): 39,
-  (34, '\xcb'): 39,
-  (34, '\xcc'): 39,
-  (34, '\xcd'): 39,
-  (34, '\xce'): 39,
-  (34, '\xcf'): 39,
-  (34, '\xd0'): 39,
-  (34, '\xd1'): 39,
-  (34, '\xd2'): 39,
-  (34, '\xd3'): 39,
-  (34, '\xd4'): 39,
-  (34, '\xd5'): 39,
-  (34, '\xd6'): 39,
-  (34, '\xd7'): 39,
-  (34, '\xd8'): 39,
-  (34, '\xd9'): 39,
-  (34, '\xda'): 39,
-  (34, '\xdb'): 39,
-  (34, '\xdc'): 39,
-  (34, '\xdd'): 39,
-  (34, '\xde'): 39,
-  (34, '\xdf'): 39,
-  (34, '\xe0'): 39,
-  (34, '\xe1'): 39,
-  (34, '\xe2'): 40,
-  (34, '\xe3'): 39,
-  (34, '\xe4'): 39,
-  (34, '\xe5'): 39,
-  (34, '\xe6'): 39,
-  (34, '\xe7'): 39,
-  (34, '\xe8'): 39,
-  (34, '\xe9'): 39,
-  (34, '\xea'): 39,
-  (34, '\xeb'): 39,
-  (34, '\xec'): 39,
-  (34, '\xed'): 39,
-  (34, '\xee'): 39,
-  (34, '\xef'): 39,
-  (34, '\xf0'): 39,
-  (34, '\xf1'): 39,
-  (34, '\xf2'): 39,
-  (34, '\xf3'): 39,
-  (34, '\xf4'): 39,
-  (34, '\xf5'): 39,
-  (34, '\xf6'): 39,
-  (34, '\xf7'): 39,
-  (34, '\xf8'): 39,
-  (34, '\xf9'): 39,
-  (34, '\xfa'): 39,
-  (34, '\xfb'): 39,
-  (34, '\xfc'): 39,
-  (34, '\xfd'): 39,
-  (34, '\xfe'): 39,
-  (34, '\xff'): 39,
-  (35, '\x00'): 37,
-  (35, '\x01'): 37,
-  (35, '\x02'): 37,
-  (35, '\x03'): 37,
-  (35, '\x04'): 37,
-  (35, '\x05'): 37,
-  (35, '\x06'): 37,
-  (35, '\x07'): 37,
-  (35, '\x08'): 37,
-  (35, '\t'): 38,
-  (35, '\n'): 38,
-  (35, '\x0b'): 37,
-  (35, '\x0c'): 38,
-  (35, '\r'): 38,
-  (35, '\x0e'): 37,
-  (35, '\x0f'): 37,
-  (35, '\x10'): 37,
-  (35, '\x11'): 37,
-  (35, '\x12'): 37,
-  (35, '\x13'): 37,
-  (35, '\x14'): 37,
-  (35, '\x15'): 37,
-  (35, '\x16'): 37,
-  (35, '\x17'): 37,
-  (35, '\x18'): 37,
-  (35, '\x19'): 37,
-  (35, '\x1a'): 37,
-  (35, '\x1b'): 37,
-  (35, '\x1c'): 37,
-  (35, '\x1d'): 37,
-  (35, '\x1e'): 37,
-  (35, '\x1f'): 37,
-  (35, ' '): 38,
-  (35, '!'): 37,
-  (35, '"'): 37,
-  (35, '#'): 38,
-  (35, '$'): 37,
-  (35, '%'): 37,
-  (35, '&'): 37,
-  (35, "'"): 37,
-  (35, '('): 38,
-  (35, ')'): 38,
-  (35, '*'): 37,
-  (35, '+'): 37,
-  (35, ','): 38,
-  (35, '-'): 37,
-  (35, '.'): 37,
-  (35, '/'): 37,
-  (35, '0'): 37,
-  (35, '1'): 37,
-  (35, '2'): 37,
-  (35, '3'): 37,
-  (35, '4'): 37,
-  (35, '5'): 37,
-  (35, '6'): 37,
-  (35, '7'): 37,
-  (35, '8'): 37,
-  (35, '9'): 37,
-  (35, ':'): 37,
-  (35, ';'): 37,
-  (35, '<'): 37,
-  (35, '='): 37,
-  (35, '>'): 37,
-  (35, '?'): 37,
-  (35, '@'): 37,
-  (35, 'A'): 37,
-  (35, 'B'): 37,
-  (35, 'C'): 37,
-  (35, 'D'): 37,
-  (35, 'E'): 37,
-  (35, 'F'): 37,
-  (35, 'G'): 37,
-  (35, 'H'): 37,
-  (35, 'I'): 37,
-  (35, 'J'): 37,
-  (35, 'K'): 37,
-  (35, 'L'): 37,
-  (35, 'M'): 37,
-  (35, 'N'): 37,
-  (35, 'O'): 37,
-  (35, 'P'): 37,
-  (35, 'Q'): 37,
-  (35, 'R'): 37,
-  (35, 'S'): 37,
-  (35, 'T'): 37,
-  (35, 'U'): 37,
-  (35, 'V'): 37,
-  (35, 'W'): 37,
-  (35, 'X'): 37,
-  (35, 'Y'): 37,
-  (35, 'Z'): 37,
-  (35, '['): 37,
-  (35, '\\'): 37,
-  (35, ']'): 37,
-  (35, '^'): 37,
-  (35, '_'): 37,
-  (35, '`'): 37,
-  (35, 'a'): 37,
-  (35, 'b'): 37,
-  (35, 'c'): 37,
-  (35, 'd'): 37,
-  (35, 'e'): 37,
-  (35, 'f'): 37,
-  (35, 'g'): 37,
-  (35, 'h'): 37,
-  (35, 'i'): 37,
-  (35, 'j'): 37,
-  (35, 'k'): 37,
-  (35, 'l'): 37,
-  (35, 'm'): 37,
-  (35, 'n'): 37,
-  (35, 'o'): 37,
-  (35, 'p'): 37,
-  (35, 'q'): 37,
-  (35, 'r'): 37,
-  (35, 's'): 37,
-  (35, 't'): 37,
-  (35, 'u'): 37,
-  (35, 'v'): 37,
-  (35, 'w'): 37,
-  (35, 'x'): 37,
-  (35, 'y'): 37,
-  (35, 'z'): 37,
-  (35, '{'): 37,
-  (35, '|'): 37,
-  (35, '}'): 37,
-  (35, '~'): 37,
-  (35, '\x7f'): 37,
-  (35, '\x80'): 37,
-  (35, '\x81'): 37,
-  (35, '\x82'): 37,
-  (35, '\x83'): 37,
-  (35, '\x84'): 37,
-  (35, '\x85'): 37,
-  (35, '\x86'): 37,
-  (35, '\x87'): 37,
-  (35, '\x88'): 37,
-  (35, '\x89'): 37,
-  (35, '\x8a'): 37,
-  (35, '\x8b'): 37,
-  (35, '\x8c'): 37,
-  (35, '\x8d'): 37,
-  (35, '\x8e'): 37,
-  (35, '\x8f'): 37,
-  (35, '\x90'): 37,
-  (35, '\x91'): 37,
-  (35, '\x92'): 37,
-  (35, '\x93'): 37,
-  (35, '\x94'): 37,
-  (35, '\x95'): 37,
-  (35, '\x96'): 37,
-  (35, '\x97'): 37,
-  (35, '\x98'): 37,
-  (35, '\x99'): 37,
-  (35, '\x9a'): 37,
-  (35, '\x9b'): 37,
-  (35, '\x9c'): 37,
-  (35, '\x9d'): 37,
-  (35, '\x9e'): 37,
-  (35, '\x9f'): 38,
-  (35, '\xa0'): 37,
-  (35, '\xa1'): 37,
-  (35, '\xa2'): 37,
-  (35, '\xa3'): 37,
-  (35, '\xa4'): 37,
-  (35, '\xa5'): 37,
-  (35, '\xa6'): 37,
-  (35, '\xa7'): 37,
-  (35, '\xa8'): 37,
-  (35, '\xa9'): 37,
-  (35, '\xaa'): 38,
-  (35, '\xab'): 38,
-  (35, '\xac'): 37,
-  (35, '\xad'): 37,
-  (35, '\xae'): 37,
-  (35, '\xaf'): 37,
-  (35, '\xb0'): 37,
-  (35, '\xb1'): 37,
-  (35, '\xb2'): 37,
-  (35, '\xb3'): 37,
-  (35, '\xb4'): 37,
-  (35, '\xb5'): 37,
-  (35, '\xb6'): 37,
-  (35, '\xb7'): 37,
-  (35, '\xb8'): 37,
-  (35, '\xb9'): 37,
-  (35, '\xba'): 37,
-  (35, '\xbb'): 37,
-  (35, '\xbc'): 37,
-  (35, '\xbd'): 37,
-  (35, '\xbe'): 37,
-  (35, '\xbf'): 37,
-  (35, '\xc0'): 37,
-  (35, '\xc1'): 37,
-  (35, '\xc2'): 37,
-  (35, '\xc3'): 37,
-  (35, '\xc4'): 37,
-  (35, '\xc5'): 37,
-  (35, '\xc6'): 37,
-  (35, '\xc7'): 37,
-  (35, '\xc8'): 37,
-  (35, '\xc9'): 37,
-  (35, '\xca'): 37,
-  (35, '\xcb'): 37,
-  (35, '\xcc'): 37,
-  (35, '\xcd'): 37,
-  (35, '\xce'): 37,
-  (35, '\xcf'): 37,
-  (35, '\xd0'): 37,
-  (35, '\xd1'): 37,
-  (35, '\xd2'): 37,
-  (35, '\xd3'): 37,
-  (35, '\xd4'): 37,
-  (35, '\xd5'): 37,
-  (35, '\xd6'): 37,
-  (35, '\xd7'): 37,
-  (35, '\xd8'): 37,
-  (35, '\xd9'): 37,
-  (35, '\xda'): 37,
-  (35, '\xdb'): 37,
-  (35, '\xdc'): 37,
-  (35, '\xdd'): 37,
-  (35, '\xde'): 37,
-  (35, '\xdf'): 37,
-  (35, '\xe0'): 37,
-  (35, '\xe1'): 37,
-  (35, '\xe2'): 38,
-  (35, '\xe3'): 37,
-  (35, '\xe4'): 37,
-  (35, '\xe5'): 37,
-  (35, '\xe6'): 37,
-  (35, '\xe7'): 37,
-  (35, '\xe8'): 37,
-  (35, '\xe9'): 37,
-  (35, '\xea'): 37,
-  (35, '\xeb'): 37,
-  (35, '\xec'): 37,
-  (35, '\xed'): 37,
-  (35, '\xee'): 37,
-  (35, '\xef'): 37,
-  (35, '\xf0'): 37,
-  (35, '\xf1'): 37,
-  (35, '\xf2'): 37,
-  (35, '\xf3'): 37,
-  (35, '\xf4'): 37,
-  (35, '\xf5'): 37,
-  (35, '\xf6'): 37,
-  (35, '\xf7'): 37,
-  (35, '\xf8'): 37,
-  (35, '\xf9'): 37,
-  (35, '\xfa'): 37,
-  (35, '\xfb'): 37,
-  (35, '\xfc'): 37,
-  (35, '\xfd'): 37,
-  (35, '\xfe'): 37,
-  (35, '\xff'): 37,
-  (36, '\x00'): 10,
-  (36, '\x01'): 10,
-  (36, '\x02'): 10,
-  (36, '\x03'): 10,
-  (36, '\x04'): 10,
-  (36, '\x05'): 10,
-  (36, '\x06'): 10,
-  (36, '\x07'): 10,
-  (36, '\x08'): 10,
-  (36, '\x0b'): 10,
-  (36, '\x0e'): 10,
-  (36, '\x0f'): 10,
-  (36, '\x10'): 10,
-  (36, '\x11'): 10,
-  (36, '\x12'): 10,
-  (36, '\x13'): 10,
-  (36, '\x14'): 10,
-  (36, '\x15'): 10,
-  (36, '\x16'): 10,
-  (36, '\x17'): 10,
-  (36, '\x18'): 10,
-  (36, '\x19'): 10,
-  (36, '\x1a'): 10,
-  (36, '\x1b'): 10,
-  (36, '\x1c'): 10,
-  (36, '\x1d'): 10,
-  (36, '\x1e'): 10,
-  (36, '\x1f'): 10,
-  (36, '!'): 10,
-  (36, '"'): 10,
-  (36, '$'): 10,
-  (36, '%'): 10,
-  (36, '&'): 10,
-  (36, "'"): 10,
-  (36, '*'): 10,
-  (36, '+'): 10,
-  (36, '-'): 10,
-  (36, '.'): 10,
-  (36, '/'): 10,
-  (36, '0'): 10,
-  (36, '1'): 10,
-  (36, '2'): 10,
-  (36, '3'): 10,
-  (36, '4'): 10,
-  (36, '5'): 10,
-  (36, '6'): 10,
-  (36, '7'): 10,
-  (36, '8'): 10,
-  (36, '9'): 10,
-  (36, ':'): 10,
-  (36, ';'): 10,
-  (36, '<'): 10,
-  (36, '='): 10,
-  (36, '>'): 10,
-  (36, '?'): 10,
-  (36, '@'): 10,
-  (36, 'A'): 10,
-  (36, 'B'): 10,
-  (36, 'C'): 10,
-  (36, 'D'): 10,
-  (36, 'E'): 10,
-  (36, 'F'): 10,
-  (36, 'G'): 10,
-  (36, 'H'): 10,
-  (36, 'I'): 10,
-  (36, 'J'): 10,
-  (36, 'K'): 10,
-  (36, 'L'): 10,
-  (36, 'M'): 10,
-  (36, 'N'): 10,
-  (36, 'O'): 10,
-  (36, 'P'): 10,
-  (36, 'Q'): 10,
-  (36, 'R'): 10,
-  (36, 'S'): 10,
-  (36, 'T'): 10,
-  (36, 'U'): 10,
-  (36, 'V'): 10,
-  (36, 'W'): 10,
-  (36, 'X'): 10,
-  (36, 'Y'): 10,
-  (36, 'Z'): 10,
-  (36, '['): 10,
-  (36, '\\'): 10,
-  (36, ']'): 10,
-  (36, '^'): 10,
-  (36, '_'): 10,
-  (36, '`'): 10,
-  (36, 'a'): 10,
-  (36, 'b'): 10,
-  (36, 'c'): 10,
-  (36, 'd'): 10,
-  (36, 'e'): 10,
-  (36, 'f'): 10,
-  (36, 'g'): 10,
-  (36, 'h'): 10,
-  (36, 'i'): 10,
-  (36, 'j'): 10,
-  (36, 'k'): 10,
-  (36, 'l'): 10,
-  (36, 'm'): 10,
-  (36, 'n'): 10,
-  (36, 'o'): 10,
-  (36, 'p'): 10,
-  (36, 'q'): 10,
-  (36, 'r'): 10,
-  (36, 's'): 10,
-  (36, 't'): 10,
-  (36, 'u'): 10,
-  (36, 'v'): 10,
-  (36, 'w'): 10,
-  (36, 'x'): 10,
-  (36, 'y'): 10,
-  (36, 'z'): 10,
-  (36, '{'): 10,
-  (36, '|'): 10,
-  (36, '}'): 10,
-  (36, '~'): 10,
-  (36, '\x7f'): 10,
-  (36, '\x80'): 10,
-  (36, '\x81'): 10,
-  (36, '\x82'): 10,
-  (36, '\x83'): 10,
-  (36, '\x84'): 10,
-  (36, '\x85'): 10,
-  (36, '\x86'): 10,
-  (36, '\x87'): 10,
-  (36, '\x88'): 10,
-  (36, '\x89'): 10,
-  (36, '\x8a'): 10,
-  (36, '\x8b'): 10,
-  (36, '\x8c'): 10,
-  (36, '\x8d'): 10,
-  (36, '\x8e'): 10,
-  (36, '\x8f'): 10,
-  (36, '\x90'): 10,
-  (36, '\x91'): 10,
-  (36, '\x92'): 10,
-  (36, '\x93'): 10,
-  (36, '\x94'): 10,
-  (36, '\x95'): 10,
-  (36, '\x96'): 10,
-  (36, '\x97'): 10,
-  (36, '\x98'): 10,
-  (36, '\x99'): 10,
-  (36, '\x9a'): 10,
-  (36, '\x9b'): 10,
-  (36, '\x9c'): 10,
-  (36, '\x9d'): 10,
-  (36, '\x9e'): 10,
-  (36, '\xa0'): 10,
-  (36, '\xa1'): 10,
-  (36, '\xa2'): 10,
-  (36, '\xa3'): 10,
-  (36, '\xa4'): 10,
-  (36, '\xa5'): 10,
-  (36, '\xa6'): 10,
-  (36, '\xa7'): 10,
-  (36, '\xa8'): 10,
-  (36, '\xa9'): 10,
-  (36, '\xac'): 10,
-  (36, '\xad'): 10,
-  (36, '\xae'): 10,
-  (36, '\xaf'): 10,
-  (36, '\xb0'): 10,
-  (36, '\xb1'): 10,
-  (36, '\xb2'): 10,
-  (36, '\xb3'): 10,
-  (36, '\xb4'): 10,
-  (36, '\xb5'): 10,
-  (36, '\xb6'): 10,
-  (36, '\xb7'): 10,
-  (36, '\xb8'): 10,
-  (36, '\xb9'): 10,
-  (36, '\xba'): 10,
-  (36, '\xbb'): 10,
-  (36, '\xbc'): 10,
-  (36, '\xbd'): 10,
-  (36, '\xbe'): 10,
-  (36, '\xbf'): 10,
-  (36, '\xc0'): 10,
-  (36, '\xc1'): 10,
-  (36, '\xc2'): 10,
-  (36, '\xc3'): 10,
-  (36, '\xc4'): 10,
-  (36, '\xc5'): 10,
-  (36, '\xc6'): 10,
-  (36, '\xc7'): 10,
-  (36, '\xc8'): 10,
-  (36, '\xc9'): 10,
-  (36, '\xca'): 10,
-  (36, '\xcb'): 10,
-  (36, '\xcc'): 10,
-  (36, '\xcd'): 10,
-  (36, '\xce'): 10,
-  (36, '\xcf'): 10,
-  (36, '\xd0'): 10,
-  (36, '\xd1'): 10,
-  (36, '\xd2'): 10,
-  (36, '\xd3'): 10,
-  (36, '\xd4'): 10,
-  (36, '\xd5'): 10,
-  (36, '\xd6'): 10,
-  (36, '\xd7'): 10,
-  (36, '\xd8'): 10,
-  (36, '\xd9'): 10,
-  (36, '\xda'): 10,
-  (36, '\xdb'): 10,
-  (36, '\xdc'): 10,
-  (36, '\xdd'): 10,
-  (36, '\xde'): 10,
-  (36, '\xdf'): 10,
-  (36, '\xe0'): 10,
-  (36, '\xe1'): 10,
-  (36, '\xe3'): 10,
-  (36, '\xe4'): 10,
-  (36, '\xe5'): 10,
-  (36, '\xe6'): 10,
-  (36, '\xe7'): 10,
-  (36, '\xe8'): 10,
-  (36, '\xe9'): 10,
-  (36, '\xea'): 10,
-  (36, '\xeb'): 10,
-  (36, '\xec'): 10,
-  (36, '\xed'): 10,
-  (36, '\xee'): 10,
-  (36, '\xef'): 10,
-  (36, '\xf0'): 10,
-  (36, '\xf1'): 10,
-  (36, '\xf2'): 10,
-  (36, '\xf3'): 10,
-  (36, '\xf4'): 10,
-  (36, '\xf5'): 10,
-  (36, '\xf6'): 10,
-  (36, '\xf7'): 10,
-  (36, '\xf8'): 10,
-  (36, '\xf9'): 10,
-  (36, '\xfa'): 10,
-  (36, '\xfb'): 10,
-  (36, '\xfc'): 10,
-  (36, '\xfd'): 10,
-  (36, '\xfe'): 10,
-  (36, '\xff'): 10,
-  (37, '\x00'): 10,
-  (37, '\x01'): 10,
-  (37, '\x02'): 10,
-  (37, '\x03'): 10,
-  (37, '\x04'): 10,
-  (37, '\x05'): 10,
-  (37, '\x06'): 10,
-  (37, '\x07'): 10,
-  (37, '\x08'): 10,
-  (37, '\x0b'): 10,
-  (37, '\x0e'): 10,
-  (37, '\x0f'): 10,
-  (37, '\x10'): 10,
-  (37, '\x11'): 10,
-  (37, '\x12'): 10,
-  (37, '\x13'): 10,
-  (37, '\x14'): 10,
-  (37, '\x15'): 10,
-  (37, '\x16'): 10,
-  (37, '\x17'): 10,
-  (37, '\x18'): 10,
-  (37, '\x19'): 10,
-  (37, '\x1a'): 10,
-  (37, '\x1b'): 10,
-  (37, '\x1c'): 10,
-  (37, '\x1d'): 10,
-  (37, '\x1e'): 10,
-  (37, '\x1f'): 10,
-  (37, '!'): 10,
-  (37, '"'): 10,
-  (37, '$'): 10,
-  (37, '%'): 10,
-  (37, '&'): 10,
-  (37, "'"): 10,
-  (37, '*'): 10,
-  (37, '+'): 10,
-  (37, '-'): 10,
-  (37, '.'): 10,
-  (37, '/'): 10,
-  (37, '0'): 10,
-  (37, '1'): 10,
-  (37, '2'): 10,
-  (37, '3'): 10,
-  (37, '4'): 10,
-  (37, '5'): 10,
-  (37, '6'): 10,
-  (37, '7'): 10,
-  (37, '8'): 10,
-  (37, '9'): 10,
-  (37, ':'): 10,
-  (37, ';'): 10,
-  (37, '<'): 10,
-  (37, '='): 10,
-  (37, '>'): 10,
-  (37, '?'): 10,
-  (37, '@'): 10,
-  (37, 'A'): 10,
-  (37, 'B'): 10,
-  (37, 'C'): 10,
-  (37, 'D'): 10,
-  (37, 'E'): 10,
-  (37, 'F'): 10,
-  (37, 'G'): 10,
-  (37, 'H'): 10,
-  (37, 'I'): 10,
-  (37, 'J'): 10,
-  (37, 'K'): 10,
-  (37, 'L'): 10,
-  (37, 'M'): 10,
-  (37, 'N'): 10,
-  (37, 'O'): 10,
-  (37, 'P'): 10,
-  (37, 'Q'): 10,
-  (37, 'R'): 10,
-  (37, 'S'): 10,
-  (37, 'T'): 10,
-  (37, 'U'): 10,
-  (37, 'V'): 10,
-  (37, 'W'): 10,
-  (37, 'X'): 10,
-  (37, 'Y'): 10,
-  (37, 'Z'): 10,
-  (37, '['): 10,
-  (37, '\\'): 10,
-  (37, ']'): 10,
-  (37, '^'): 10,
-  (37, '_'): 10,
-  (37, '`'): 10,
-  (37, 'a'): 10,
-  (37, 'b'): 10,
-  (37, 'c'): 10,
-  (37, 'd'): 10,
-  (37, 'e'): 10,
-  (37, 'f'): 10,
-  (37, 'g'): 10,
-  (37, 'h'): 10,
-  (37, 'i'): 10,
-  (37, 'j'): 10,
-  (37, 'k'): 10,
-  (37, 'l'): 10,
-  (37, 'm'): 10,
-  (37, 'n'): 10,
-  (37, 'o'): 10,
-  (37, 'p'): 10,
-  (37, 'q'): 10,
-  (37, 'r'): 10,
-  (37, 's'): 10,
-  (37, 't'): 10,
-  (37, 'u'): 10,
-  (37, 'v'): 10,
-  (37, 'w'): 10,
-  (37, 'x'): 10,
-  (37, 'y'): 10,
-  (37, 'z'): 10,
-  (37, '{'): 10,
-  (37, '|'): 10,
-  (37, '}'): 10,
-  (37, '~'): 10,
-  (37, '\x7f'): 10,
-  (37, '\x80'): 10,
-  (37, '\x81'): 10,
-  (37, '\x82'): 10,
-  (37, '\x83'): 10,
-  (37, '\x84'): 10,
-  (37, '\x85'): 10,
-  (37, '\x86'): 10,
-  (37, '\x87'): 10,
-  (37, '\x88'): 10,
-  (37, '\x89'): 10,
-  (37, '\x8a'): 10,
-  (37, '\x8b'): 10,
-  (37, '\x8c'): 10,
-  (37, '\x8d'): 10,
-  (37, '\x8e'): 10,
-  (37, '\x8f'): 10,
-  (37, '\x90'): 10,
-  (37, '\x91'): 10,
-  (37, '\x92'): 10,
-  (37, '\x93'): 10,
-  (37, '\x94'): 10,
-  (37, '\x95'): 10,
-  (37, '\x96'): 10,
-  (37, '\x97'): 10,
-  (37, '\x98'): 10,
-  (37, '\x99'): 10,
-  (37, '\x9a'): 10,
-  (37, '\x9b'): 10,
-  (37, '\x9c'): 10,
-  (37, '\x9d'): 10,
-  (37, '\x9e'): 10,
-  (37, '\xa0'): 10,
-  (37, '\xa1'): 10,
-  (37, '\xa2'): 10,
-  (37, '\xa3'): 10,
-  (37, '\xa4'): 10,
-  (37, '\xa5'): 10,
-  (37, '\xa6'): 10,
-  (37, '\xa7'): 10,
-  (37, '\xa8'): 10,
-  (37, '\xa9'): 10,
-  (37, '\xac'): 10,
-  (37, '\xad'): 10,
-  (37, '\xae'): 10,
-  (37, '\xaf'): 10,
-  (37, '\xb0'): 10,
-  (37, '\xb1'): 10,
-  (37, '\xb2'): 10,
-  (37, '\xb3'): 10,
-  (37, '\xb4'): 10,
-  (37, '\xb5'): 10,
-  (37, '\xb6'): 10,
-  (37, '\xb7'): 10,
-  (37, '\xb8'): 10,
-  (37, '\xb9'): 10,
-  (37, '\xba'): 10,
-  (37, '\xbb'): 10,
-  (37, '\xbc'): 10,
-  (37, '\xbd'): 10,
-  (37, '\xbe'): 10,
-  (37, '\xbf'): 10,
-  (37, '\xc0'): 10,
-  (37, '\xc1'): 10,
-  (37, '\xc2'): 10,
-  (37, '\xc3'): 10,
-  (37, '\xc4'): 10,
-  (37, '\xc5'): 10,
-  (37, '\xc6'): 10,
-  (37, '\xc7'): 10,
-  (37, '\xc8'): 10,
-  (37, '\xc9'): 10,
-  (37, '\xca'): 10,
-  (37, '\xcb'): 10,
-  (37, '\xcc'): 10,
-  (37, '\xcd'): 10,
-  (37, '\xce'): 10,
-  (37, '\xcf'): 10,
-  (37, '\xd0'): 10,
-  (37, '\xd1'): 10,
-  (37, '\xd2'): 10,
-  (37, '\xd3'): 10,
-  (37, '\xd4'): 10,
-  (37, '\xd5'): 10,
-  (37, '\xd6'): 10,
-  (37, '\xd7'): 10,
-  (37, '\xd8'): 10,
-  (37, '\xd9'): 10,
-  (37, '\xda'): 10,
-  (37, '\xdb'): 10,
-  (37, '\xdc'): 10,
-  (37, '\xdd'): 10,
-  (37, '\xde'): 10,
-  (37, '\xdf'): 10,
-  (37, '\xe0'): 10,
-  (37, '\xe1'): 10,
-  (37, '\xe3'): 10,
-  (37, '\xe4'): 10,
-  (37, '\xe5'): 10,
-  (37, '\xe6'): 10,
-  (37, '\xe7'): 10,
-  (37, '\xe8'): 10,
-  (37, '\xe9'): 10,
-  (37, '\xea'): 10,
-  (37, '\xeb'): 10,
-  (37, '\xec'): 10,
-  (37, '\xed'): 10,
-  (37, '\xee'): 10,
-  (37, '\xef'): 10,
-  (37, '\xf0'): 10,
-  (37, '\xf1'): 10,
-  (37, '\xf2'): 10,
-  (37, '\xf3'): 10,
-  (37, '\xf4'): 10,
-  (37, '\xf5'): 10,
-  (37, '\xf6'): 10,
-  (37, '\xf7'): 10,
-  (37, '\xf8'): 10,
-  (37, '\xf9'): 10,
-  (37, '\xfa'): 10,
-  (37, '\xfb'): 10,
-  (37, '\xfc'): 10,
-  (37, '\xfd'): 10,
-  (37, '\xfe'): 10,
-  (37, '\xff'): 10,
+  (24, '\x00'): 24,
+  (24, '\x01'): 24,
+  (24, '\x02'): 24,
+  (24, '\x03'): 24,
+  (24, '\x04'): 24,
+  (24, '\x05'): 24,
+  (24, '\x06'): 24,
+  (24, '\x07'): 24,
+  (24, '\x08'): 24,
+  (24, '\t'): 24,
+  (24, '\n'): 24,
+  (24, '\x0b'): 24,
+  (24, '\x0c'): 24,
+  (24, '\r'): 24,
+  (24, '\x0e'): 24,
+  (24, '\x0f'): 24,
+  (24, '\x10'): 24,
+  (24, '\x11'): 24,
+  (24, '\x12'): 24,
+  (24, '\x13'): 24,
+  (24, '\x14'): 24,
+  (24, '\x15'): 24,
+  (24, '\x16'): 24,
+  (24, '\x17'): 24,
+  (24, '\x18'): 24,
+  (24, '\x19'): 24,
+  (24, '\x1a'): 24,
+  (24, '\x1b'): 24,
+  (24, '\x1c'): 24,
+  (24, '\x1d'): 24,
+  (24, '\x1e'): 24,
+  (24, '\x1f'): 24,
+  (24, ' '): 24,
+  (24, '!'): 24,
+  (24, '"'): 24,
+  (24, '#'): 24,
+  (24, '$'): 24,
+  (24, '%'): 24,
+  (24, '&'): 24,
+  (24, "'"): 24,
+  (24, '('): 24,
+  (24, ')'): 24,
+  (24, '*'): 24,
+  (24, '+'): 24,
+  (24, ','): 24,
+  (24, '-'): 24,
+  (24, '.'): 24,
+  (24, '/'): 24,
+  (24, '0'): 24,
+  (24, '1'): 24,
+  (24, '2'): 24,
+  (24, '3'): 24,
+  (24, '4'): 24,
+  (24, '5'): 24,
+  (24, '6'): 24,
+  (24, '7'): 24,
+  (24, '8'): 24,
+  (24, '9'): 24,
+  (24, ':'): 24,
+  (24, ';'): 24,
+  (24, '<'): 24,
+  (24, '='): 24,
+  (24, '>'): 24,
+  (24, '?'): 24,
+  (24, '@'): 24,
+  (24, 'A'): 24,
+  (24, 'B'): 24,
+  (24, 'C'): 24,
+  (24, 'D'): 24,
+  (24, 'E'): 24,
+  (24, 'F'): 24,
+  (24, 'G'): 24,
+  (24, 'H'): 24,
+  (24, 'I'): 24,
+  (24, 'J'): 24,
+  (24, 'K'): 24,
+  (24, 'L'): 24,
+  (24, 'M'): 24,
+  (24, 'N'): 24,
+  (24, 'O'): 24,
+  (24, 'P'): 24,
+  (24, 'Q'): 24,
+  (24, 'R'): 24,
+  (24, 'S'): 24,
+  (24, 'T'): 24,
+  (24, 'U'): 24,
+  (24, 'V'): 24,
+  (24, 'W'): 24,
+  (24, 'X'): 24,
+  (24, 'Y'): 24,
+  (24, 'Z'): 24,
+  (24, '['): 24,
+  (24, '\\'): 24,
+  (24, ']'): 24,
+  (24, '^'): 24,
+  (24, '_'): 24,
+  (24, '`'): 24,
+  (24, 'a'): 24,
+  (24, 'b'): 24,
+  (24, 'c'): 24,
+  (24, 'd'): 24,
+  (24, 'e'): 24,
+  (24, 'f'): 24,
+  (24, 'g'): 24,
+  (24, 'h'): 24,
+  (24, 'i'): 24,
+  (24, 'j'): 24,
+  (24, 'k'): 24,
+  (24, 'l'): 24,
+  (24, 'm'): 24,
+  (24, 'n'): 24,
+  (24, 'o'): 24,
+  (24, 'p'): 24,
+  (24, 'q'): 24,
+  (24, 'r'): 24,
+  (24, 's'): 24,
+  (24, 't'): 24,
+  (24, 'u'): 24,
+  (24, 'v'): 24,
+  (24, 'w'): 24,
+  (24, 'x'): 24,
+  (24, 'y'): 24,
+  (24, 'z'): 24,
+  (24, '{'): 24,
+  (24, '|'): 24,
+  (24, '}'): 24,
+  (24, '~'): 24,
+  (24, '\x7f'): 24,
+  (24, '\x81'): 24,
+  (24, '\x82'): 24,
+  (24, '\x83'): 24,
+  (24, '\x84'): 24,
+  (24, '\x85'): 24,
+  (24, '\x86'): 24,
+  (24, '\x87'): 24,
+  (24, '\x88'): 24,
+  (24, '\x89'): 24,
+  (24, '\x8a'): 24,
+  (24, '\x8b'): 24,
+  (24, '\x8c'): 24,
+  (24, '\x8d'): 24,
+  (24, '\x8e'): 24,
+  (24, '\x8f'): 24,
+  (24, '\x90'): 24,
+  (24, '\x91'): 24,
+  (24, '\x92'): 24,
+  (24, '\x93'): 24,
+  (24, '\x94'): 24,
+  (24, '\x95'): 24,
+  (24, '\x96'): 24,
+  (24, '\x97'): 24,
+  (24, '\x98'): 24,
+  (24, '\x99'): 24,
+  (24, '\x9a'): 24,
+  (24, '\x9b'): 24,
+  (24, '\x9c'): 24,
+  (24, '\x9e'): 24,
+  (24, '\x9f'): 24,
+  (24, '\xa0'): 24,
+  (24, '\xa1'): 24,
+  (24, '\xa2'): 24,
+  (24, '\xa3'): 24,
+  (24, '\xa4'): 24,
+  (24, '\xa5'): 24,
+  (24, '\xa6'): 24,
+  (24, '\xa7'): 24,
+  (24, '\xa8'): 24,
+  (24, '\xa9'): 24,
+  (24, '\xaa'): 24,
+  (24, '\xab'): 24,
+  (24, '\xac'): 24,
+  (24, '\xad'): 24,
+  (24, '\xae'): 24,
+  (24, '\xaf'): 24,
+  (24, '\xb0'): 24,
+  (24, '\xb1'): 24,
+  (24, '\xb2'): 24,
+  (24, '\xb3'): 24,
+  (24, '\xb4'): 24,
+  (24, '\xb5'): 24,
+  (24, '\xb6'): 24,
+  (24, '\xb7'): 24,
+  (24, '\xb8'): 24,
+  (24, '\xb9'): 24,
+  (24, '\xba'): 24,
+  (24, '\xbb'): 24,
+  (24, '\xbc'): 24,
+  (24, '\xbd'): 24,
+  (24, '\xbe'): 24,
+  (24, '\xbf'): 24,
+  (24, '\xc0'): 24,
+  (24, '\xc1'): 24,
+  (24, '\xc2'): 24,
+  (24, '\xc3'): 24,
+  (24, '\xc4'): 24,
+  (24, '\xc5'): 24,
+  (24, '\xc6'): 24,
+  (24, '\xc7'): 24,
+  (24, '\xc8'): 24,
+  (24, '\xc9'): 24,
+  (24, '\xca'): 24,
+  (24, '\xcb'): 24,
+  (24, '\xcc'): 24,
+  (24, '\xcd'): 24,
+  (24, '\xce'): 24,
+  (24, '\xcf'): 24,
+  (24, '\xd0'): 24,
+  (24, '\xd1'): 24,
+  (24, '\xd2'): 24,
+  (24, '\xd3'): 24,
+  (24, '\xd4'): 24,
+  (24, '\xd5'): 24,
+  (24, '\xd6'): 24,
+  (24, '\xd7'): 24,
+  (24, '\xd8'): 24,
+  (24, '\xd9'): 24,
+  (24, '\xda'): 24,
+  (24, '\xdb'): 24,
+  (24, '\xdc'): 24,
+  (24, '\xdd'): 24,
+  (24, '\xde'): 24,
+  (24, '\xdf'): 24,
+  (24, '\xe0'): 24,
+  (24, '\xe1'): 24,
+  (24, '\xe2'): 25,
+  (24, '\xe3'): 24,
+  (24, '\xe4'): 24,
+  (24, '\xe5'): 24,
+  (24, '\xe6'): 24,
+  (24, '\xe7'): 24,
+  (24, '\xe8'): 24,
+  (24, '\xe9'): 24,
+  (24, '\xea'): 24,
+  (24, '\xeb'): 24,
+  (24, '\xec'): 24,
+  (24, '\xed'): 24,
+  (24, '\xee'): 24,
+  (24, '\xef'): 24,
+  (24, '\xf0'): 24,
+  (24, '\xf1'): 24,
+  (24, '\xf2'): 24,
+  (24, '\xf3'): 24,
+  (24, '\xf4'): 24,
+  (24, '\xf5'): 24,
+  (24, '\xf6'): 24,
+  (24, '\xf7'): 24,
+  (24, '\xf8'): 24,
+  (24, '\xf9'): 24,
+  (24, '\xfa'): 24,
+  (24, '\xfb'): 24,
+  (24, '\xfc'): 24,
+  (24, '\xfd'): 24,
+  (24, '\xfe'): 24,
+  (24, '\xff'): 24,
+  (25, '\x80'): 26,
+  (26, '\x9d'): 27,
+  (28, '\x80'): 29,
+  (29, '\x99'): 30,
+  (36, '\x00'): 41,
+  (36, '\x01'): 41,
+  (36, '\x02'): 41,
+  (36, '\x03'): 41,
+  (36, '\x04'): 41,
+  (36, '\x05'): 41,
+  (36, '\x06'): 41,
+  (36, '\x07'): 41,
+  (36, '\x08'): 41,
+  (36, '\t'): 42,
+  (36, '\n'): 42,
+  (36, '\x0b'): 41,
+  (36, '\x0c'): 42,
+  (36, '\r'): 42,
+  (36, '\x0e'): 41,
+  (36, '\x0f'): 41,
+  (36, '\x10'): 41,
+  (36, '\x11'): 41,
+  (36, '\x12'): 41,
+  (36, '\x13'): 41,
+  (36, '\x14'): 41,
+  (36, '\x15'): 41,
+  (36, '\x16'): 41,
+  (36, '\x17'): 41,
+  (36, '\x18'): 41,
+  (36, '\x19'): 41,
+  (36, '\x1a'): 41,
+  (36, '\x1b'): 41,
+  (36, '\x1c'): 41,
+  (36, '\x1d'): 41,
+  (36, '\x1e'): 41,
+  (36, '\x1f'): 41,
+  (36, ' '): 42,
+  (36, '!'): 41,
+  (36, '"'): 41,
+  (36, '#'): 42,
+  (36, '$'): 41,
+  (36, '%'): 41,
+  (36, '&'): 41,
+  (36, "'"): 41,
+  (36, '('): 42,
+  (36, ')'): 42,
+  (36, '*'): 41,
+  (36, '+'): 41,
+  (36, ','): 42,
+  (36, '-'): 41,
+  (36, '.'): 41,
+  (36, '/'): 41,
+  (36, '0'): 41,
+  (36, '1'): 41,
+  (36, '2'): 41,
+  (36, '3'): 41,
+  (36, '4'): 41,
+  (36, '5'): 41,
+  (36, '6'): 41,
+  (36, '7'): 41,
+  (36, '8'): 41,
+  (36, '9'): 41,
+  (36, ':'): 41,
+  (36, ';'): 41,
+  (36, '<'): 41,
+  (36, '='): 41,
+  (36, '>'): 41,
+  (36, '?'): 41,
+  (36, '@'): 41,
+  (36, 'A'): 41,
+  (36, 'B'): 41,
+  (36, 'C'): 41,
+  (36, 'D'): 41,
+  (36, 'E'): 41,
+  (36, 'F'): 41,
+  (36, 'G'): 41,
+  (36, 'H'): 41,
+  (36, 'I'): 41,
+  (36, 'J'): 41,
+  (36, 'K'): 41,
+  (36, 'L'): 41,
+  (36, 'M'): 41,
+  (36, 'N'): 41,
+  (36, 'O'): 41,
+  (36, 'P'): 41,
+  (36, 'Q'): 41,
+  (36, 'R'): 41,
+  (36, 'S'): 41,
+  (36, 'T'): 41,
+  (36, 'U'): 41,
+  (36, 'V'): 41,
+  (36, 'W'): 41,
+  (36, 'X'): 41,
+  (36, 'Y'): 41,
+  (36, 'Z'): 41,
+  (36, '['): 41,
+  (36, '\\'): 41,
+  (36, ']'): 41,
+  (36, '^'): 41,
+  (36, '_'): 41,
+  (36, '`'): 41,
+  (36, 'a'): 41,
+  (36, 'b'): 41,
+  (36, 'c'): 41,
+  (36, 'd'): 41,
+  (36, 'e'): 41,
+  (36, 'f'): 41,
+  (36, 'g'): 41,
+  (36, 'h'): 41,
+  (36, 'i'): 41,
+  (36, 'j'): 41,
+  (36, 'k'): 41,
+  (36, 'l'): 41,
+  (36, 'm'): 41,
+  (36, 'n'): 41,
+  (36, 'o'): 41,
+  (36, 'p'): 41,
+  (36, 'q'): 41,
+  (36, 'r'): 41,
+  (36, 's'): 41,
+  (36, 't'): 41,
+  (36, 'u'): 41,
+  (36, 'v'): 41,
+  (36, 'w'): 41,
+  (36, 'x'): 41,
+  (36, 'y'): 41,
+  (36, 'z'): 41,
+  (36, '{'): 41,
+  (36, '|'): 41,
+  (36, '}'): 41,
+  (36, '~'): 41,
+  (36, '\x7f'): 41,
+  (36, '\x80'): 41,
+  (36, '\x81'): 41,
+  (36, '\x82'): 41,
+  (36, '\x83'): 41,
+  (36, '\x84'): 41,
+  (36, '\x85'): 41,
+  (36, '\x86'): 41,
+  (36, '\x87'): 41,
+  (36, '\x88'): 41,
+  (36, '\x89'): 41,
+  (36, '\x8a'): 41,
+  (36, '\x8b'): 41,
+  (36, '\x8c'): 41,
+  (36, '\x8d'): 41,
+  (36, '\x8e'): 41,
+  (36, '\x8f'): 41,
+  (36, '\x90'): 41,
+  (36, '\x91'): 41,
+  (36, '\x92'): 41,
+  (36, '\x93'): 41,
+  (36, '\x94'): 41,
+  (36, '\x95'): 41,
+  (36, '\x96'): 41,
+  (36, '\x97'): 41,
+  (36, '\x98'): 41,
+  (36, '\x99'): 41,
+  (36, '\x9a'): 41,
+  (36, '\x9b'): 41,
+  (36, '\x9c'): 41,
+  (36, '\x9d'): 41,
+  (36, '\x9e'): 41,
+  (36, '\x9f'): 42,
+  (36, '\xa0'): 41,
+  (36, '\xa1'): 41,
+  (36, '\xa2'): 41,
+  (36, '\xa3'): 41,
+  (36, '\xa4'): 41,
+  (36, '\xa5'): 41,
+  (36, '\xa6'): 41,
+  (36, '\xa7'): 41,
+  (36, '\xa8'): 41,
+  (36, '\xa9'): 41,
+  (36, '\xaa'): 42,
+  (36, '\xab'): 42,
+  (36, '\xac'): 41,
+  (36, '\xad'): 41,
+  (36, '\xae'): 41,
+  (36, '\xaf'): 41,
+  (36, '\xb0'): 41,
+  (36, '\xb1'): 41,
+  (36, '\xb2'): 41,
+  (36, '\xb3'): 41,
+  (36, '\xb4'): 41,
+  (36, '\xb5'): 41,
+  (36, '\xb6'): 41,
+  (36, '\xb7'): 41,
+  (36, '\xb8'): 41,
+  (36, '\xb9'): 41,
+  (36, '\xba'): 41,
+  (36, '\xbb'): 41,
+  (36, '\xbc'): 41,
+  (36, '\xbd'): 41,
+  (36, '\xbe'): 41,
+  (36, '\xbf'): 41,
+  (36, '\xc0'): 41,
+  (36, '\xc1'): 41,
+  (36, '\xc2'): 41,
+  (36, '\xc3'): 41,
+  (36, '\xc4'): 41,
+  (36, '\xc5'): 41,
+  (36, '\xc6'): 41,
+  (36, '\xc7'): 41,
+  (36, '\xc8'): 41,
+  (36, '\xc9'): 41,
+  (36, '\xca'): 41,
+  (36, '\xcb'): 41,
+  (36, '\xcc'): 41,
+  (36, '\xcd'): 41,
+  (36, '\xce'): 41,
+  (36, '\xcf'): 41,
+  (36, '\xd0'): 41,
+  (36, '\xd1'): 41,
+  (36, '\xd2'): 41,
+  (36, '\xd3'): 41,
+  (36, '\xd4'): 41,
+  (36, '\xd5'): 41,
+  (36, '\xd6'): 41,
+  (36, '\xd7'): 41,
+  (36, '\xd8'): 41,
+  (36, '\xd9'): 41,
+  (36, '\xda'): 41,
+  (36, '\xdb'): 41,
+  (36, '\xdc'): 41,
+  (36, '\xdd'): 41,
+  (36, '\xde'): 41,
+  (36, '\xdf'): 41,
+  (36, '\xe0'): 41,
+  (36, '\xe1'): 41,
+  (36, '\xe2'): 42,
+  (36, '\xe3'): 41,
+  (36, '\xe4'): 41,
+  (36, '\xe5'): 41,
+  (36, '\xe6'): 41,
+  (36, '\xe7'): 41,
+  (36, '\xe8'): 41,
+  (36, '\xe9'): 41,
+  (36, '\xea'): 41,
+  (36, '\xeb'): 41,
+  (36, '\xec'): 41,
+  (36, '\xed'): 41,
+  (36, '\xee'): 41,
+  (36, '\xef'): 41,
+  (36, '\xf0'): 41,
+  (36, '\xf1'): 41,
+  (36, '\xf2'): 41,
+  (36, '\xf3'): 41,
+  (36, '\xf4'): 41,
+  (36, '\xf5'): 41,
+  (36, '\xf6'): 41,
+  (36, '\xf7'): 41,
+  (36, '\xf8'): 41,
+  (36, '\xf9'): 41,
+  (36, '\xfa'): 41,
+  (36, '\xfb'): 41,
+  (36, '\xfc'): 41,
+  (36, '\xfd'): 41,
+  (36, '\xfe'): 41,
+  (36, '\xff'): 41,
+  (37, '\x00'): 39,
+  (37, '\x01'): 39,
+  (37, '\x02'): 39,
+  (37, '\x03'): 39,
+  (37, '\x04'): 39,
+  (37, '\x05'): 39,
+  (37, '\x06'): 39,
+  (37, '\x07'): 39,
+  (37, '\x08'): 39,
+  (37, '\t'): 40,
+  (37, '\n'): 40,
+  (37, '\x0b'): 39,
+  (37, '\x0c'): 40,
+  (37, '\r'): 40,
+  (37, '\x0e'): 39,
+  (37, '\x0f'): 39,
+  (37, '\x10'): 39,
+  (37, '\x11'): 39,
+  (37, '\x12'): 39,
+  (37, '\x13'): 39,
+  (37, '\x14'): 39,
+  (37, '\x15'): 39,
+  (37, '\x16'): 39,
+  (37, '\x17'): 39,
+  (37, '\x18'): 39,
+  (37, '\x19'): 39,
+  (37, '\x1a'): 39,
+  (37, '\x1b'): 39,
+  (37, '\x1c'): 39,
+  (37, '\x1d'): 39,
+  (37, '\x1e'): 39,
+  (37, '\x1f'): 39,
+  (37, ' '): 40,
+  (37, '!'): 39,
+  (37, '"'): 39,
+  (37, '#'): 40,
+  (37, '$'): 39,
+  (37, '%'): 39,
+  (37, '&'): 39,
+  (37, "'"): 39,
+  (37, '('): 40,
+  (37, ')'): 40,
+  (37, '*'): 39,
+  (37, '+'): 39,
+  (37, ','): 40,
+  (37, '-'): 39,
+  (37, '.'): 39,
+  (37, '/'): 39,
+  (37, '0'): 39,
+  (37, '1'): 39,
+  (37, '2'): 39,
+  (37, '3'): 39,
+  (37, '4'): 39,
+  (37, '5'): 39,
+  (37, '6'): 39,
+  (37, '7'): 39,
+  (37, '8'): 39,
+  (37, '9'): 39,
+  (37, ':'): 39,
+  (37, ';'): 39,
+  (37, '<'): 39,
+  (37, '='): 39,
+  (37, '>'): 39,
+  (37, '?'): 39,
+  (37, '@'): 39,
+  (37, 'A'): 39,
+  (37, 'B'): 39,
+  (37, 'C'): 39,
+  (37, 'D'): 39,
+  (37, 'E'): 39,
+  (37, 'F'): 39,
+  (37, 'G'): 39,
+  (37, 'H'): 39,
+  (37, 'I'): 39,
+  (37, 'J'): 39,
+  (37, 'K'): 39,
+  (37, 'L'): 39,
+  (37, 'M'): 39,
+  (37, 'N'): 39,
+  (37, 'O'): 39,
+  (37, 'P'): 39,
+  (37, 'Q'): 39,
+  (37, 'R'): 39,
+  (37, 'S'): 39,
+  (37, 'T'): 39,
+  (37, 'U'): 39,
+  (37, 'V'): 39,
+  (37, 'W'): 39,
+  (37, 'X'): 39,
+  (37, 'Y'): 39,
+  (37, 'Z'): 39,
+  (37, '['): 39,
+  (37, '\\'): 39,
+  (37, ']'): 39,
+  (37, '^'): 39,
+  (37, '_'): 39,
+  (37, '`'): 39,
+  (37, 'a'): 39,
+  (37, 'b'): 39,
+  (37, 'c'): 39,
+  (37, 'd'): 39,
+  (37, 'e'): 39,
+  (37, 'f'): 39,
+  (37, 'g'): 39,
+  (37, 'h'): 39,
+  (37, 'i'): 39,
+  (37, 'j'): 39,
+  (37, 'k'): 39,
+  (37, 'l'): 39,
+  (37, 'm'): 39,
+  (37, 'n'): 39,
+  (37, 'o'): 39,
+  (37, 'p'): 39,
+  (37, 'q'): 39,
+  (37, 'r'): 39,
+  (37, 's'): 39,
+  (37, 't'): 39,
+  (37, 'u'): 39,
+  (37, 'v'): 39,
+  (37, 'w'): 39,
+  (37, 'x'): 39,
+  (37, 'y'): 39,
+  (37, 'z'): 39,
+  (37, '{'): 39,
+  (37, '|'): 39,
+  (37, '}'): 39,
+  (37, '~'): 39,
+  (37, '\x7f'): 39,
+  (37, '\x80'): 39,
+  (37, '\x81'): 39,
+  (37, '\x82'): 39,
+  (37, '\x83'): 39,
+  (37, '\x84'): 39,
+  (37, '\x85'): 39,
+  (37, '\x86'): 39,
+  (37, '\x87'): 39,
+  (37, '\x88'): 39,
+  (37, '\x89'): 39,
+  (37, '\x8a'): 39,
+  (37, '\x8b'): 39,
+  (37, '\x8c'): 39,
+  (37, '\x8d'): 39,
+  (37, '\x8e'): 39,
+  (37, '\x8f'): 39,
+  (37, '\x90'): 39,
+  (37, '\x91'): 39,
+  (37, '\x92'): 39,
+  (37, '\x93'): 39,
+  (37, '\x94'): 39,
+  (37, '\x95'): 39,
+  (37, '\x96'): 39,
+  (37, '\x97'): 39,
+  (37, '\x98'): 39,
+  (37, '\x99'): 39,
+  (37, '\x9a'): 39,
+  (37, '\x9b'): 39,
+  (37, '\x9c'): 39,
+  (37, '\x9d'): 39,
+  (37, '\x9e'): 39,
+  (37, '\x9f'): 40,
+  (37, '\xa0'): 39,
+  (37, '\xa1'): 39,
+  (37, '\xa2'): 39,
+  (37, '\xa3'): 39,
+  (37, '\xa4'): 39,
+  (37, '\xa5'): 39,
+  (37, '\xa6'): 39,
+  (37, '\xa7'): 39,
+  (37, '\xa8'): 39,
+  (37, '\xa9'): 39,
+  (37, '\xaa'): 40,
+  (37, '\xab'): 40,
+  (37, '\xac'): 39,
+  (37, '\xad'): 39,
+  (37, '\xae'): 39,
+  (37, '\xaf'): 39,
+  (37, '\xb0'): 39,
+  (37, '\xb1'): 39,
+  (37, '\xb2'): 39,
+  (37, '\xb3'): 39,
+  (37, '\xb4'): 39,
+  (37, '\xb5'): 39,
+  (37, '\xb6'): 39,
+  (37, '\xb7'): 39,
+  (37, '\xb8'): 39,
+  (37, '\xb9'): 39,
+  (37, '\xba'): 39,
+  (37, '\xbb'): 39,
+  (37, '\xbc'): 39,
+  (37, '\xbd'): 39,
+  (37, '\xbe'): 39,
+  (37, '\xbf'): 39,
+  (37, '\xc0'): 39,
+  (37, '\xc1'): 39,
+  (37, '\xc2'): 39,
+  (37, '\xc3'): 39,
+  (37, '\xc4'): 39,
+  (37, '\xc5'): 39,
+  (37, '\xc6'): 39,
+  (37, '\xc7'): 39,
+  (37, '\xc8'): 39,
+  (37, '\xc9'): 39,
+  (37, '\xca'): 39,
+  (37, '\xcb'): 39,
+  (37, '\xcc'): 39,
+  (37, '\xcd'): 39,
+  (37, '\xce'): 39,
+  (37, '\xcf'): 39,
+  (37, '\xd0'): 39,
+  (37, '\xd1'): 39,
+  (37, '\xd2'): 39,
+  (37, '\xd3'): 39,
+  (37, '\xd4'): 39,
+  (37, '\xd5'): 39,
+  (37, '\xd6'): 39,
+  (37, '\xd7'): 39,
+  (37, '\xd8'): 39,
+  (37, '\xd9'): 39,
+  (37, '\xda'): 39,
+  (37, '\xdb'): 39,
+  (37, '\xdc'): 39,
+  (37, '\xdd'): 39,
+  (37, '\xde'): 39,
+  (37, '\xdf'): 39,
+  (37, '\xe0'): 39,
+  (37, '\xe1'): 39,
+  (37, '\xe2'): 40,
+  (37, '\xe3'): 39,
+  (37, '\xe4'): 39,
+  (37, '\xe5'): 39,
+  (37, '\xe6'): 39,
+  (37, '\xe7'): 39,
+  (37, '\xe8'): 39,
+  (37, '\xe9'): 39,
+  (37, '\xea'): 39,
+  (37, '\xeb'): 39,
+  (37, '\xec'): 39,
+  (37, '\xed'): 39,
+  (37, '\xee'): 39,
+  (37, '\xef'): 39,
+  (37, '\xf0'): 39,
+  (37, '\xf1'): 39,
+  (37, '\xf2'): 39,
+  (37, '\xf3'): 39,
+  (37, '\xf4'): 39,
+  (37, '\xf5'): 39,
+  (37, '\xf6'): 39,
+  (37, '\xf7'): 39,
+  (37, '\xf8'): 39,
+  (37, '\xf9'): 39,
+  (37, '\xfa'): 39,
+  (37, '\xfb'): 39,
+  (37, '\xfc'): 39,
+  (37, '\xfd'): 39,
+  (37, '\xfe'): 39,
+  (37, '\xff'): 39,
+  (38, '\x00'): 10,
+  (38, '\x01'): 10,
+  (38, '\x02'): 10,
+  (38, '\x03'): 10,
+  (38, '\x04'): 10,
+  (38, '\x05'): 10,
+  (38, '\x06'): 10,
+  (38, '\x07'): 10,
+  (38, '\x08'): 10,
+  (38, '\x0b'): 10,
+  (38, '\x0e'): 10,
+  (38, '\x0f'): 10,
+  (38, '\x10'): 10,
+  (38, '\x11'): 10,
+  (38, '\x12'): 10,
+  (38, '\x13'): 10,
+  (38, '\x14'): 10,
+  (38, '\x15'): 10,
+  (38, '\x16'): 10,
+  (38, '\x17'): 10,
+  (38, '\x18'): 10,
+  (38, '\x19'): 10,
+  (38, '\x1a'): 10,
+  (38, '\x1b'): 10,
+  (38, '\x1c'): 10,
+  (38, '\x1d'): 10,
+  (38, '\x1e'): 10,
+  (38, '\x1f'): 10,
+  (38, '!'): 10,
+  (38, '"'): 10,
+  (38, '$'): 10,
+  (38, '%'): 10,
+  (38, '&'): 10,
+  (38, "'"): 10,
+  (38, '*'): 10,
+  (38, '+'): 10,
+  (38, '-'): 10,
+  (38, '.'): 10,
+  (38, '/'): 10,
+  (38, '0'): 10,
+  (38, '1'): 10,
+  (38, '2'): 10,
+  (38, '3'): 10,
+  (38, '4'): 10,
+  (38, '5'): 10,
+  (38, '6'): 10,
+  (38, '7'): 10,
+  (38, '8'): 10,
+  (38, '9'): 10,
+  (38, ':'): 10,
+  (38, ';'): 10,
+  (38, '<'): 10,
+  (38, '='): 10,
+  (38, '>'): 10,
+  (38, '?'): 10,
+  (38, '@'): 10,
+  (38, 'A'): 10,
+  (38, 'B'): 10,
+  (38, 'C'): 10,
+  (38, 'D'): 10,
+  (38, 'E'): 10,
+  (38, 'F'): 10,
+  (38, 'G'): 10,
+  (38, 'H'): 10,
+  (38, 'I'): 10,
+  (38, 'J'): 10,
+  (38, 'K'): 10,
+  (38, 'L'): 10,
+  (38, 'M'): 10,
+  (38, 'N'): 10,
+  (38, 'O'): 10,
+  (38, 'P'): 10,
+  (38, 'Q'): 10,
+  (38, 'R'): 10,
+  (38, 'S'): 10,
+  (38, 'T'): 10,
+  (38, 'U'): 10,
+  (38, 'V'): 10,
+  (38, 'W'): 10,
+  (38, 'X'): 10,
+  (38, 'Y'): 10,
+  (38, 'Z'): 10,
+  (38, '['): 10,
+  (38, '\\'): 10,
+  (38, ']'): 10,
+  (38, '^'): 10,
+  (38, '_'): 10,
+  (38, '`'): 10,
+  (38, 'a'): 10,
+  (38, 'b'): 10,
+  (38, 'c'): 10,
+  (38, 'd'): 10,
+  (38, 'e'): 10,
+  (38, 'f'): 10,
+  (38, 'g'): 10,
+  (38, 'h'): 10,
+  (38, 'i'): 10,
+  (38, 'j'): 10,
+  (38, 'k'): 10,
+  (38, 'l'): 10,
+  (38, 'm'): 10,
+  (38, 'n'): 10,
+  (38, 'o'): 10,
+  (38, 'p'): 10,
+  (38, 'q'): 10,
+  (38, 'r'): 10,
+  (38, 's'): 10,
+  (38, 't'): 10,
+  (38, 'u'): 10,
+  (38, 'v'): 10,
+  (38, 'w'): 10,
+  (38, 'x'): 10,
+  (38, 'y'): 10,
+  (38, 'z'): 10,
+  (38, '{'): 10,
+  (38, '|'): 10,
+  (38, '}'): 10,
+  (38, '~'): 10,
+  (38, '\x7f'): 10,
+  (38, '\x80'): 10,
+  (38, '\x81'): 10,
+  (38, '\x82'): 10,
+  (38, '\x83'): 10,
+  (38, '\x84'): 10,
+  (38, '\x85'): 10,
+  (38, '\x86'): 10,
+  (38, '\x87'): 10,
+  (38, '\x88'): 10,
+  (38, '\x89'): 10,
+  (38, '\x8a'): 10,
+  (38, '\x8b'): 10,
+  (38, '\x8c'): 10,
+  (38, '\x8d'): 10,
+  (38, '\x8e'): 10,
+  (38, '\x8f'): 10,
+  (38, '\x90'): 10,
+  (38, '\x91'): 10,
+  (38, '\x92'): 10,
+  (38, '\x93'): 10,
+  (38, '\x94'): 10,
+  (38, '\x95'): 10,
+  (38, '\x96'): 10,
+  (38, '\x97'): 10,
+  (38, '\x98'): 10,
+  (38, '\x99'): 10,
+  (38, '\x9a'): 10,
+  (38, '\x9b'): 10,
+  (38, '\x9c'): 10,
+  (38, '\x9d'): 10,
+  (38, '\x9e'): 10,
+  (38, '\xa0'): 10,
+  (38, '\xa1'): 10,
+  (38, '\xa2'): 10,
+  (38, '\xa3'): 10,
+  (38, '\xa4'): 10,
+  (38, '\xa5'): 10,
+  (38, '\xa6'): 10,
+  (38, '\xa7'): 10,
+  (38, '\xa8'): 10,
+  (38, '\xa9'): 10,
+  (38, '\xac'): 10,
+  (38, '\xad'): 10,
+  (38, '\xae'): 10,
+  (38, '\xaf'): 10,
+  (38, '\xb0'): 10,
+  (38, '\xb1'): 10,
+  (38, '\xb2'): 10,
+  (38, '\xb3'): 10,
+  (38, '\xb4'): 10,
+  (38, '\xb5'): 10,
+  (38, '\xb6'): 10,
+  (38, '\xb7'): 10,
+  (38, '\xb8'): 10,
+  (38, '\xb9'): 10,
+  (38, '\xba'): 10,
+  (38, '\xbb'): 10,
+  (38, '\xbc'): 10,
+  (38, '\xbd'): 10,
+  (38, '\xbe'): 10,
+  (38, '\xbf'): 10,
+  (38, '\xc0'): 10,
+  (38, '\xc1'): 10,
+  (38, '\xc2'): 10,
+  (38, '\xc3'): 10,
+  (38, '\xc4'): 10,
+  (38, '\xc5'): 10,
+  (38, '\xc6'): 10,
+  (38, '\xc7'): 10,
+  (38, '\xc8'): 10,
+  (38, '\xc9'): 10,
+  (38, '\xca'): 10,
+  (38, '\xcb'): 10,
+  (38, '\xcc'): 10,
+  (38, '\xcd'): 10,
+  (38, '\xce'): 10,
+  (38, '\xcf'): 10,
+  (38, '\xd0'): 10,
+  (38, '\xd1'): 10,
+  (38, '\xd2'): 10,
+  (38, '\xd3'): 10,
+  (38, '\xd4'): 10,
+  (38, '\xd5'): 10,
+  (38, '\xd6'): 10,
+  (38, '\xd7'): 10,
+  (38, '\xd8'): 10,
+  (38, '\xd9'): 10,
+  (38, '\xda'): 10,
+  (38, '\xdb'): 10,
+  (38, '\xdc'): 10,
+  (38, '\xdd'): 10,
+  (38, '\xde'): 10,
+  (38, '\xdf'): 10,
+  (38, '\xe0'): 10,
+  (38, '\xe1'): 10,
+  (38, '\xe3'): 10,
+  (38, '\xe4'): 10,
+  (38, '\xe5'): 10,
+  (38, '\xe6'): 10,
+  (38, '\xe7'): 10,
+  (38, '\xe8'): 10,
+  (38, '\xe9'): 10,
+  (38, '\xea'): 10,
+  (38, '\xeb'): 10,
+  (38, '\xec'): 10,
+  (38, '\xed'): 10,
+  (38, '\xee'): 10,
+  (38, '\xef'): 10,
+  (38, '\xf0'): 10,
+  (38, '\xf1'): 10,
+  (38, '\xf2'): 10,
+  (38, '\xf3'): 10,
+  (38, '\xf4'): 10,
+  (38, '\xf5'): 10,
+  (38, '\xf6'): 10,
+  (38, '\xf7'): 10,
+  (38, '\xf8'): 10,
+  (38, '\xf9'): 10,
+  (38, '\xfa'): 10,
+  (38, '\xfb'): 10,
+  (38, '\xfc'): 10,
+  (38, '\xfd'): 10,
+  (38, '\xfe'): 10,
+  (38, '\xff'): 10,
   (39, '\x00'): 10,
   (39, '\x01'): 10,
   (39, '\x02'): 10,
@@ -5957,7 +5776,250 @@ lexer = DummyLexer(recognize, DFA(41,
   (39, '\xfc'): 10,
   (39, '\xfd'): 10,
   (39, '\xfe'): 10,
-  (39, '\xff'): 10},
+  (39, '\xff'): 10,
+  (41, '\x00'): 10,
+  (41, '\x01'): 10,
+  (41, '\x02'): 10,
+  (41, '\x03'): 10,
+  (41, '\x04'): 10,
+  (41, '\x05'): 10,
+  (41, '\x06'): 10,
+  (41, '\x07'): 10,
+  (41, '\x08'): 10,
+  (41, '\x0b'): 10,
+  (41, '\x0e'): 10,
+  (41, '\x0f'): 10,
+  (41, '\x10'): 10,
+  (41, '\x11'): 10,
+  (41, '\x12'): 10,
+  (41, '\x13'): 10,
+  (41, '\x14'): 10,
+  (41, '\x15'): 10,
+  (41, '\x16'): 10,
+  (41, '\x17'): 10,
+  (41, '\x18'): 10,
+  (41, '\x19'): 10,
+  (41, '\x1a'): 10,
+  (41, '\x1b'): 10,
+  (41, '\x1c'): 10,
+  (41, '\x1d'): 10,
+  (41, '\x1e'): 10,
+  (41, '\x1f'): 10,
+  (41, '!'): 10,
+  (41, '"'): 10,
+  (41, '$'): 10,
+  (41, '%'): 10,
+  (41, '&'): 10,
+  (41, "'"): 10,
+  (41, '*'): 10,
+  (41, '+'): 10,
+  (41, '-'): 10,
+  (41, '.'): 10,
+  (41, '/'): 10,
+  (41, '0'): 10,
+  (41, '1'): 10,
+  (41, '2'): 10,
+  (41, '3'): 10,
+  (41, '4'): 10,
+  (41, '5'): 10,
+  (41, '6'): 10,
+  (41, '7'): 10,
+  (41, '8'): 10,
+  (41, '9'): 10,
+  (41, ':'): 10,
+  (41, ';'): 10,
+  (41, '<'): 10,
+  (41, '='): 10,
+  (41, '>'): 10,
+  (41, '?'): 10,
+  (41, '@'): 10,
+  (41, 'A'): 10,
+  (41, 'B'): 10,
+  (41, 'C'): 10,
+  (41, 'D'): 10,
+  (41, 'E'): 10,
+  (41, 'F'): 10,
+  (41, 'G'): 10,
+  (41, 'H'): 10,
+  (41, 'I'): 10,
+  (41, 'J'): 10,
+  (41, 'K'): 10,
+  (41, 'L'): 10,
+  (41, 'M'): 10,
+  (41, 'N'): 10,
+  (41, 'O'): 10,
+  (41, 'P'): 10,
+  (41, 'Q'): 10,
+  (41, 'R'): 10,
+  (41, 'S'): 10,
+  (41, 'T'): 10,
+  (41, 'U'): 10,
+  (41, 'V'): 10,
+  (41, 'W'): 10,
+  (41, 'X'): 10,
+  (41, 'Y'): 10,
+  (41, 'Z'): 10,
+  (41, '['): 10,
+  (41, '\\'): 10,
+  (41, ']'): 10,
+  (41, '^'): 10,
+  (41, '_'): 10,
+  (41, '`'): 10,
+  (41, 'a'): 10,
+  (41, 'b'): 10,
+  (41, 'c'): 10,
+  (41, 'd'): 10,
+  (41, 'e'): 10,
+  (41, 'f'): 10,
+  (41, 'g'): 10,
+  (41, 'h'): 10,
+  (41, 'i'): 10,
+  (41, 'j'): 10,
+  (41, 'k'): 10,
+  (41, 'l'): 10,
+  (41, 'm'): 10,
+  (41, 'n'): 10,
+  (41, 'o'): 10,
+  (41, 'p'): 10,
+  (41, 'q'): 10,
+  (41, 'r'): 10,
+  (41, 's'): 10,
+  (41, 't'): 10,
+  (41, 'u'): 10,
+  (41, 'v'): 10,
+  (41, 'w'): 10,
+  (41, 'x'): 10,
+  (41, 'y'): 10,
+  (41, 'z'): 10,
+  (41, '{'): 10,
+  (41, '|'): 10,
+  (41, '}'): 10,
+  (41, '~'): 10,
+  (41, '\x7f'): 10,
+  (41, '\x80'): 10,
+  (41, '\x81'): 10,
+  (41, '\x82'): 10,
+  (41, '\x83'): 10,
+  (41, '\x84'): 10,
+  (41, '\x85'): 10,
+  (41, '\x86'): 10,
+  (41, '\x87'): 10,
+  (41, '\x88'): 10,
+  (41, '\x89'): 10,
+  (41, '\x8a'): 10,
+  (41, '\x8b'): 10,
+  (41, '\x8c'): 10,
+  (41, '\x8d'): 10,
+  (41, '\x8e'): 10,
+  (41, '\x8f'): 10,
+  (41, '\x90'): 10,
+  (41, '\x91'): 10,
+  (41, '\x92'): 10,
+  (41, '\x93'): 10,
+  (41, '\x94'): 10,
+  (41, '\x95'): 10,
+  (41, '\x96'): 10,
+  (41, '\x97'): 10,
+  (41, '\x98'): 10,
+  (41, '\x99'): 10,
+  (41, '\x9a'): 10,
+  (41, '\x9b'): 10,
+  (41, '\x9c'): 10,
+  (41, '\x9d'): 10,
+  (41, '\x9e'): 10,
+  (41, '\xa0'): 10,
+  (41, '\xa1'): 10,
+  (41, '\xa2'): 10,
+  (41, '\xa3'): 10,
+  (41, '\xa4'): 10,
+  (41, '\xa5'): 10,
+  (41, '\xa6'): 10,
+  (41, '\xa7'): 10,
+  (41, '\xa8'): 10,
+  (41, '\xa9'): 10,
+  (41, '\xac'): 10,
+  (41, '\xad'): 10,
+  (41, '\xae'): 10,
+  (41, '\xaf'): 10,
+  (41, '\xb0'): 10,
+  (41, '\xb1'): 10,
+  (41, '\xb2'): 10,
+  (41, '\xb3'): 10,
+  (41, '\xb4'): 10,
+  (41, '\xb5'): 10,
+  (41, '\xb6'): 10,
+  (41, '\xb7'): 10,
+  (41, '\xb8'): 10,
+  (41, '\xb9'): 10,
+  (41, '\xba'): 10,
+  (41, '\xbb'): 10,
+  (41, '\xbc'): 10,
+  (41, '\xbd'): 10,
+  (41, '\xbe'): 10,
+  (41, '\xbf'): 10,
+  (41, '\xc0'): 10,
+  (41, '\xc1'): 10,
+  (41, '\xc2'): 10,
+  (41, '\xc3'): 10,
+  (41, '\xc4'): 10,
+  (41, '\xc5'): 10,
+  (41, '\xc6'): 10,
+  (41, '\xc7'): 10,
+  (41, '\xc8'): 10,
+  (41, '\xc9'): 10,
+  (41, '\xca'): 10,
+  (41, '\xcb'): 10,
+  (41, '\xcc'): 10,
+  (41, '\xcd'): 10,
+  (41, '\xce'): 10,
+  (41, '\xcf'): 10,
+  (41, '\xd0'): 10,
+  (41, '\xd1'): 10,
+  (41, '\xd2'): 10,
+  (41, '\xd3'): 10,
+  (41, '\xd4'): 10,
+  (41, '\xd5'): 10,
+  (41, '\xd6'): 10,
+  (41, '\xd7'): 10,
+  (41, '\xd8'): 10,
+  (41, '\xd9'): 10,
+  (41, '\xda'): 10,
+  (41, '\xdb'): 10,
+  (41, '\xdc'): 10,
+  (41, '\xdd'): 10,
+  (41, '\xde'): 10,
+  (41, '\xdf'): 10,
+  (41, '\xe0'): 10,
+  (41, '\xe1'): 10,
+  (41, '\xe3'): 10,
+  (41, '\xe4'): 10,
+  (41, '\xe5'): 10,
+  (41, '\xe6'): 10,
+  (41, '\xe7'): 10,
+  (41, '\xe8'): 10,
+  (41, '\xe9'): 10,
+  (41, '\xea'): 10,
+  (41, '\xeb'): 10,
+  (41, '\xec'): 10,
+  (41, '\xed'): 10,
+  (41, '\xee'): 10,
+  (41, '\xef'): 10,
+  (41, '\xf0'): 10,
+  (41, '\xf1'): 10,
+  (41, '\xf2'): 10,
+  (41, '\xf3'): 10,
+  (41, '\xf4'): 10,
+  (41, '\xf5'): 10,
+  (41, '\xf6'): 10,
+  (41, '\xf7'): 10,
+  (41, '\xf8'): 10,
+  (41, '\xf9'): 10,
+  (41, '\xfa'): 10,
+  (41, '\xfb'): 10,
+  (41, '\xfc'): 10,
+  (41, '\xfd'): 10,
+  (41, '\xfe'): 10,
+  (41, '\xff'): 10},
  set([0,
       1,
       2,
@@ -5974,8 +6036,7 @@ lexer = DummyLexer(recognize, DFA(41,
       15,
       16,
       17,
-      26,
-      29,
+      27,
       30,
       31,
       32,
@@ -5986,7 +6047,9 @@ lexer = DummyLexer(recognize, DFA(41,
       37,
       38,
       39,
-      40]),
+      40,
+      41,
+      42]),
  set([0,
       1,
       2,
@@ -6003,8 +6066,7 @@ lexer = DummyLexer(recognize, DFA(41,
       15,
       16,
       17,
-      26,
-      29,
+      27,
       30,
       31,
       32,
@@ -6015,13 +6077,15 @@ lexer = DummyLexer(recognize, DFA(41,
       37,
       38,
       39,
-      40]),
+      40,
+      41,
+      42]),
  ['IGNORE',
   '__1_.',
   '__0_,',
   'NEWLINE',
   'NAME',
-  '1, 1, 1, 1, 1, 1',
+  '1, 1, 1, 1, 1, 1, 1',
   'LEFT_PARENTHESIS',
   'RIGHT_PARENTHESIS',
   'NAME',
@@ -6034,6 +6098,7 @@ lexer = DummyLexer(recognize, DFA(41,
   'INTEGER',
   'NAME',
   'FLOAT',
+  '2',
   '2',
   '2',
   '2, 2',
@@ -6049,6 +6114,7 @@ lexer = DummyLexer(recognize, DFA(41,
   'LEFT_DOUBLE_ANGLE',
   'RIGHT_DOUBLE_ANGLE',
   'DEFINEDAS',
+  'RIGHTWARDS_DOUBLE_ARROW',
   'MAPSTO',
   'NAME',
   'NAME',
