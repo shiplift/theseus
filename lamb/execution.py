@@ -107,6 +107,7 @@ toplevel_bindings = Toplevel()
 
 
 ##################################################################################
+@inline_small_list()
 class Env(Object):
     def __init__(self):
         pass
@@ -120,7 +121,6 @@ class Env(Object):
                 shapes[i] = w_obj._shape
         return find_shape_tuple(shapes)
 
-inline_small_list(Env)
 
 class Continuation(Object):
     def plug_reduce(self, w_val):
@@ -136,6 +136,7 @@ class FinishContinuation(Continuation):
     def needs_bindings(self):
         return False
 
+@inline_small_list()
 class CallContinuation(Continuation):
     def __init__(self, w_expr, bindings, cont):
         assert isinstance(w_expr, W_Call)
@@ -159,7 +160,6 @@ class CallContinuation(Continuation):
         assert bindings is not None
         cont = CallContinuation.make(values_w, self.w_expr, bindings, self.cont)
         return self.w_expr.get_argument(size), bindings, cont
-inline_small_list(CallContinuation)
 
 def get_printable_location_constr(expr, shape):
     res = "C"
@@ -189,6 +189,7 @@ def constrcont(values_w, w_expr, bindings, cont):
         return ConstrContinuation.make(values_w, w_expr, cont)
     return ConstrEvalArgsContinuation.make(values_w, w_expr, bindings, cont)
 
+@inline_small_list()
 class ConstrEvalArgsContinuation(Continuation):
     def __init__(self, w_expr, bindings, cont):
         self.w_expr = w_expr
@@ -202,8 +203,8 @@ class ConstrEvalArgsContinuation(Continuation):
         bindings = self.bindings
         cont = constrcont(values_w, self.w_expr, bindings, self.cont)
         return self.w_expr._children[len(values_w)], bindings, cont
-inline_small_list(ConstrEvalArgsContinuation)
 
+@inline_small_list()
 class ConstrContinuation(Continuation):
 
     def __init__(self, w_expr, cont):
@@ -224,8 +225,6 @@ class ConstrContinuation(Continuation):
                 return self.plug_reduce(w_constr)
             w_val = w_constr
             constrdriver.jit_merge_point(expr=self.w_expr, shape=w_val._shape, self=self, w_val=w_val)
-
-inline_small_list(ConstrContinuation)
 
 class Done(Exception):
     def __init__(self, w_val):

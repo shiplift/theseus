@@ -41,12 +41,6 @@ class Shape(Object):
 
     _attrs_ = []
 
-    def _init_children(self, w_c, children):
-        pass
-
-    def _update_child(self, new_children, children, index):
-        pass
-
     def get_child(self, w_c, index):
         return self.extract_child(w_c, index)
 
@@ -161,12 +155,9 @@ class CompoundShape(Shape):
         return depth + 1
 
     def build_child(self, new_children):
-        from model import W_Constructor, select_constructor_class
+        from model import W_Constructor
         (shape, storage) = self.fusion(new_children)
-        cls = select_constructor_class(storage)
-        constructor = cls(shape)
-        constructor._init_storage(storage)
-        return constructor
+        return W_Constructor.construct(shape, storage)
 
     def replace(self, storage_index, new_shape):
         structure = self._structure[:]
@@ -176,7 +167,6 @@ class CompoundShape(Shape):
                 return CompoundShape(self._tag, structure)
             storage_index -= child.storage_width()
 
-    @jit.unroll_safe
     def record_shape(self, child, i):
         from model import W_Constructor
         if not isinstance(child, W_Constructor):
@@ -351,6 +341,21 @@ class InStorageShape(Shape):
         return "|"
 
 in_storage_shape = InStorageShape()
+
+class IntegerShape(InStorageShape):
+
+    # @jit.elidable
+    def extract_child(self, w_c, index):
+        from lamb.model import W_Integer
+        return W_Integer(w_c.get_storage_at(index))
+    #
+    # Testing and Debug
+    #
+
+    def merge_point_string_seen(self, seen):
+        return "1"
+integer_shape = InStorageShape()
+    
 
 
 @jit.unroll_safe

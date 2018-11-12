@@ -18,13 +18,16 @@
 """
 from rpython.rlib import jit, rbigint
 from rpython.rlib.unroll import unrolling_iterable
-from rpython.rlib.objectmodel import compute_identity_hash, r_dict
+from rpython.rlib.objectmodel import compute_identity_hash, r_dict, not_rpython
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
 from lamb.object import Object
 
-from lamb.shape import CompoundShape, in_storage_shape, default_shape
+from lamb.shape import (CompoundShape, in_storage_shape, default_shape,
+                        integer_shape)
 from lamb.pattern import NoMatch
+from lamb.small_list import inline_small_list
+
 
 class W_Object(Object):
 
@@ -81,6 +84,8 @@ class W_Integer(W_Object):
         return self._value
     def merge_point_string(self):
         return "%d" % self._value
+    # def shape(self):
+    #     return integer_shape
 
 
 def w_integer(value):
@@ -129,25 +134,19 @@ def w_string(value):
     # assert isinstance(value, str)
     return W_String(value)
 
+@inline_small_list(immutable=True, nonull=True,
+                   attrname="_storage",
+                   listgettername="get_storage",
+                   listsizename="get_storage_width", gettername="get_storage_at"
+)
 class W_Constructor(W_Object):
 
+    #_immutable_ = True
     _immutable_fields_ = ['_shape']
 
     def __init__(self, shape):
         assert isinstance(shape, CompoundShape)
         self._shape = shape
-
-    def _init_storage(self, stroage):
-        pass
-
-    def get_storage(self):
-        return []
-
-    def get_storage_at(self, index):
-        raise IndexError()
-
-    def get_storage_width(self):
-        return 0
 
     def get_tag(self):
         return self.shape()._tag
@@ -160,10 +159,11 @@ class W_Constructor(W_Object):
 
     def get_number_of_children(self):
         return self.shape().get_number_of_direct_children()
-
+    
     def shape(self):
         return jit.promote(self._shape)
 
+    @not_rpython
     def __eq__(self, other):
         if isinstance(other, W_Constructor):
             if self.get_number_of_children() == other.get_number_of_children():
@@ -172,71 +172,11 @@ class W_Constructor(W_Object):
 
     def merge_point_string(self):
         return "%s/%s" % (self.get_tag().name, self.get_tag().arity())
-class W_NAryConstructor(W_Constructor):
 
-    _immutable_fields_ = ['_storage[*]']
-
-    def _init_storage(self, storage):
-        self._storage = storage or []
-
-    def get_storage(self):
-        return self._storage
-
-    def get_storage_at(self, index):
-        return self._storage[index]
-
-    def get_storage_width(self):
-        return len(self._storage)
-
-STORAGE_ATTR_TEMPLATE = "storage_%d"
-
-def constructor_class_name(n_storage):
-    return 'W_Constructor%d' % n_storage
-
-
-def generate_constructor_class(n_storage):
-
-    storage_iter = unrolling_iterable(range(n_storage))
-
-    class constructor_class(W_Constructor):
-        _immutable_fields_ = [(STORAGE_ATTR_TEMPLATE % x) for x in storage_iter]
-
-        def _init_storage(self, storage):
-            for x in storage_iter:
-                setattr(self, STORAGE_ATTR_TEMPLATE % x, storage[x])
-
-        def get_storage(self):
-            result = [None] * n_storage
-            for x in storage_iter:
-                result[x] = getattr(self, STORAGE_ATTR_TEMPLATE % x)
-            return result
-
-        def get_storage_at(self, index):
-            for x in storage_iter:
-                if x == index:
-                    return getattr(self, STORAGE_ATTR_TEMPLATE % x)
-            raise IndexError
-
-        def get_storage_width(self):
-            return n_storage
-
-    constructor_class.__name__ = constructor_class_name(n_storage)
-    return constructor_class
-
-constructor_classes = [W_Constructor]
-for n_storage in range(1, 10):
-    constructor_classes.append(generate_constructor_class(n_storage))
-
-class_iter = unrolling_iterable(enumerate(constructor_classes))
-
-def select_constructor_class(storage):
-    length = len(storage)
-    for i, cls in class_iter:
-        if i == length:
-            return cls
-    # otherwise:
-    return W_NAryConstructor
-
+    # for convenience
+    @staticmethod
+    def construct(shape, storage):
+        return W_Constructor.make(storage, shape)
 
 def prepare_constructor(tag, children):
     """
@@ -251,10 +191,7 @@ def w_constructor(tag, children):
     if SHOT:
         import pdb; pdb.set_trace()
     shape, storage = prepare_constructor(tag, children)
-    constr_cls = select_constructor_class(storage)
-    constr = constr_cls(shape)
-    constr._init_storage(storage)
-    return constr
+    return W_Constructor.construct(shape, storage)
 
 class W_Lambda(W_Object):
     """
