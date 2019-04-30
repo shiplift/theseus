@@ -61,7 +61,7 @@ Some functions
 
     :::text
     nil    ≔ nil()
-    append ≔ λ x, y:
+    append ≔ λ.
              1. nil             , X ↦ X
              2. Cons(Head, Tail), X ↦ Cons(Head, μ(append, Tail, X))
 

@@ -210,7 +210,7 @@ class CompoundShape(Shape):
     @jit.unroll_safe
     def merge(self, storage):
         u"""
-        fusion ≔ Shape × [W_Object] → Shape' × [W_Object]'
+        fusion := Shape × [W_Object] -> Shape' × [W_Object]'
         """
         from model import W_Constructor
 
