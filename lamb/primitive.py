@@ -138,6 +138,21 @@ def clock():
     import time
     return model.w_float(time.clock())
 
+@jit.dont_look_inside
+def current_gc_time():
+    from rpython.rlib import rgc
+    if objectmodel.we_are_translated():
+        val = rgc.get_stats(rgc.TOTAL_GC_TIME)
+    else:
+        val = 0
+    return val
+
+@expose_primitive(unwrap_spec=[])
+def gctime():
+    g = current_gc_time() * 1.0
+    return model.w_float(g)
+
+
 ###############################################################
 
 @expose_primitive("-", unwrap_spec=[generic, generic])
@@ -316,12 +331,13 @@ def print_string(x):
     print x
     return nil()
 
-@expose_primitive(unwrap_spec=[float])
-def print_result_string(x):
+@expose_primitive(unwrap_spec=[float, float, float])
+def print_result_string(x, y, z):
     " A hacky primitive to quickly generate ReBench out format "
     from lamb.util.construction_helper import nil
     x *= 1000.0
-    print "0:RESULT-cpu:ms: %s\n0:RESULT-total:ms: %s" % (x, x)
+    y *= 1000.0
+    print "0:RESULT-cpu:ms: %s\n0:RESULT-total:ms: %s\n0:RESULT-gc:ms: %s" % (x, y, z)
     return nil()
 
 

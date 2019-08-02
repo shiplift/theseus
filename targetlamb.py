@@ -239,6 +239,12 @@ def run(config, filename, args):
 
 
 def target(driver, args):
+    driver.config.translation.suggest(**{
+        "jit": True,
+        "jit_opencoder_model": "big",
+    })
+    driver.config.translation.set(gcrootfinder="shadowstack")
+
     if "--inhibit-recognition" in args:
         args.remove("--inhibit-recognition")
         driver.exe_name = 'lambi'
