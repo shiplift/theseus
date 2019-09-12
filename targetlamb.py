@@ -60,6 +60,7 @@ Options:
        --jit arg     pass arg to the JIT, may be 'default', 'off', or 'param=value,param=value' list
     -s num           set substitution threshold to num (is %d)
     -w num           set maximal storage with to consider for substitution to num (is %d)
+    -d num           set maximal shape depth to create to num (is %d)
 
     -R               don't read .lambc statefile (is %s read)
     -W               don't write .lambc statefile (is %s write)
@@ -73,6 +74,7 @@ Operations:
     ('do' if config["Print"] else 'do not'),
     CompoundShape._config.substitution_threshold,
     CompoundShape._config.max_storage_width,
+    CompoundShape._config.max_shape_depth,
     ('do' if config["ReadStatefile"] else 'do not'),
     ('do' if config["WriteStatefile"] else 'do not'),
 )
@@ -130,6 +132,13 @@ def parse_options(argv, config):
                 break
             i += 1
             CompoundShape._config.max_storage_width = int(argv[i])
+        elif argv[i] == "-d":
+            if len(argv) == i + 1:
+                print "missing argument after -d"
+                ret = 2
+                break
+            i += 1
+            CompoundShape._config.max_shape_depth = int(argv[i])
         else:
             filename = argv[i]
             if len(argv) > i:
