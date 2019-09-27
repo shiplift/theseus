@@ -134,7 +134,8 @@ def w_string(value):
     # assert isinstance(value, str)
     return W_String(value)
 
-@inline_small_list(immutable=True, nonull=True,
+@inline_small_list(sizemax=31,
+                   immutable=True, nonull=True,
                    attrname="_storage",
                    listgettername="get_storage",
                    listsizename="get_storage_width", gettername="get_storage_at"
