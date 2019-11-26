@@ -1,4 +1,3 @@
-syntax: glob
 *-c
 .coverage
 *.lambc
@@ -6,6 +5,4 @@ syntax: glob
 *.cmi
 *.cmx
 *.x86-darwin
-
-syntax: regexp
-\.cm/
+.cm/
