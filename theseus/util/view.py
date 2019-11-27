@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from lamb.util.repr import urepr
+from theseus.util.repr import urepr
 from rpython.rlib import objectmodel
 #
 # Graphviz

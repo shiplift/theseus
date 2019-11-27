@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    Parser for lamb.
+    Parser for Theseus.
 """
 from __future__ import absolute_import
 
@@ -14,7 +14,7 @@ from rpython.rlib.parsing.tree import RPythonVisitor, Symbol, Nonterminal, Node
 from rpython.rlib.objectmodel import we_are_translated, not_rpython
 from rpython.rlib.streamio import open_file_as_stream
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
-from lamb import model, pattern, expression, primitive
+from theseus import model, pattern, expression, primitive
 
 import py
 import sys
@@ -98,14 +98,14 @@ class LambdaInfo(object):
 no_result = model.W_Object()
 #   
 # #
-# Parser/Transformator to Lamb
+# Parser/Transformator to Theseus
 #
 
 class Parser(RPythonVisitor):
-    """Lamb Parser"""
+    """Theseus Parser"""
     def __init__(self):
         RPythonVisitor.__init__(self)
-        self.parser, self.lexer, self.transformer = make_lamb_parser()
+        self.parser, self.lexer, self.transformer = make_theseus_parser()
         self._reset()
 
     def _reset(self):
@@ -400,7 +400,7 @@ class Parser(RPythonVisitor):
         return [primitive.lookup(name)]
 
     # top level production
-    def visit_lamb_source(self, node):
+    def visit_theseus_source(self, node):
         return self.handle_all(node.children)
 
     # general visiting
@@ -439,13 +439,13 @@ def parse_string(string, w_argv=None):
 ############################################################################
 
 # generated code between this line and its other occurence
-class LambToAST(object):
-    def visit_lamb_source(self, node):
+class TheseusToAST(object):
+    def visit_theseus_source(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 1:
             children = []
-            expr = self.visit___lamb_source_rest_0_0(node.children[0])
+            expr = self.visit___theseus_source_rest_0_0(node.children[0])
             assert len(expr) == 1
             children.extend(expr[0].children)
             return [Nonterminal(node.symbol, children)]
@@ -453,7 +453,7 @@ class LambToAST(object):
         expr = self.visit__star_symbol0(node.children[0])
         assert len(expr) == 1
         children.extend(expr[0].children)
-        expr = self.visit___lamb_source_rest_0_0(node.children[1])
+        expr = self.visit___theseus_source_rest_0_0(node.children[1])
         assert len(expr) == 1
         children.extend(expr[0].children)
         return [Nonterminal(node.symbol, children)]
@@ -953,7 +953,7 @@ class LambToAST(object):
         children = []
         children.extend([node.children[1]])
         return [Nonterminal(node.symbol, children)]
-    def visit___lamb_source_rest_0_0(self, node):
+    def visit___theseus_source_rest_0_0(self, node):
         #auto-generated code, don't edit
         length = len(node.children)
         if length == 1:
@@ -1017,8 +1017,8 @@ class LambToAST(object):
     def transform(self, tree):
         #auto-generated code, don't edit
         assert isinstance(tree, Nonterminal)
-        assert tree.symbol == 'lamb_source'
-        r = self.visit_lamb_source(tree)
+        assert tree.symbol == 'theseus_source'
+        r = self.visit_theseus_source(tree)
         assert len(r) == 1
         if not we_are_translated():
             try:
@@ -1027,7 +1027,7 @@ class LambToAST(object):
             except AttributeError:
                 pass
         return r[0]
-parser = PackratParser([Rule('lamb_source', [['_star_symbol0', '__lamb_source_rest_0_0'], ['__lamb_source_rest_0_0']]),
+parser = PackratParser([Rule('theseus_source', [['_star_symbol0', '__theseus_source_rest_0_0'], ['__theseus_source_rest_0_0']]),
   Rule('_maybe_symbol1', [['toplevel_expressions']]),
   Rule('_star_symbol0', [['NEWLINE', '_star_symbol0'], ['NEWLINE']]),
   Rule('_plus_symbol0', [['NEWLINE', '_plus_symbol0'], ['NEWLINE']]),
@@ -1076,12 +1076,12 @@ parser = PackratParser([Rule('lamb_source', [['_star_symbol0', '__lamb_source_re
   Rule('_star_symbol16', [['__0_,', '_maybe_symbol15', '___star_symbol16_rest_0_0'], ['__0_,', '___star_symbol16_rest_0_0']]),
   Rule('pattern_arglist', [['pattern', '_star_symbol16'], ['pattern']]),
   Rule('primitive', [['LEFT_DOUBLE_ANGLE', 'NAME', 'RIGHT_DOUBLE_ANGLE']]),
-  Rule('__lamb_source_rest_0_0', [['_maybe_symbol1', 'EOF'], ['EOF']]),
+  Rule('__theseus_source_rest_0_0', [['_maybe_symbol1', 'EOF'], ['EOF']]),
   Rule('__toplevel_expressions_rest_0_0', [['_star_symbol3'], []]),
   Rule('___star_symbol5_rest_0_0', [['expression', '_star_symbol5'], ['expression']]),
   Rule('___star_symbol14_rest_0_0', [['pattern', '_star_symbol14'], ['pattern']]),
   Rule('___star_symbol16_rest_0_0', [['pattern', '_star_symbol16'], ['pattern']])],
- 'lamb_source')
+ 'theseus_source')
 def recognize(runner, i):
     #auto-generated code, don't edit
     assert i >= 0
@@ -6125,10 +6125,10 @@ lexer = DummyLexer(recognize, DFA(43,
   'LAMBDA']), {'IGNORE': None})
 # generated code between this line and its other occurence
 
-def make_lamb_parser_dynamic():
+def make_theseus_parser_dynamic():
     from rpython.rlib.parsing.ebnfparse import parse_ebnf, check_for_missing_names
 
-    filename = py.path.local(__file__).dirpath("lamb.ebnf")
+    filename = py.path.local(__file__).dirpath("theseus.ebnf")
     try:
         ebnf_source = py.path.local(filename).read(mode='U')
         rs, rules, tr = parse_ebnf(ebnf_source)
@@ -6143,14 +6143,14 @@ def make_lamb_parser_dynamic():
     # pr = PackratParser(rules, rules[0].nonterminal, check_for_left_recursion=True)
     return pr, lx, tr
 
-def make_lamb_parser_generated():
-    return parser, lexer, LambToAST
+def make_theseus_parser_generated():
+    return parser, lexer, TheseusToAST
 
-def make_lamb_parser():
+def make_theseus_parser():
     if use_dynamic_parser:
-        return make_lamb_parser_dynamic()
+        return make_theseus_parser_dynamic()
     else:
-        return make_lamb_parser_generated()
+        return make_theseus_parser_generated()
 
 ############################################################################
 if __name__ == '__main__':
@@ -6159,10 +6159,10 @@ if __name__ == '__main__':
     s = u"# GENERATED CODE BETWEEN THIS LINE AND ITS OTHER OCCURENCE\n".lower()
     pre, gen, after = oldcontent.split(s)
 
-    parser, lexer, ToAST = make_lamb_parser_dynamic()
+    parser, lexer, ToAST = make_theseus_parser_dynamic()
     transformer = ToAST.source
     newcontent = u"%s%s%s\nparser = %r\n%s\n%s%s" % (
-            pre, s, transformer.replace("ToAST", "LambToAST"),
+            pre, s, transformer.replace("ToAST", "TheseusToAST"),
             parser, lexer.get_dummy_repr(), s, after)
     print newcontent
     f.write(newcontent.encode("utf-8"), mode="wb")

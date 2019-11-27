@@ -4,8 +4,8 @@
 
 from rpython.tool.pairtype import extendabletype
 
-from lamb.util.testing import TestHelperMixin
-from lamb.util.view import DebugVizualizationMixin
+from theseus.util.testing import TestHelperMixin
+from theseus.util.view import DebugVizualizationMixin
 
 class Object(TestHelperMixin, DebugVizualizationMixin):
     _attrs_ = []

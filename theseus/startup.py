@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Startup registry for lamb.
+Startup registry for theseus.
 """
 
 from rpython.rlib import jit
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
-from lamb.object import Object
+from theseus.object import Object
 
 class StartupRegistry(Object):
 
@@ -26,9 +26,9 @@ class StartupRegistry(Object):
 the_startup_registry = StartupRegistry()
 
 def boot():
-    debug_start("lamb-startup")
+    debug_start("theseus-startup")
     the_startup_registry.boot()
-    debug_stop("lamb-startup")
+    debug_stop("theseus-startup")
 
 def startup(fun):
     # debug_print("register %s for startup" % fun)

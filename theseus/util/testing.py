@@ -14,5 +14,5 @@ class TestHelperMixin(object):
 
     def shape(self):
         # for non-W_Objects to act as such during pattern generation
-        from lamb.shape import in_storage_shape
+        from theseus.shape import in_storage_shape
         return in_storage_shape

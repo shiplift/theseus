@@ -3,12 +3,12 @@
 
 from rpython.rlib import jit
 
-from lamb.execution import (current_shapes,
+from theseus.execution import (current_shapes,
                             ex_data_or_none, op_data_or_none,
                             W_LambdaCursor, W_ConstructorCursor,
                             )
-from lamb.util.view import _dot, view
-from lamb.util.repr import urepr, who, uni
+from theseus.util.view import _dot, view
+from theseus.util.repr import urepr, who, uni
 
 glob = { 'predicates': [] }
 

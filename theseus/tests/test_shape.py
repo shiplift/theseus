@@ -7,14 +7,14 @@ import sys
 import py
 
 
-from lamb.execution import *
-from lamb.shape import *
-from lamb.model import *
-from lamb.expression import *
-from lamb.util.construction_helper import (pattern, cons, integer, expression,
-                                           ziprules, lamb, mu,
-                                           nil, is_nil,
-                                           conslist, plist)
+from theseus.execution import *
+from theseus.shape import *
+from theseus.model import *
+from theseus.expression import *
+from theseus.util.construction_helper import (pattern, cons, integer, expression,
+                                              ziprules, lamb, mu,
+                                              nil, is_nil,
+                                              conslist, plist)
 
 
 #
@@ -167,7 +167,7 @@ class TestShapeMerger(object):
     """
 
     def test_splice(self):
-        from lamb.shape import _splice
+        from theseus.shape import _splice
 
         a = [1, 2, 3]
         len_a = len(a)

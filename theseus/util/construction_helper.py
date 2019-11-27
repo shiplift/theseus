@@ -8,15 +8,15 @@
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import we_are_translated, not_rpython
 from rpython.rlib.unroll import unrolling_iterable
-from lamb.expression import (Variable, Rule,
-                             W_VariableExpression,
-                             w_call)
-from lamb.object import Object
-from lamb.pattern import (Pattern,
-                          VariablePattern, ConstructorPattern, IntegerPattern)
-from lamb.model import (W_Object, W_Integer, W_Constructor, W_Lambda,
-                        tag, w_constructor)
-from lamb.execution import interpret, interpret_expression
+from theseus.expression import (Variable, Rule,
+                                W_VariableExpression,
+                                w_call)
+from theseus.object import Object
+from theseus.pattern import (Pattern,
+                             VariablePattern, ConstructorPattern, IntegerPattern)
+from theseus.model import (W_Object, W_Integer, W_Constructor, W_Lambda,
+                           tag, w_constructor)
+from theseus.execution import interpret, interpret_expression
 
 def nil():
     return w_constructor(tag("nil", 0), [])
@@ -105,7 +105,7 @@ def run(lamb, args):
     return interpret_expression(mu(lamb, args))
 
 def convert_arguments(arguments):
-    from lamb import model
+    from theseus import model
     return conslist([model.w_string(arg) for arg in arguments])
 
 # EOF

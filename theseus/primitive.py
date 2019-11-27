@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from lamb import model
+from theseus import model
 from rpython.rlib import (jit, rarithmetic, rstring, rfloat, rbigint,
                           objectmodel)
 
                           
-from lamb.util.construction_helper import conslist, plist, nil
+from theseus.util.construction_helper import conslist, plist, nil
 
 # Primitives
 class UnsupportedPrimitive(Exception):
@@ -334,7 +334,7 @@ def print_string(x):
 @expose_primitive(unwrap_spec=[float, float, float])
 def print_result_string(x, y, z):
     " A hacky primitive to quickly generate ReBench out format "
-    from lamb.util.construction_helper import nil
+    from theseus.util.construction_helper import nil
     x *= 1000.0
     y *= 1000.0
     print "0:RESULT-cpu:ms: %s\n0:RESULT-total:ms: %s\n0:RESULT-gc:ms: %s" % (x, y, z)

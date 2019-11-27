@@ -11,9 +11,9 @@ from rpython.rlib.objectmodel import we_are_translated
 
 take_options = True
 
-from lamb.startup import boot
-from lamb.execution import jitdriver, toplevel_bindings
-from lamb.shape import CompoundShape
+from theseus.startup import boot
+from theseus.execution import jitdriver, toplevel_bindings
+from theseus.shape import CompoundShape
 
 default_config = {
     "Nums": 1000,
@@ -46,7 +46,7 @@ def stats():
 
 
 def print_help(argv, config):
-    print """Lamb
+    print """Theseus
 Usage: %s [options] file
 
 Options:
@@ -62,8 +62,8 @@ Options:
     -w num           set maximal storage with to consider for substitution to num (is %d)
     -d num           set maximal shape depth to create to num (is %d)
 
-    -R               don't read .lambc statefile (is %s read)
-    -W               don't write .lambc statefile (is %s write)
+    -R               don't read .docked statefile (is %s read)
+    -W               don't write .docked statefile (is %s write)
 
 Operations:
     file             file to run
@@ -149,16 +149,16 @@ def parse_options(argv, config):
     return (filename, ret, args, config)
 
 def convert_arguments(arguments):
-    from lamb.util.construction_helper import conslist
-    from lamb import model
+    from theseus.util.construction_helper import conslist
+    from theseus import model
     return conslist([model.w_string(arg) for arg in arguments])
 
 def do_come_up(f):
-    from lamb.util.serialize import come_up
+    from theseus.util.serialize import come_up
     come_up(f)
 
 def do_settle(f):
-    from lamb.util.serialize import settle
+    from theseus.util.serialize import settle
     settle(f)
 
 # __________  Entry points  __________
@@ -209,7 +209,7 @@ def entry_point_i(argv):
     return entry_point(argv)
 
 def entry_point_t(argv):
-    from lamb.util.transformation import print_transformations
+    from theseus.util.transformation import print_transformations
     ret = entry_point(argv)
     print_transformations()
     return ret
@@ -217,9 +217,9 @@ def entry_point_t(argv):
 
 def run(config, filename, args):
 
-    from lamb.util.construction_helper import interpret_expression, nil
-    from lamb.parser import parse_file
-    from lamb.execution import toplevel_bindings
+    from theseus.util.construction_helper import interpret_expression, nil
+    from theseus.parser import parse_file
+    from theseus.execution import toplevel_bindings
 
     w_argv = convert_arguments(args)
     expressions, bindings = parse_file(filename, w_argv)
@@ -254,26 +254,25 @@ def target(driver, args):
     })
     driver.config.translation.set(gcrootfinder="shadowstack")
 
+    exe_name = 'theseus'
+    ep = entry_point_normal
     if "--inhibit-recognition" in args:
         args.remove("--inhibit-recognition")
-        driver.exe_name = 'lambi'
+        exe_name += 'i'
         ep = entry_point_i
     elif "--inhibit-all" in args:
         args.remove("--inhibit-all")
-        driver.exe_name = 'lambn'
+        exe_name += 'n'
         ep = entry_point_n
     elif "--record-transformations" in args:
         args.remove("--record-transformations")
-        from lamb.util.transformation import record_predicates
-        from lamb import execution
+        from theseus.util.transformation import record_predicates
+        from theseus import execution
         execution._debug_callback = record_predicates
-        driver.exe_name = 'lambt'
+        exe_name += 't'
         ep = entry_point_t
-    else:
-        driver.exe_name = 'lamb'
-        ep = entry_point_normal
-    if driver.exe_name is not None:
-        driver.exe_name = 'bin/' + driver.exe_name
+
+    driver.exe_name = 'bin/' + exe_name
     return ep, None
 
 
@@ -284,7 +283,7 @@ def jitpolicy(driver):
 
 if __name__ == '__main__':
     assert not we_are_translated()
-    import lamb.util.debug
+    import theseus.util.debug
     from rpython.translator.driver import TranslationDriver
     f, _ = target(TranslationDriver(), sys.argv)
     try:

@@ -21,12 +21,12 @@ from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import compute_identity_hash, r_dict, not_rpython
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
-from lamb.object import Object
+from theseus.object import Object
 
-from lamb.shape import (CompoundShape, in_storage_shape, default_shape,
+from theseus.shape import (CompoundShape, in_storage_shape, default_shape,
                         integer_shape)
-from lamb.pattern import NoMatch
-from lamb.small_list import inline_small_list
+from theseus.pattern import NoMatch
+from theseus.small_list import inline_small_list
 
 
 class W_Object(Object):
@@ -37,7 +37,7 @@ class W_Object(Object):
         return in_storage_shape
     
     def _replace_with_constructor_expression(self):
-        from lamb.expression import Quote
+        from theseus.expression import Quote
         return Quote(self)
     def merge_point_string(self):
         return "<unknown: %s>" % self

@@ -7,8 +7,8 @@ from rpython.rlib import jit
 
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
-from lamb.object import Object
-from lamb.util.repr import uni, who, urepr
+from theseus.object import Object
+from theseus.util.repr import uni, who, urepr
 
 
 class Pattern(Object):
@@ -27,7 +27,7 @@ class IntegerPattern(Pattern):
         self.value = value
 
     def match(self, obj, binding):
-        from lamb.model import W_Integer
+        from theseus.model import W_Integer
         if isinstance(obj, W_Integer): # pragma: no branch
             if obj._value == self.value:
                 return
@@ -41,7 +41,7 @@ class StringPattern(Pattern):
         self.value = value
 
     def match(self, obj, binding):
-        from lamb.model import W_String
+        from theseus.model import W_String
         if isinstance(obj, W_String): # pragma: no branch
             if obj._value == self.value:
                 return
@@ -75,7 +75,7 @@ class ConstructorPattern(Pattern):
 
     @jit.unroll_safe
     def match(self, obj, binding):
-        from lamb.execution import W_Constructor
+        from theseus.execution import W_Constructor
         if not isinstance(obj, W_Constructor):
             raise NoMatch()
 

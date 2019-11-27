@@ -33,7 +33,7 @@ marshal_proto = (
     }
 )
 
-The serialized tree is written to a '.lambc' files
+The serialized tree is written to a '.docked' files
 
 """
 import os.path
@@ -41,8 +41,8 @@ from rpython.rlib.streamio import open_file_as_stream
 from rpython.rlib.rmarshal import get_marshaller, get_unmarshaller
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
-from lamb.model import W_Tag
-from lamb.shape import in_storage_shape, CompoundShape
+from theseus.model import W_Tag
+from theseus.shape import in_storage_shape, CompoundShape
 
 marshal_proto = (
     int, # number of shapes
@@ -219,16 +219,16 @@ def slurp_tags(un_tags):
 def come_up(basename):
     """
     Bring up previously marshalled Tags, shapes and transformations
-    from '.lambc' file un-marshalling, slurping and replacement of
+    from '.docked' file un-marshalling, slurping and replacement of
     current Tags.
     """
-    from lamb.shape import CompoundShape
+    from theseus.shape import CompoundShape
     # later
     # from os import stat
     # statres = stat(path)
-    debug_start("lamb-come-up")
+    debug_start("theseus-come-up")
 
-    path = basename + '.lambc'
+    path = basename + '.docked'
     if not os.path.exists(path):
         return
     try:
@@ -245,16 +245,16 @@ def come_up(basename):
     new_tags = slurp_tags(res)
     for key, value in new_tags.items():
         W_Tag.tags[key] = value
-    debug_stop("lamb-come-up")
+    debug_stop("theseus-come-up")
 
 def settle(basename):
     """
-    Settle Tags, shapes and transformations to a '.lambc' file
+    Settle Tags, shapes and transformations to a '.docked' file
     punching and marshalling all current Tags.
     """
-    debug_start("lamb-settle")
+    debug_start("theseus-settle")
 
-    path = basename + '.lambc'
+    path = basename + '.docked'
     buf = []
     marshaller(buf, punch_tags(W_Tag.tags))
     try:
@@ -266,4 +266,4 @@ def settle(basename):
         f.write(''.join(buf))
     finally:
         f.close()
-    debug_stop("lamb-settle")
+    debug_stop("theseus-settle")

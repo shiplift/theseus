@@ -5,7 +5,7 @@
 This is adapted from a benchmark written by John Ellis and Pete Kovac
 of Post Communications.
 It was modified by Hans Boehm of Silicon Graphics.
-Adapted to lamb by Tobias Pape
+Adapted to theseus by Tobias Pape
 
     This is no substitute for real applications.  No actual application
     is likely to behave in exactly this way.  However, this benchmark was
@@ -50,12 +50,12 @@ Adapted to lamb by Tobias Pape
 """
 
 import time
-from lamb.expression import Variable
-from lamb.startup import startup
+from theseus.expression import Variable
+from theseus.startup import startup
 
-from lamb.model import tag
-from lamb.shape import CompoundShape, in_storage_shape
-from lamb.util.construction_helper import (pattern as p, expression as e,
+from theseus.model import tag
+from theseus.shape import CompoundShape, in_storage_shape
+from theseus.util.construction_helper import (pattern as p, expression as e,
                                            lamb, mu, cons, integer,
                                            plist, conslist, rules,
                                            nil)
@@ -208,11 +208,11 @@ def prim_currentmilliseconds(w_args):
     return integer(int(time.clock()*1000))
 
 def make_prim_currentmilliseconds():
-    from lamb.model import W_Primitive
+    from theseus.model import W_Primitive
     return W_Primitive(prim_currentmilliseconds, 0, "currentmilliseconds")
 
 def prim_minus(w_args):
-    from lamb.model import W_Integer
+    from theseus.model import W_Integer
     assert len(w_args) == 2
     w_arg0 = w_args[0]
     assert isinstance(w_arg0, W_Integer)
@@ -222,11 +222,11 @@ def prim_minus(w_args):
     return integer(w_arg0.value() - w_arg1.value())
 
 def make_prim_minus():
-    from lamb.model import W_Primitive
+    from theseus.model import W_Primitive
     return W_Primitive(prim_minus, 2, "minus")
 
 def prim_print_int(w_args):
-    from lamb.model import W_Integer
+    from theseus.model import W_Integer
     assert len(w_args) == 1
     w_arg0 = w_args[0]
     assert isinstance(w_arg0, W_Integer)
@@ -236,11 +236,11 @@ def prim_print_int(w_args):
     return nil()
 
 def make_prim_print_int():
-    from lamb.model import W_Primitive
+    from theseus.model import W_Primitive
     return W_Primitive(prim_print_int, 1, "print_int")
 
 # def prim_display(w_args):
-#     from lamb.model import W_String
+#     from theseus.model import W_String
 #     assert len(w_args) == 1
 #     w_arg0 = w_args[0]
 #     assert isinstance(w_arg0, W_String)

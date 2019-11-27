@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-from lamb.parser import Parser, ParseError
-from lamb.util.construction_helper import *
-from lamb.util.construction_helper import expression as e, pattern as p
-from lamb import model, expression, pattern
+from theseus.parser import Parser, ParseError
+from theseus.util.construction_helper import *
+from theseus.util.construction_helper import expression as e, pattern as p
+from theseus import model, expression, pattern
 
 from rpython.rlib.parsing.parsing import PackratParser, ParseError as PyParseError
 from rpython.rlib.parsing.lexer import SourcePos, Lexer, Token
@@ -14,14 +14,14 @@ from rpython.rlib.parsing.tree import Nonterminal, Symbol, Node
 import py
 
 # For our joy
-import lamb.util.debug
-import lamb.parser
-lamb.parser.use_dynamic_parser = True
+import theseus.util.debug
+import theseus.parser
+theseus.parser.use_dynamic_parser = True
 
 def pytest_funcarg__parser(request):
     import copy
     """
-    Returns a Lamb parser
+    Returns a Theseus parser
     """
     def build_parser():
         return Parser()
@@ -55,7 +55,7 @@ class TestParser(object):
         assert t == [model.w_string("1")]
 
     def test_primitive(self, parser):
-        from lamb.primitive import lookup, UnsupportedPrimitive
+        from theseus.primitive import lookup, UnsupportedPrimitive
         t = parser.parse("⟪-⟫")
         assert t == [lookup("-")]
 

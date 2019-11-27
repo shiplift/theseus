@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from rpython.rlib.nonconst import NonConstant
-from lamb.startup import startup
+from theseus.startup import startup
 
-from lamb.expression import Variable
-from lamb.model import tag
-from lamb.shape import CompoundShape, in_storage_shape
-from lamb.util.construction_helper import (pattern as p, expression as e,
+from theseus.expression import Variable
+from theseus.model import tag
+from theseus.shape import CompoundShape, in_storage_shape
+from theseus.util.construction_helper import (pattern as p, expression as e,
                                            lamb, mu, cons,
                                            plist, conslist, rules,
                                            nil)

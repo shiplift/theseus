@@ -3,11 +3,11 @@
 
 import py, sys
 
-from lamb.util.view import _dot, view
-from lamb.util.repr import urepr, who, uni
+from theseus.util.view import _dot, view
+from theseus.util.repr import urepr, who, uni
 
 
-from lamb import model, shape, pattern, expression, execution, object as obj
+from theseus import model, shape, pattern, expression, execution, object as obj
 # Monkeypatch debug output
 #
 

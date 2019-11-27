@@ -8,16 +8,16 @@ from rpython.rlib.unroll import unrolling_iterable
 from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
-from lamb.pattern import NoMatch
-from lamb.object import Object
-from lamb.model import (W_Object, W_Constructor, W_Lambda, W_Primitive,
+from theseus.pattern import NoMatch
+from theseus.object import Object
+from theseus.model import (W_Object, W_Constructor, W_Lambda, W_Primitive,
                         w_constructor)
-from lamb.shape import (default_shape, find_shape_tuple,
+from theseus.shape import (default_shape, find_shape_tuple,
                         CompoundShape, InStorageShape)
-from lamb.expression import (W_ConstructorEvaluator, W_VariableExpression,
+from theseus.expression import (W_ConstructorEvaluator, W_VariableExpression,
                              W_Call, W_NAryCall, Quote,
                              VariableUnbound, LambdaBox, Rule)
-from lamb.small_list import inline_small_list
+from theseus.small_list import inline_small_list
 
 #
 # Execution behavior.
@@ -254,7 +254,7 @@ jitdriver = jit.JitDriver(
 )
 
 def interpret(expr, bindings=None, cont=None):
-    from lamb.expression import W_PureExpression
+    from theseus.expression import W_PureExpression
     # if isinstance(expr, ExecutionStackElement): # XXX for now
     #     assert expr._next is None
     #     expr = expr._data._replace_with_constructor_expression()

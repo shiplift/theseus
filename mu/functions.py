@@ -3,11 +3,11 @@
 
 from rpython.rlib import jit
 
-from lamb.object import Object
-from lamb.util.construction_helper import (integer, is_nil, conslist, run)
-from lamb.model import W_Integer, W_Object, W_Tag, W_Constructor
+from theseus.object import Object
+from theseus.util.construction_helper import (integer, is_nil, conslist, run)
+from theseus.model import W_Integer, W_Object, W_Tag, W_Constructor
 
-from lamb.startup import startup
+from theseus.startup import startup
 
 import mu.peano
 import mu.lists
@@ -87,7 +87,7 @@ def list_fun(arg):
 
 def format(ret):
     from mu.peano import python_num
-    from lamb.execution import W_Constructor, W_Lambda
+    from theseus.execution import W_Constructor, W_Lambda
     if isinstance(ret, W_Integer):
         return "%d" % ret._value
     elif isinstance(ret, W_Constructor):
@@ -126,7 +126,7 @@ class Function(CanApply):
     fmt is a string consisting of one char per argument.
     """
     def __init__(self, lamb, argfmt, doc):
-        from lamb.model import W_Lambda
+        from theseus.model import W_Lambda
         assert isinstance(lamb, W_Lambda)
         self.lamb = lamb
         assert len(argfmt) == lamb.arity()

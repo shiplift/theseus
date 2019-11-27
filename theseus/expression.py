@@ -8,9 +8,9 @@ from rpython.rlib.unroll import unrolling_iterable
 
 from rpython.rlib.debug import debug_start, debug_stop, debug_print
 
-from lamb.object import Object
-from lamb.pattern import NoMatch, Pattern
-from lamb.model import W_Object, W_Tag, W_Lambda, W_Constructor, w_constructor
+from theseus.object import Object
+from theseus.pattern import NoMatch, Pattern
+from theseus.model import W_Object, W_Tag, W_Lambda, W_Constructor, w_constructor
 
 #
 # Resolved copy behavior
@@ -64,7 +64,7 @@ class W_ConstructorEvaluator(W_PureExpression):
     _immutable_fields_ = ['_tag', '_children[*]']
 
     def __init__(self, tag, children=None):
-        from lamb.model import W_Tag
+        from theseus.model import W_Tag
         assert isinstance(tag, W_Tag)
         self._tag = tag
         self._children = children or []
@@ -90,7 +90,7 @@ class W_VariableExpression(W_PureExpression):
         self.variable = variable
 
     def resolve(self, binding):
-        from lamb.execution import toplevel_bindings
+        from theseus.execution import toplevel_bindings
         # var = jit.promote(self.variable)
         var = self.variable.value()
         if not isinstance(var, Variable):

@@ -6,9 +6,9 @@
 
 from rpython.rlib import jit, objectmodel
 
-from lamb.object import Object
+from theseus.object import Object
 
-from lamb.util.repr import uni, who, urepr
+from theseus.util.repr import uni, who, urepr
 
 @jit.unroll_safe
 def _splice(array, array_len, index, insertion, insertion_len):
@@ -346,7 +346,7 @@ class IntegerShape(InStorageShape):
 
     # @jit.elidable
     def extract_child(self, w_c, index):
-        from lamb.model import W_Integer
+        from theseus.model import W_Integer
         return W_Integer(w_c.get_storage_at(index))
     #
     # Testing and Debug

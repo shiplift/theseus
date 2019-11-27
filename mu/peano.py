@@ -5,12 +5,12 @@
 from rpython.rlib import jit
 from rpython.rlib.nonconst import NonConstant
 
-from lamb.startup import startup
+from theseus.startup import startup
 
-from lamb.model import tag
-from lamb.shape import CompoundShape
-from lamb.expression import Variable
-from lamb.util.construction_helper import (pattern as pp, expression as e,
+from theseus.model import tag
+from theseus.shape import CompoundShape
+from theseus.expression import Variable
+from theseus.util.construction_helper import (pattern as pp, expression as e,
                                            lamb, mu, cons,
                                            plist, conslist, rules,
                                            nil, is_nil)
@@ -44,17 +44,17 @@ def _setup_shapes():
 
 # Value
 def p(x):
-    from lamb.model import w_constructor
+    from theseus.model import w_constructor
     return w_constructor(tag("p", 1), x)
 
 # Pattern
 def _p(x):
-    from lamb.pattern import ConstructorPattern
+    from theseus.pattern import ConstructorPattern
     return ConstructorPattern(tag("p", 1), [pp(x)])
 
 # Expression
 def p_(x):
-    from lamb.model import w_constructor
+    from theseus.model import w_constructor
     return w_constructor(tag("p", 1), [e(x)])
 
 
@@ -192,7 +192,7 @@ def peano_num(pynum):
     return res
 
 def python_num(peano):
-    from lamb.model import W_Constructor
+    from theseus.model import W_Constructor
     p = peano
     res = 0
     while not is_nil(p):
