@@ -3,11 +3,11 @@
 [run]
 branch = True
 include =
-    lamb/*
+    theseus/*
     mu/*
 omit =
-    lamb/util/*
-    lamb/tests/jit.py
+    theseus/util/*
+    theseus/tests/jit.py
 
 [report]
 # Regexes for lines to exclude from consideration
