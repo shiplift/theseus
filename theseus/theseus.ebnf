@@ -18,8 +18,8 @@ NAME: "[^0-9,\(\)⟪⟫ \n\r\t\f#][^,\(\)⟪⟫ \n\r\t\f#]*";
 IGNORE: "[ \f\t]*|#[^\n]*";
 
 # Productions
-lamb_source : [NEWLINE]* >toplevel_expressions<? [EOF]
-            ;
+ship : [NEWLINE]* >toplevel_expressions<? [EOF]
+     ;
 
 toplevel_expressions : toplevel_expression ([NEWLINE]+ >toplevel_expressions< )* [NEWLINE]*
                      ;
